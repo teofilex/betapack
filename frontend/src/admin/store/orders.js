@@ -57,6 +57,31 @@ export const useOrderStore = defineStore('orders', {
             } catch (e) {
                 console.error('Greška pri ažuriranju statusa:', e)
             }
+        },
+
+        async deleteOrder(id) {
+            const auth = useAuthStore()
+
+            try {
+                await api.delete(
+                    `orders/${id}/`,
+                    {
+                        headers: { Authorization: `Bearer ${auth.accessToken}` }
+                    }
+                )
+
+                // refresh table
+                await this.fetchAll()
+
+                // clear selected if deleted
+                if (this.selected && this.selected.id === id) {
+                    this.clearSelected()
+                }
+
+            } catch (e) {
+                console.error('Greška pri brisanju narudžbine:', e)
+                throw e
+            }
         }
     }
 })

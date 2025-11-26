@@ -1,6 +1,9 @@
 <script setup>
-import { ref } from 'vue'
-import axios from 'axios'
+import { ref, watch, onMounted } from 'vue'
+import { api } from '@/services/api'
+import { useAuthStore } from '@/store/auth'
+import AdminModal from './AdminModal.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const props = defineProps({
   productId: Number
@@ -11,6 +14,10 @@ const emit = defineEmits(['updated'])
 const variants = ref([])
 const showForm = ref(false)
 const editing = ref(null)
+const showConfirm = ref(false)
+const confirmMessage = ref('')
+const confirmAction = ref(null)
+const variantToDelete = ref(null)
 
 const form = ref({
   name: '',
@@ -23,7 +30,10 @@ const form = ref({
 const fetchVariants = async () => {
   if (!props.productId) return
   try {
-    const response = await axios.get(`/api/product-variants/?product_id=${props.productId}`)
+    const authStore = useAuthStore()
+    const response = await api.get(`product-variants/?product_id=${props.productId}`, {
+      headers: { Authorization: `Bearer ${authStore.accessToken}` }
+    })
     variants.value = response.data
   } catch (error) {
     console.error('Error fetching variants:', error)
@@ -52,17 +62,41 @@ const closeForm = () => {
   editing.value = null
 }
 
+const openConfirm = (msg, action) => {
+  confirmMessage.value = msg
+  confirmAction.value = action
+  showConfirm.value = true
+}
+
+const closeConfirm = () => {
+  showConfirm.value = false
+  confirmMessage.value = ''
+  confirmAction.value = null
+  variantToDelete.value = null
+}
+
+const doConfirm = () => {
+  if (confirmAction.value) confirmAction.value()
+  closeConfirm()
+}
+
 const saveVariant = async () => {
   try {
+    const authStore = useAuthStore()
+    const authHeaders = { Authorization: `Bearer ${authStore.accessToken}` }
     const data = {
       product: props.productId,
       ...form.value
     }
 
     if (editing.value) {
-      await axios.patch(`/api/product-variants/${editing.value}/`, data)
+      await api.patch(`product-variants/${editing.value}/`, data, {
+        headers: authHeaders
+      })
     } else {
-      await axios.post('/api/product-variants/', data)
+      await api.post('product-variants/', data, {
+        headers: authHeaders
+      })
     }
 
     await fetchVariants()
@@ -70,155 +104,221 @@ const saveVariant = async () => {
     closeForm()
   } catch (error) {
     console.error('Save error:', error)
-    alert('Greška pri čuvanju varijante')
+    const errorMsg = error.response?.data?.detail || error.response?.data?.message || 'Greška pri čuvanju varijante'
+    openConfirm(errorMsg, null)
   }
 }
 
-const deleteVariant = async (id) => {
-  if (!confirm('Obrisati varijantu?')) return
-  try {
-    await axios.delete(`/api/product-variants/${id}/`)
-    await fetchVariants()
-    emit('updated')
-  } catch (error) {
-    console.error('Delete error:', error)
-  }
+const deleteVariant = (id) => {
+  const variant = variants.value.find(v => v.id === id)
+  const variantName = variant ? variant.name : 'ovu varijantu'
+  variantToDelete.value = id
+  openConfirm(
+    `Da li želiš da obrišeš varijantu "${variantName}"?`,
+    async () => {
+      try {
+        const authStore = useAuthStore()
+        await api.delete(`product-variants/${id}/`, {
+          headers: { Authorization: `Bearer ${authStore.accessToken}` }
+        })
+        await fetchVariants()
+        emit('updated')
+      } catch (error) {
+        console.error('Delete error:', error)
+        const errorMsg = error.response?.data?.detail || error.response?.data?.message || 'Greška pri brisanju varijante. Varijanta možda se koristi u narudžbinama.'
+        openConfirm(errorMsg, null)
+      }
+    }
+  )
 }
 
-// Fetch na mount
-if (props.productId) {
-  fetchVariants()
-}
+// Fetch na mount i kada se productId promeni
+onMounted(() => {
+  if (props.productId) {
+    fetchVariants()
+  }
+})
+
+watch(() => props.productId, (newId) => {
+  if (newId) {
+    fetchVariants()
+  } else {
+    variants.value = []
+  }
+})
 </script>
 
 <template>
   <div class="space-y-4">
-    <div class="flex justify-between items-center">
-      <h4 class="font-semibold text-lg">Varijante (Dimenzije)</h4>
+    <div class="flex justify-between items-center mb-4">
+      <h4 class="font-bold text-xl text-gray-900">Varijante (Dimenzije)</h4>
       <button
         @click="openForm()"
-        class="px-4 py-2 bg-green-600 text-white rounded text-sm"
+        class="px-5 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all shadow-md hover:shadow-lg"
       >
-        + Dodaj varijantu
+        ➕ Dodaj varijantu
       </button>
     </div>
 
     <!-- Lista varijanti -->
-    <div class="space-y-2">
-      <div
-        v-for="variant in variants"
-        :key="variant.id"
-        class="flex items-center justify-between border rounded-lg p-3 bg-gray-50"
-      >
-        <div>
-          <p class="font-medium">{{ variant.name }}</p>
-          <p class="text-sm text-gray-600">
-            SKU: {{ variant.sku || 'N/A' }} |
-            Dodatna cena: {{ variant.price_adjustment >= 0 ? '+' : '' }}{{ variant.price_adjustment }} RSD
-          </p>
-          <p class="text-xs" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
-            {{ variant.in_stock ? `Na stanju: ${variant.stock_quantity}` : 'Nije na stanju' }}
-          </p>
-        </div>
+    <div class="space-y-3">
+      <TransitionGroup name="variant-list">
+        <div
+          v-for="variant in variants"
+          :key="variant.id"
+          class="flex items-center justify-between border-2 rounded-xl p-4 bg-white hover:bg-blue-50 hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+        >
+          <div class="flex-1">
+            <p class="font-semibold text-lg text-gray-900 mb-1">{{ variant.name }}</p>
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <span><strong>SKU:</strong> {{ variant.sku || 'N/A' }}</span>
+              <span><strong>Doplata:</strong> 
+                <span :class="variant.price_adjustment >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ variant.price_adjustment >= 0 ? '+' : '' }}{{ variant.price_adjustment }} RSD
+                </span>
+              </span>
+            </div>
+            <p class="text-sm mt-2 font-medium" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
+              {{ variant.in_stock ? `✅ Na stanju: ${variant.stock_quantity}` : '❌ Nije na stanju' }}
+            </p>
+          </div>
 
-        <div class="flex gap-2">
-          <button
-            @click="openForm(variant)"
-            class="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-          >
-            Izmeni
-          </button>
-          <button
-            @click="deleteVariant(variant.id)"
-            class="px-3 py-1 bg-red-500 text-white rounded text-sm"
-          >
-            Obriši
-          </button>
+          <div class="flex gap-2 ml-4">
+            <button
+              @click="openForm(variant)"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium cursor-pointer transition-all shadow-md hover:shadow-lg"
+            >
+              ✏️ Izmeni
+            </button>
+            <button
+              @click="deleteVariant(variant.id)"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium cursor-pointer transition-all shadow-md hover:shadow-lg"
+            >
+              🗑️ Obriši
+            </button>
+          </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
 
-    <p v-if="variants.length === 0" class="text-gray-400 text-center py-8">
+    <p v-if="variants.length === 0" class="text-gray-400 text-center py-12 text-lg">
       Nema varijanti. Dodaj dimenzije/varijacije proizvoda.
     </p>
 
     <!-- MODAL za dodavanje/izmenu -->
-    <div
-      v-if="showForm"
-      @click.self="closeForm"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]"
+    <AdminModal
+      :show="showForm"
+      :title="editing ? 'Izmeni varijantu' : 'Nova varijanta'"
+      max-width="max-w-lg"
+      z-index="z-[2000]"
+      @close="closeForm"
     >
-      <div class="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 class="text-xl font-semibold mb-4">
-          {{ editing ? 'Izmeni varijantu' : 'Nova varijanta' }}
-        </h3>
+      <form @submit.prevent="saveVariant" class="space-y-4">
+        <div>
+          <label class="block font-medium mb-1 text-gray-800">Naziv (dimenzije) *</label>
+          <input
+            v-model="form.name"
+            required
+            placeholder="npr. 180×135×18mm"
+            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
+        </div>
 
-        <form @submit.prevent="saveVariant" class="space-y-4">
-          <div>
-            <label class="block font-medium mb-1">Naziv (dimenzije) *</label>
-            <input
-              v-model="form.name"
-              required
-              placeholder="npr. 180×135×18mm"
-              class="w-full px-3 py-2 border rounded"
-            />
-          </div>
+        <div>
+          <label class="block font-medium mb-1 text-gray-800">SKU (šifra)</label>
+          <input
+            v-model="form.sku"
+            placeholder="npr. TACNA-70-180"
+            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
+        </div>
 
-          <div>
-            <label class="block font-medium mb-1">SKU (šifra)</label>
-            <input
-              v-model="form.sku"
-              placeholder="npr. TACNA-70-180"
-              class="w-full px-3 py-2 border rounded"
-            />
-          </div>
+        <div>
+          <label class="block font-medium mb-1 text-gray-800">Dodatna cena (+/-)</label>
+          <input
+            v-model.number="form.price_adjustment"
+            type="number"
+            step="0.01"
+            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
+          <p class="text-xs text-gray-500 mt-1">Npr: +50 za veću dimenziju, -20 za manju</p>
+        </div>
 
-          <div>
-            <label class="block font-medium mb-1">Dodatna cena (+/-)</label>
-            <input
-              v-model.number="form.price_adjustment"
-              type="number"
-              step="0.01"
-              class="w-full px-3 py-2 border rounded"
-            />
-            <p class="text-xs text-gray-500 mt-1">Npr: +50 za veću dimenziju, -20 za manju</p>
-          </div>
+        <div>
+          <label class="block font-medium mb-1 text-gray-800">Količina na stanju</label>
+          <input
+            v-model.number="form.stock_quantity"
+            type="number"
+            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
+        </div>
 
-          <div>
-            <label class="block font-medium mb-1">Količina na stanju</label>
-            <input
-              v-model.number="form.stock_quantity"
-              type="number"
-              class="w-full px-3 py-2 border rounded"
-            />
-          </div>
+        <div class="flex items-center gap-2">
+          <input
+            v-model="form.in_stock"
+            type="checkbox"
+            id="variant-in-stock"
+            class="cursor-pointer"
+          />
+          <label for="variant-in-stock" class="text-gray-800 font-medium cursor-pointer">Na stanju</label>
+        </div>
 
-          <div class="flex items-center gap-2">
-            <input
-              v-model="form.in_stock"
-              type="checkbox"
-              id="variant-in-stock"
-            />
-            <label for="variant-in-stock">Na stanju</label>
-          </div>
+        <div class="flex justify-end gap-3 pt-4">
+          <button
+            type="button"
+            @click="closeForm"
+            class="px-6 py-3 bg-gray-300 rounded-xl font-semibold hover:bg-gray-400
+                   transition cursor-pointer"
+          >
+            Otkaži
+          </button>
+          <button
+            type="submit"
+            class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow
+                   hover:bg-blue-700 transition cursor-pointer"
+          >
+            Sačuvaj
+          </button>
+        </div>
+      </form>
+    </AdminModal>
 
-          <div class="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              @click="closeForm"
-              class="px-5 py-2 bg-gray-300 rounded"
-            >
-              Otkaži
-            </button>
-            <button
-              type="submit"
-              class="px-5 py-2 bg-blue-600 text-white rounded"
-            >
-              Sačuvaj
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <ConfirmModal
+      :show="showConfirm"
+      :message="confirmMessage"
+      title="Potvrda"
+      confirmText="Obriši"
+      cancelText="Odustani"
+      @confirm="doConfirm"
+      @cancel="closeConfirm"
+    />
   </div>
 </template>
+
+<style scoped>
+.variant-list-enter-active {
+  transition: all 0.3s ease;
+}
+
+.variant-list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.variant-list-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.variant-list-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.variant-list-move {
+  transition: transform 0.3s ease;
+}
+</style>

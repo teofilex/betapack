@@ -1,21 +1,16 @@
 from rest_framework import serializers
-from .models import (
-    Category, Subcategory, Product, ProductVariant,
-    ProductImage, Order, OrderItem
-)
+from .models import Category, Subcategory, Product, ProductVariant, ProductImage, Order, OrderItem
 
 
 class SubcategorySerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
-
     class Meta:
         model = Subcategory
-        fields = ['id', 'name', 'description', 'category', 'category_name', 'created_at']
+        fields = ['id', 'name', 'description', 'category', 'created_at']
 
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = SubcategorySerializer(many=True, read_only=True)
-    product_count = serializers.IntegerField(source='products.count', read_only=True)
+    product_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Category
@@ -23,9 +18,41 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
+    # Koristimo SerializerMethodField za read, ali dozvoljavamo write preko image field-a
+    image_url = serializers.SerializerMethodField()
+    
+    def get_image_url(self, obj):
+        # Vrati relativni URL slike
+        if obj.image and obj.image.name:
+            try:
+                url = obj.image.url
+                # Django ImageField.url već vraća /media/products/...
+                if url.startswith('/media/'):
+                    return url
+                elif url.startswith('media/'):
+                    return '/' + url
+                elif url.startswith('/'):
+                    return '/media' + url if not url.startswith('/media') else url
+                else:
+                    return '/media/' + url
+            except (ValueError, AttributeError):
+                return None
+        return None
+    
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'alt_text', 'is_primary', 'order', 'created_at']
+        fields = ['id', 'product', 'image', 'image_url', 'alt_text', 'is_primary', 'order', 'created_at']
+        extra_kwargs = {
+            'image': {'write_only': True}  # image je samo za write
+        }
+    
+    def to_representation(self, instance):
+        # Override to_representation da vratimo image_url kao image
+        ret = super().to_representation(instance)
+        # Zameni image_url sa image za kompatibilnost sa frontend-om
+        if 'image_url' in ret:
+            ret['image'] = ret.pop('image_url')
+        return ret
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
@@ -34,7 +61,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
         fields = [
-            'id', 'name', 'price_adjustment', 'final_price', 'sku',
+            'id', 'product', 'name', 'price_adjustment', 'final_price', 'sku',
             'in_stock', 'stock_quantity', 'created_at'
         ]
 
@@ -43,8 +70,6 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     current_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-
-    # Nested relations
     variants = ProductVariantSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
 
@@ -58,20 +83,18 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
 
-# Serializers za Order i OrderItem
-
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(read_only=True)
-    variant_name = serializers.CharField(read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
+    variant_name = serializers.CharField(source='variant.name', read_only=True, allow_null=True)
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = OrderItem
         fields = [
-            'id', 'product', 'variant', 'quantity',
-            'unit_price', 'total_price',
-            'product_name', 'variant_name'
+            'id', 'order', 'product', 'product_name', 'variant', 'variant_name',
+            'quantity', 'unit_price', 'total_price'
         ]
-        read_only_fields = ['unit_price', 'total_price', 'product_name', 'variant_name']
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -81,86 +104,113 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'customer_name', 'customer_phone', 'customer_email',
-            'delivery_address', 'status', 'notes', 'admin_notes',
-            'total_amount', 'created_at', 'updated_at',
-            'sms_sent', 'email_sent', 'items'
+            'delivery_address', 'notes', 'status', 'total_amount',
+            'items', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['total_amount', 'sms_sent', 'email_sent']
 
 
-class OrderCreateSerializer(serializers.Serializer):
-    """
-    Serializer za kreiranje narudžbine sa stavkama
-    """
-    customer_name = serializers.CharField(max_length=200)
-    customer_phone = serializers.CharField(max_length=20)
-    customer_email = serializers.EmailField(required=False, allow_blank=True)
-    delivery_address = serializers.CharField(required=False, allow_blank=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
-
+class OrderCreateSerializer(serializers.ModelSerializer):
     items = serializers.ListField(
         child=serializers.DictField(),
-        allow_empty=False
+        write_only=True,
+        required=True
     )
 
-    def validate_items(self, items):
-        """Validacija stavki"""
-        if not items:
-            raise serializers.ValidationError("Narudžbina mora sadržati bar jednu stavku.")
-
-        for item in items:
-            if 'product_id' not in item:
-                raise serializers.ValidationError("Nedostaje product_id u stavci.")
-            if 'quantity' not in item or item['quantity'] < 1:
-                raise serializers.ValidationError("Količina mora biti najmanje 1.")
-
-        return items
-
+    class Meta:
+        model = Order
+        fields = [
+            'customer_name', 'customer_phone', 'customer_email',
+            'delivery_address', 'notes', 'items'
+        ]
+        extra_kwargs = {
+            'customer_name': {'required': True},
+            'customer_phone': {'required': True},
+            'customer_email': {'allow_null': True, 'allow_blank': True, 'required': False},
+            'delivery_address': {'allow_null': True, 'allow_blank': True, 'required': False},
+            'notes': {'allow_null': True, 'allow_blank': True, 'required': False},
+        }
+    
+    def validate(self, data):
+        # Konvertuj prazne stringove u None za opciona polja
+        if 'customer_email' in data and data['customer_email'] == '':
+            data['customer_email'] = None
+        if 'delivery_address' in data and data['delivery_address'] == '':
+            data['delivery_address'] = None
+        if 'notes' in data and data['notes'] == '':
+            data['notes'] = None
+        return data
+    
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-
-        # Kreiraj Order
-        order = Order.objects.create(
-            customer_name=validated_data['customer_name'],
-            customer_phone=validated_data['customer_phone'],
-            customer_email=validated_data.get('customer_email', ''),
-            delivery_address=validated_data.get('delivery_address', ''),
-            notes=validated_data.get('notes', ''),
-            total_amount=0  # Temp, izračunaćemo ispod
-        )
-
-        total = 0
-
-        # Kreiraj OrderItems
+        
+        # First calculate total_amount
+        total_amount = 0
+        items_to_create = []
+        
         for item_data in items_data:
-            product = Product.objects.get(id=item_data['product_id'])
+            product_id = item_data.get('product') or item_data.get('product_id')
+            variant_id = item_data.get('variant') or item_data.get('variant_id')
+            quantity = item_data.get('quantity', 1)
+            
+            # Get product and variant
+            product = None
             variant = None
-            variant_name = ''
-
-            if 'variant_id' in item_data and item_data['variant_id']:
-                variant = ProductVariant.objects.get(id=item_data['variant_id'])
+            
+            if product_id:
+                try:
+                    product = Product.objects.get(id=product_id)
+                except Product.DoesNotExist:
+                    pass
+            
+            if variant_id:
+                try:
+                    variant = ProductVariant.objects.get(id=variant_id)
+                except ProductVariant.DoesNotExist:
+                    pass
+            
+            # Calculate price
+            if variant:
                 unit_price = variant.final_price
+                # Ako product nije postavljen, uzmi ga iz variant.product
+                if not product and hasattr(variant, 'product') and variant.product:
+                    product = variant.product
+                product_name = product.name if product else (variant.product.name if hasattr(variant, 'product') and variant.product else 'Unknown Product')
                 variant_name = variant.name
-            else:
+            elif product:
                 unit_price = product.current_price
-
-            quantity = item_data['quantity']
+                product_name = product.name
+                variant_name = ''
+            else:
+                # Fallback - use price from item_data if available
+                unit_price = item_data.get('unit_price', 0)
+                product_name = item_data.get('product_name', 'Unknown Product')
+                variant_name = item_data.get('variant_name', '')
+            
             total_price = unit_price * quantity
-            total += total_price
-
+            total_amount += total_price
+            
+            # Store item data for creation
+            items_to_create.append({
+                'product': product,
+                'variant': variant,
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'total_price': total_price,
+                'product_name': product_name,
+                'variant_name': variant_name
+            })
+        
+        # Create order with total_amount
+        order = Order.objects.create(
+            **validated_data,
+            total_amount=total_amount
+        )
+        
+        # Create OrderItems
+        for item_data in items_to_create:
             OrderItem.objects.create(
                 order=order,
-                product=product,
-                variant=variant,
-                quantity=quantity,
-                unit_price=unit_price,
-                total_price=total_price,
-                product_name=product.name,
-                variant_name=variant_name
+                **item_data
             )
-
-        # Update total
-        order.total_amount = total
-        order.save()
-
+        
         return order

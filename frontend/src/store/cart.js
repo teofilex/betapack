@@ -27,9 +27,20 @@ export const useCartStore = defineStore('cart', {
 
         total: (state) => {
             return state.items.reduce((sum, item) => {
+                // Use stored current_price (which should already include variant price if applicable)
                 const price = parseFloat(item.current_price) || 0
                 return sum + (price * item.quantity)
             }, 0)
+        },
+        
+        // Helper to get item price (with variant if applicable)
+        getItemPrice: (state) => (item) => {
+            // If item has a selectedVariant with final_price, use that
+            if (item.selectedVariant && item.selectedVariant.final_price) {
+                return parseFloat(item.selectedVariant.final_price)
+            }
+            // Otherwise use stored current_price
+            return parseFloat(item.current_price) || 0
         },
 
         isInCart: (state) => (productId, variantId = null) => {
@@ -61,14 +72,24 @@ export const useCartStore = defineStore('cart', {
 
             const found = this.items.find(i => i.cartId === cartId)
 
+            // Calculate the correct price: use variant's final_price if variant exists, otherwise use product's current_price
+            let itemPrice = product.current_price
+            if (product.selectedVariant && product.selectedVariant.final_price) {
+                itemPrice = parseFloat(product.selectedVariant.final_price)
+            } else {
+                itemPrice = parseFloat(product.current_price) || 0
+            }
+
             if (found) {
                 found.quantity += quantity
+                // Update price in case it changed
+                found.current_price = itemPrice
             } else {
                 this.items.push({
                     cartId: cartId,
                     id: product.id,
                     name: product.name,
-                    current_price: product.current_price,
+                    current_price: itemPrice,
                     images: product.images || [],
                     category_name: product.category_name,
                     selectedVariant: product.selectedVariant || null,

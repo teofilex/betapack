@@ -185,14 +185,14 @@ class Order(models.Model):
         validators=[phone_validator],
         help_text="Obavezan broj telefona"
     )
-    customer_email = models.EmailField(blank=True, help_text="Opciono")
+    customer_email = models.EmailField(blank=True, null=True, help_text="Opciono")
 
     # Opciono: adresa dostave
-    delivery_address = models.TextField(blank=True)
+    delivery_address = models.TextField(blank=True, null=True)
 
     # Status i napomene
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    notes = models.TextField(blank=True, help_text="Napomena kupca")
+    notes = models.TextField(blank=True, null=True, help_text="Napomena kupca")
     admin_notes = models.TextField(blank=True, help_text="Interne napomene")
 
     # Totali
@@ -224,12 +224,14 @@ class OrderItem(models.Model):
     )
     product = models.ForeignKey(
         Product,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='order_items'
     )
     variant = models.ForeignKey(
         ProductVariant,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='order_items',

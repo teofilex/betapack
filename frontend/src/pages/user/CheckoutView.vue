@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
-import axios from 'axios'
+import { api } from '@/services/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -50,8 +50,11 @@ const validateForm = () => {
     errors.value.customer_phone = 'Unesite ispravan broj telefona (npr: 0641234567)'
   }
 
-  if (form.value.customer_email && !form.value.customer_email.includes('@')) {
-    errors.value.customer_email = 'Unesite ispravnu email adresu'
+  if (form.value.customer_email && form.value.customer_email.trim()) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailPattern.test(form.value.customer_email.trim())) {
+      errors.value.customer_email = 'Unesite ispravnu email adresu'
+    }
   }
 
   return Object.keys(errors.value).length === 0
@@ -70,20 +73,26 @@ const submitOrder = async () => {
   try {
     // Prepare order data
     const orderData = {
-      customer_name: form.value.customer_name,
+      customer_name: form.value.customer_name.trim(),
       customer_phone: form.value.customer_phone.replace(/[\s\-\/]/g, ''),
-      customer_email: form.value.customer_email,
-      delivery_address: form.value.delivery_address,
-      notes: form.value.notes,
+      customer_email: form.value.customer_email?.trim() || null,
+      delivery_address: form.value.delivery_address?.trim() || null,
+      notes: form.value.notes?.trim() || null,
       items: cartItems.value.map(item => ({
         product_id: item.id,
         variant_id: item.selectedVariant?.id || null,
         quantity: item.quantity
       }))
     }
+    
+    // Remove null fields to avoid sending them (backend will handle defaults)
+    // Actually, let's send null explicitly for optional fields
+    if (!orderData.customer_email) orderData.customer_email = null
+    if (!orderData.delivery_address) orderData.delivery_address = null
+    if (!orderData.notes) orderData.notes = null
 
     // Submit order
-    const response = await axios.post('/api/orders/', orderData)
+    const response = await api.post('orders/', orderData)
 
     // Clear cart
     cartStore.clear()
@@ -96,7 +105,12 @@ const submitOrder = async () => {
 
   } catch (error) {
     console.error('Order submission error:', error)
-    alert('Došlo je do greške pri slanju narudžbine. Molimo pokušajte ponovo ili nas kontaktirajte telefonom.')
+    const errorMessage = error.response?.data?.detail || 
+                        error.response?.data?.message || 
+                        (typeof error.response?.data === 'object' ? JSON.stringify(error.response.data) : null) ||
+                        error.message ||
+                        'Došlo je do greške pri slanju narudžbine. Molimo pokušajte ponovo ili nas kontaktirajte telefonom.'
+    alert(errorMessage)
   } finally {
     submitting.value = false
   }

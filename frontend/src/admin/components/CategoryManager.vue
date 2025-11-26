@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useCategoryStore } from '@/admin/store/categories'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import AdminModal from './AdminModal.vue'
 
 const emit = defineEmits(['update-count'])
 
@@ -116,142 +117,138 @@ onMounted(() => {
   <div>
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
-      <h2 class="text-2xl font-bold text-gray-800">Kategorije</h2>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-1">📁 Kategorije</h2>
+        <p class="text-xs text-gray-500 font-medium">Organizujte proizvode u kategorije</p>
+      </div>
 
       <button
         @click="openAddModal"
-        class="px-6 py-3 bg-gradient-to-r from-[#3555e4] to-[#64b5f6]
-               text-white rounded-lg shadow hover:shadow-md active:scale-95 transition cursor-pointer"
+        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
       >
-        + Dodaj Kategoriju
+        <span class="text-base">➕</span>
+        <span>Dodaj Kategoriju</span>
       </button>
     </div>
 
     <!-- Loading -->
-    <div v-if="categoryStore.loading" class="text-center py-10 text-gray-600">
-      Učitavanje...
+    <div v-if="categoryStore.loading" class="text-center py-16">
+      <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-[#3555e4] mb-4"></div>
+      <p class="text-gray-600 text-lg font-semibold">Učitavanje kategorija...</p>
     </div>
 
     <!-- List -->
-    <div v-else-if="categoryStore.list.length > 0" class="flex flex-col gap-5">
+    <div v-else-if="categoryStore.list.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
         v-for="cat in categoryStore.list"
         :key="cat.id"
-        class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm 
-               hover:shadow-lg transition flex justify-between items-center"
+        class="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-md 
+               hover:shadow-xl hover:border-blue-300 transition-all duration-300 transform hover:scale-[1.02]"
       >
-        <div class="flex-1">
-          <h3 class="text-xl font-semibold">{{ cat.name }}</h3>
+        <div class="flex justify-between items-start mb-4">
+          <div class="flex-1">
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ cat.name }}</h3>
 
-          <p v-if="cat.description" class="text-gray-600 text-sm mt-1">
-            {{ cat.description }}
-          </p>
-
-          <span
-            class="inline-block mt-3 px-3 py-1 bg-green-50 text-green-700 rounded-full
-                   text-xs font-semibold"
-          >
-            {{ cat.product_count || 0 }} proizvoda
-          </span>
+            <p v-if="cat.description" class="text-gray-600 text-sm mt-2 leading-relaxed">
+              {{ cat.description }}
+            </p>
+          </div>
         </div>
 
-        <div class="flex gap-3 cursor-pointer">
-          <button
-            @click="openEditModal(cat)"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700
-                   transition cursor-pointer"
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+          <span
+            class="px-4 py-2 bg-gradient-to-r from-green-50 to-green-100 text-green-700 rounded-xl
+                   text-sm font-bold border border-green-200"
           >
-            Izmeni
-          </button>
+            📦 {{ cat.product_count || 0 }} proizvoda
+          </span>
 
-          <button
-            @click="deleteCategory(cat)"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700
-                   transition cursor-pointer"
-          >
-            Obriši
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="openEditModal(cat)"
+              class="px-4 py-2.5 bg-blue-400 hover:bg-blue-500 text-white rounded-lg shadow-sm hover:shadow transition-all cursor-pointer text-sm font-medium"
+            >
+              ✏️ Izmeni
+            </button>
+
+            <button
+              @click="deleteCategory(cat)"
+              class="px-4 py-2.5 bg-red-400 hover:bg-red-500 text-white rounded-lg shadow-sm hover:shadow transition-all cursor-pointer text-sm font-medium"
+            >
+              🗑️ Obriši
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Empty -->
-    <div v-else class="text-center py-16 text-gray-400">
-      <p class="text-lg">Nema kategorija. Dodaj prvu!</p>
+    <div v-else class="text-center py-20">
+      <div class="inline-block bg-gray-100 rounded-full p-8 mb-4">
+        <span class="text-6xl">📁</span>
+      </div>
+      <p class="text-xl font-bold text-gray-600 mb-2">
+        Nema kategorija
+      </p>
+      <p class="text-gray-500 mb-6">Dodajte prvu kategoriju da započnete!</p>
+      <button
+        @click="openAddModal"
+        class="px-6 py-3 bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer"
+      >
+        ➕ Dodaj Prvu Kategoriju
+      </button>
     </div>
 
     <!-- Modal -->
-    <div
-      v-if="showModal"
-      @click.self="closeModal"
-      class="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4
-             z-[1000] animate-fade-in"
+    <AdminModal
+      :show="showModal"
+      :title="isEditing ? 'Izmeni Kategoriju' : 'Nova Kategorija'"
+      @close="closeModal"
     >
-      <div
-        class="bg-white rounded-3xl w-full max-w-[650px] shadow-2xl overflow-hidden 
-               animate-slide-up"
-      >
-        <!-- HEADER -->
-        <div class="px-10 py-7 bg-gradient-to-r from-blue-600 to-blue-500 flex justify-between items-center">
-          <h3 class="text-2xl font-semibold text-white">
-            {{ isEditing ? 'Izmeni Kategoriju' : 'Nova Kategorija' }}
-          </h3>
-
-          <button
-            @click="closeModal"
-            class="text-white text-4xl leading-none hover:scale-125 transition cursor-pointer"
-          >
-            &times;
-          </button>
+      <form @submit.prevent="saveCategory" class="space-y-6">
+        <div>
+          <label class="block mb-2 font-medium text-gray-800">Naziv *</label>
+          <input
+            v-model="form.name"
+            required
+            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
         </div>
 
-        <!-- FORM -->
-        <form @submit.prevent="saveCategory" class="px-10 py-8 space-y-6">
-          <div>
-            <label class="block mb-2 font-medium text-gray-800">Naziv *</label>
-            <input
-              v-model="form.name"
-              required
-              class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                     focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
-            />
-          </div>
+        <div>
+          <label class="block mb-2 font-medium text-gray-800">Opis</label>
+          <textarea
+            v-model="form.description"
+            rows="3"
+            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm resize-none"
+          ></textarea>
+        </div>
 
-          <div>
-            <label class="block mb-2 font-medium text-gray-800">Opis</label>
-            <textarea
-              v-model="form.description"
-              rows="3"
-              class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                     focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm resize-none"
-            ></textarea>
-          </div>
+        <p v-if="error" class="text-red-600 font-medium">{{ error }}</p>
 
-          <p v-if="error" class="text-red-600 font-medium">{{ error }}</p>
+        <div class="flex justify-end gap-4 pt-4">
+          <button
+            type="button"
+            @click="closeModal"
+            class="px-6 py-3 bg-gray-300 rounded-xl font-semibold hover:bg-gray-400
+                   transition cursor-pointer"
+          >
+            Otkaži
+          </button>
 
-          <!-- BUTTONS -->
-          <div class="flex justify-end gap-4 pt-4">
-            <button
-              type="button"
-              @click="closeModal"
-              class="px-6 py-3 bg-gray-300 rounded-xl font-semibold hover:bg-gray-400
-                     transition cursor-pointer"
-            >
-              Otkaži
-            </button>
-
-            <button
-              type="submit"
-              :disabled="saving"
-              class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow
-                     hover:bg-blue-700 transition cursor-pointer disabled:opacity-60"
-            >
-              {{ saving ? 'Čuvanje...' : 'Sačuvaj' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          <button
+            type="submit"
+            :disabled="saving"
+            class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow
+                   hover:bg-blue-700 transition cursor-pointer disabled:opacity-60"
+          >
+            {{ saving ? 'Čuvanje...' : 'Sačuvaj' }}
+          </button>
+        </div>
+      </form>
+    </AdminModal>
 
     <!-- Confirm Modal -->
     <ConfirmModal
@@ -266,23 +263,3 @@ onMounted(() => {
   </div>
 </template>
 
-<style>
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.25s ease-out;
-  }
-  .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0 }
-    to   { opacity: 1 }
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(25px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-}
-</style>

@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 
+from django.db import models
 from .models import (
     Category, Subcategory, Product, ProductVariant,
     ProductImage, Order, OrderItem
@@ -53,13 +54,24 @@ class SubcategoryViewSet(viewsets.ModelViewSet):
 
 # Product ViewSet
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related('images', 'variants').select_related('category', 'subcategory')
     serializer_class = ProductSerializer
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [IsAdminUser()]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+    def destroy(self, request, *args, **kwargs):
+        # Dozvoli brisanje proizvoda bez provere narudžbina
+        # OrderItem će imati product=None zbog SET_NULL, ali će zadržati product_name za istorijat
+        return super().destroy(request, *args, **kwargs)
 
 
 # ProductVariant ViewSet
@@ -79,6 +91,11 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(product_id=product_id)
         return queryset
 
+    def destroy(self, request, *args, **kwargs):
+        # Dozvoli brisanje varijante bez provere narudžbina
+        # OrderItem će imati variant=None zbog SET_NULL, ali će zadržati variant_name za istorijat
+        return super().destroy(request, *args, **kwargs)
+
 
 # ProductImage ViewSet
 class ProductImageViewSet(viewsets.ModelViewSet):
@@ -89,6 +106,11 @@ class ProductImageViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [IsAdminUser()]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def get_queryset(self):
         queryset = ProductImage.objects.all()
@@ -120,8 +142,38 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
 
-        # Pošalji email notifikaciju vlasniku
-        self.send_order_notification(order)
+        # Smanji količinu na stanju za svaku stavku narudžbine
+        # Ovo je opciono - ako dođe do greške, ne prekidaj kreiranje narudžbine
+        try:
+            for item in order.items.all():
+                # Ako postoji varijanta, smanji količinu varijante
+                if item.variant_id is not None:
+                    try:
+                        variant = ProductVariant.objects.filter(id=item.variant_id).first()
+                        if variant and hasattr(variant, 'stock_quantity') and variant.stock_quantity is not None and variant.stock_quantity > 0:
+                            variant.stock_quantity = max(0, variant.stock_quantity - item.quantity)
+                            variant.save(update_fields=['stock_quantity'])
+                    except Exception:
+                        pass
+                
+                # Ako nema varijante ili varijanta nema ograničenu količinu, smanji količinu proizvoda
+                if item.product_id is not None:
+                    try:
+                        product = Product.objects.filter(id=item.product_id).first()
+                        if product and hasattr(product, 'stock_quantity') and product.stock_quantity is not None and product.stock_quantity > 0:
+                            product.stock_quantity = max(0, product.stock_quantity - item.quantity)
+                            product.save(update_fields=['stock_quantity'])
+                    except Exception:
+                        pass
+        except Exception as e:
+            # Loguj grešku ali ne prekidaj kreiranje narudžbine
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error updating stock quantities: {str(e)}", exc_info=True)
+
+        # Email notifikacija je onemogućena za sada
+        # TODO: Omogućiti slanje email-a kada se konfiguriše email server
+        # self.send_order_notification(order)
 
         # TODO: Pošalji SMS korisniku i vlasniku (implementirati kasnije)
 
@@ -184,3 +236,73 @@ Stavke:
             {'error': 'Invalid status'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+# SSE endpoint za real-time notifikacije o novim orderima
+from django.http import StreamingHttpResponse
+import json
+import time
+
+def order_notifications_stream(request):
+    """Server-Sent Events stream za notifikacije o novim orderima"""
+    from rest_framework_simplejwt.authentication import JWTAuthentication
+    from rest_framework_simplejwt.tokens import UntypedToken
+    from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+    from django.contrib.auth import get_user_model
+    
+    User = get_user_model()
+    
+    # Proveri autentifikaciju preko query parametra (token)
+    token = request.GET.get('token')
+    if not token:
+        return StreamingHttpResponse('Unauthorized', status=401)
+    
+    try:
+        # Validiraj token
+        UntypedToken(token)
+        from rest_framework_simplejwt.state import token_backend
+        decoded_data = token_backend.decode(token, verify=True)
+        user_id = decoded_data.get('user_id')
+        user = User.objects.get(id=user_id)
+        
+        if not user or not user.is_staff:
+            return StreamingHttpResponse('Unauthorized', status=401)
+    except (InvalidToken, TokenError, User.DoesNotExist) as e:
+        return StreamingHttpResponse('Unauthorized', status=401)
+    
+    def event_stream():
+        last_order_id = None
+        
+        # Prvo pošalji trenutni broj ordera
+        current_count = Order.objects.count()
+        yield f"data: {json.dumps({'type': 'init', 'count': current_count})}\n\n"
+        
+        while True:
+            try:
+                # Proveri da li ima novih ordera
+                if last_order_id:
+                    new_orders = Order.objects.filter(id__gt=last_order_id).order_by('-id')
+                else:
+                    # Prvi put - uzmi poslednji order
+                    last_order = Order.objects.order_by('-id').first()
+                    if last_order:
+                        last_order_id = last_order.id
+                    new_orders = []
+                
+                if new_orders.exists():
+                    for order in new_orders:
+                        yield f"data: {json.dumps({'type': 'new_order', 'order_id': order.id})}\n\n"
+                        last_order_id = order.id
+                
+                # Heartbeat svakih 5 sekundi
+                yield f": heartbeat\n\n"
+                time.sleep(5)
+                
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                time.sleep(5)
+    
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response

@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useOrderStore } from '../store/orders'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const emit = defineEmits(['update-count'])
 const orderStore = useOrderStore()
@@ -22,7 +23,38 @@ const statusLabels = {
   cancelled: 'Otkazana'
 }
 
+// Tabovi za filtriranje
+const activeTab = ref('all')
+const tabs = [
+  { id: 'all', label: 'Sve', count: null, icon: '📋', color: 'from-gray-600 to-gray-500' },
+  { id: 'pending', label: 'Na čekanju', count: null, icon: '⏳', color: 'from-yellow-500 to-yellow-400' },
+  { id: 'confirmed', label: 'Potvrđena', count: null, icon: '✅', color: 'from-blue-500 to-blue-400' },
+  { id: 'processing', label: 'U obradi', count: null, icon: '⚙️', color: 'from-purple-500 to-purple-400' },
+  { id: 'completed', label: 'Završena', count: null, icon: '🎉', color: 'from-green-500 to-green-400' },
+  { id: 'cancelled', label: 'Otkazana', count: null, icon: '❌', color: 'from-red-500 to-red-400' }
+]
+
+// Filtrirane porudžbine
+const filteredOrders = computed(() => {
+  if (activeTab.value === 'all') {
+    return orderStore.list
+  }
+  return orderStore.list.filter(order => order.status === activeTab.value)
+})
+
+// Ažuriraj brojeve u tabovima
+const updateTabCounts = () => {
+  tabs.forEach(tab => {
+    if (tab.id === 'all') {
+      tab.count = orderStore.list.length
+    } else {
+      tab.count = orderStore.list.filter(order => order.status === tab.id).length
+    }
+  })
+}
+
 const showDetailModal = ref(false)
+const showConfirmDelete = ref(false)
 
 const openDetailModal = (order) => {
   orderStore.selectOrder(order)
@@ -34,6 +66,28 @@ const closeDetailModal = () => {
   orderStore.clearSelected()
 }
 
+const deleteOrder = () => {
+  showConfirmDelete.value = true
+}
+
+const confirmDelete = async () => {
+  if (orderStore.selected) {
+    try {
+      await orderStore.deleteOrder(orderStore.selected.id)
+      closeDetailModal()
+      await refreshOrders()
+    } catch (error) {
+      console.error('Error deleting order:', error)
+      alert('Greška pri brisanju narudžbine')
+    }
+  }
+  showConfirmDelete.value = false
+}
+
+const cancelDelete = () => {
+  showConfirmDelete.value = false
+}
+
 // format funkcije ostaju ovde
 const formatPrice = (price) =>
   new Intl.NumberFormat('sr-RS', { style: 'currency', currency: 'RSD' }).format(price)
@@ -41,95 +95,265 @@ const formatPrice = (price) =>
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleString('sr-RS')
 
-// onMounted → samo fetch
-onMounted(() => {
-  orderStore.fetchAll()
+// Watch za promene u listi porudžbina - samo ažuriraj tabove, ne emituj event
+watch(() => orderStore.list, () => {
+  updateTabCounts()
+}, { deep: true })
+
+// Funkcija za osvežavanje
+const refreshOrders = async () => {
+  await orderStore.fetchAll()
+  updateTabCounts()
+  emit('update-count')
+}
+
+// Server-Sent Events za real-time notifikacije
+let eventSource = null
+
+// onMounted → fetch i osveži brojač, pokreni SSE
+onMounted(async () => {
+  await refreshOrders()
+  startSSE()
+  
+  // Osveži kada se tab vrati u fokus
+  if (typeof window !== 'undefined') {
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && !orderStore.loading) {
+        await refreshOrders()
+        // Restartuj SSE ako je zatvoren
+        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+          startSSE()
+        }
+      }
+    })
+  }
 })
+
+// onUnmounted → zatvori SSE
+onUnmounted(() => {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+})
+
+// SSE funkcija za real-time notifikacije
+const startSSE = () => {
+  const { useAuthStore } = require('@/store/auth')
+  const authStore = useAuthStore()
+  
+  if (!authStore.accessToken) {
+    return
+  }
+  
+  // Zatvori postojeći SSE ako postoji
+  if (eventSource) {
+    eventSource.close()
+  }
+  
+  // Kreiraj SSE konekciju sa tokenom u query parametru
+  const { api } = require('@/services/api')
+  const baseURL = api.defaults.baseURL || 'http://127.0.0.1:8000/api'
+  
+  eventSource = new EventSource(`${baseURL}/orders/notifications/?token=${authStore.accessToken}`)
+  
+  eventSource.onmessage = async (event) => {
+    try {
+      // Heartbeat poruke se ignorišu
+      if (event.data.startsWith(':')) {
+        return
+      }
+      
+      const data = JSON.parse(event.data)
+      
+      if (data.type === 'new_order') {
+        // Nova porudžbina - osveži listu
+        await refreshOrders()
+      } else if (data.type === 'init') {
+        // Inicijalizacija - proveri da li ima novih ordera
+        if (data.count > orderStore.list.length) {
+          await refreshOrders()
+        }
+      }
+    } catch (e) {
+      // Ignoriši parse greške za heartbeat
+      if (!event.data.startsWith(':')) {
+        console.error('SSE parse error:', e)
+      }
+    }
+  }
+  
+  eventSource.onerror = (error) => {
+    console.error('SSE connection error:', error)
+    // Pokušaj ponovo nakon 5 sekundi
+    setTimeout(() => {
+      if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+        startSSE()
+      }
+    }, 5000)
+  }
+}
 </script>
 
 
 <template>
   <div>
+
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
-      <h2 class="text-2xl font-bold">Narudžbine</h2>
+      <h2 class="text-3xl font-bold text-gray-900">Narudžbine</h2>
+
       <button
-        @click="orderStore.fetchAll"
-        class="px-5 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        @click="refreshOrders"
+        class="px-6 py-3 bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-lg font-semibold 
+        hover:from-[#2f4ad8] hover:to-[#5caeef] shadow-md hover:shadow-lg transition cursor-pointer"
       >
-        Osveži
+        🔄 Osveži
       </button>
     </div>
 
-    <!-- Loading -->
-    <div v-if="orderStore.loading" class="text-center py-10 text-gray-600">
-      Učitavanje narudžbina...
+    <!-- Tabs -->
+    <div class="mb-8 bg-white rounded-2xl p-3 shadow-lg border border-gray-200 overflow-x-auto">
+      <div class="flex gap-2 min-w-max">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          @click="activeTab = tab.id"
+          :class="activeTab === tab.id
+            ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
+            : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-md'"
+          class="px-6 py-4 font-bold text-base transition-all duration-300 cursor-pointer whitespace-nowrap flex items-center gap-3 rounded-xl border-2 min-w-[140px] justify-center"
+          :style="activeTab === tab.id ? { borderColor: 'transparent' } : { borderColor: '#e5e7eb' }"
+        >
+          <span class="text-xl">{{ tab.icon }}</span>
+          <span class="font-semibold">{{ tab.label }}</span>
+          <span 
+            v-if="tab.count !== null"
+            :class="activeTab === tab.id 
+              ? 'bg-white/30 text-white border-white/50' 
+              : 'bg-white text-gray-700 border-gray-300'"
+            class="px-3 py-1 rounded-full text-sm font-bold border-2 min-w-[28px] flex items-center justify-center"
+          >
+            {{ tab.count }}
+          </span>
+        </button>
+      </div>
     </div>
 
-    <!-- Orders table -->
-    <div v-else-if="orderStore.list.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-      <table class="w-full">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="px-4 py-3 text-left text-sm font-semibold">#</th>
-            <th class="px-4 py-3 text-left text-sm font-semibold">Kupac</th>
-            <th class="px-4 py-3 text-left text-sm font-semibold">Telefon</th>
-            <th class="px-4 py-3 text-left text-sm font-semibold">Ukupno</th>
-            <th class="px-4 py-3 text-left text-sm font-semibold">Status</th>
-            <th class="px-4 py-3 text-left text-sm font-semibold">Datum</th>
-            <th class="px-4 py-3 text-left text-sm font-semibold">Akcije</th>
-          </tr>
-        </thead>
+    <!-- Loading -->
+    <div v-if="orderStore.loading" class="text-center py-16 text-gray-600 text-lg">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#3555e4] mb-4"></div>
+      <p>Učitavanje narudžbina...</p>
+    </div>
 
-        <tbody>
-          <tr
-            v-for="order in orderStore.list"
-            :key="order.id"
-            class="border-t hover:bg-gray-50 transition"
-          >
-            <td class="px-4 py-3 text-sm font-medium">#{{ order.id }}</td>
+    <!-- Orders LIST -->
+    <div v-else-if="filteredOrders.length > 0" class="space-y-4">
+      <TransitionGroup name="order-list">
+        <div
+          v-for="order in filteredOrders"
+          :key="order.id"
+          class="bg-white rounded-2xl shadow-md border-2 border-gray-200 p-6 hover:shadow-xl hover:border-blue-300 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] group"
+          @click="openDetailModal(order)"
+        >
+          <div class="flex justify-between items-start gap-6">
 
-            <td class="px-4 py-3 text-sm">{{ order.customer_name }}</td>
+            <!-- Left Section -->
+            <div class="flex-1">
+              <!-- Order ID and Date -->
+              <div class="flex items-center gap-3 mb-4">
+                <div class="bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-xl px-4 py-2 shadow-md">
+                  <span class="text-sm font-bold opacity-90">#</span>
+                  <span class="text-2xl font-bold">{{ order.id }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-gray-500">
+                  <span class="text-lg">📅</span>
+                  <p class="text-sm font-medium">{{ formatDate(order.created_at) }}</p>
+                </div>
+              </div>
 
-            <td class="px-4 py-3 text-sm">
-              <a :href="`tel:${order.customer_phone}`" class="text-blue-600 hover:underline">
-                {{ order.customer_phone }}
-              </a>
-            </td>
+              <!-- Customer Info -->
+              <div class="space-y-2 mb-4">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">👤</span>
+                  <p class="text-lg font-bold text-gray-900">{{ order.customer_name }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">📞</span>
+                  <a 
+                    :href="`tel:${order.customer_phone}`"
+                    @click.stop
+                    class="text-base font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    {{ order.customer_phone }}
+                  </a>
+                </div>
+                <div v-if="order.customer_email" class="flex items-center gap-2">
+                  <span class="text-lg">✉️</span>
+                  <a 
+                    :href="`mailto:${order.customer_email}`"
+                    @click.stop
+                    class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    {{ order.customer_email }}
+                  </a>
+                </div>
+              </div>
 
-            <td class="px-4 py-3 text-sm font-semibold">
-              {{ formatPrice(order.total_amount) }}
-            </td>
+              <!-- Total Amount -->
+              <div class="mt-4 pt-4 border-t border-gray-200">
+                <p class="text-sm font-semibold text-gray-500 uppercase mb-1">Ukupno</p>
+                <p class="text-2xl font-bold text-green-600">
+                  {{ formatPrice(order.total_amount) }}
+                </p>
+              </div>
+            </div>
 
-            <td class="px-4 py-3 text-sm">
-              <span
-                :class="statusColors[order.status]"
-                class="px-2 py-1 rounded-full text-xs font-medium"
-              >
-                {{ statusLabels[order.status] }}
-              </span>
-            </td>
+            <!-- Right Section -->
+            <div class="flex flex-col items-end gap-4">
+              <!-- Status Badge -->
+              <div class="flex flex-col items-end gap-2">
+                <span
+                  :class="statusColors[order.status]"
+                  class="px-5 py-2.5 rounded-full text-sm font-bold shadow-md border-2"
+                  :style="{ borderColor: 'transparent' }"
+                >
+                  {{ statusLabels[order.status] }}
+                </span>
+              </div>
 
-            <td class="px-4 py-3 text-sm text-gray-600">
-              {{ formatDate(order.created_at) }}
-            </td>
+              <!-- Items Count -->
+              <div v-if="order.items && order.items.length > 0" class="text-right">
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Stavki</p>
+                <p class="text-lg font-bold text-gray-700">
+                  {{ order.items.length }} {{ order.items.length === 1 ? 'stavka' : 'stavki' }}
+                </p>
+              </div>
 
-            <td class="px-4 py-3 text-sm">
+              <!-- View Button -->
               <button
-                @click="openDetailModal(order)"
-                class="px-3 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                @click.stop="openDetailModal(order)"
+                class="px-6 py-3 bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-xl font-bold shadow-lg 
+                hover:from-[#2f4ad8] hover:to-[#5caeef] hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 flex items-center gap-2"
               >
-                Detalji
+                <span>👁️</span>
+                <span>Pregled</span>
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+
+          </div>
+        </div>
+      </TransitionGroup>
     </div>
 
     <!-- Empty -->
-    <div v-else class="py-16 text-center text-gray-400">
-      Nema narudžbina.
+    <div v-else class="py-20 text-center">
+      <div class="inline-block bg-gray-100 rounded-full p-6 mb-4">
+        <span class="text-5xl">📦</span>
+      </div>
+      <p class="text-xl font-semibold text-gray-600 mb-2">
+        Nema narudžbina
+      </p>
+      <p class="text-gray-500">Nove narudžbine će se pojaviti ovde automatski</p>
     </div>
 
     <!-- DETAIL MODAL -->
@@ -140,110 +364,180 @@ onMounted(() => {
     >
       <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 
-        <!-- Modal Header -->
-        <div class="p-6 border-b bg-gradient-to-r from-blue-600 to-blue-500 text-white flex justify-between">
+        <!-- Modal Header (BLUE) -->
+        <div class="p-6 border-b bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white flex justify-between">
           <div>
-            <h3 class="text-2xl font-bold">
+            <h3 class="text-3xl font-bold mb-1">
               Narudžbina #{{ orderStore.selected.id }}
             </h3>
             <p class="text-sm opacity-90">{{ formatDate(orderStore.selected.created_at) }}</p>
           </div>
 
-          <button @click="closeDetailModal" class="text-3xl hover:bg-white/20 rounded px-2">
+          <button @click="closeDetailModal" class="text-4xl hover:bg-white/20 rounded px-3 py-1 cursor-pointer transition">
             &times;
           </button>
         </div>
 
-        <div class="p-6 space-y-6">
+        <div class="p-8 space-y-6">
 
           <!-- Kupac -->
           <div>
-            <h4 class="font-semibold text-lg mb-3">Kupac</h4>
-            <div class="space-y-2 bg-gray-50 p-4 rounded">
-              <p><strong>Ime:</strong> {{ orderStore.selected.customer_name }}</p>
+            <h4 class="font-bold text-xl mb-4 text-gray-900">Kupac</h4>
+            <div class="space-y-3 bg-blue-50 p-6 rounded-xl border border-blue-200">
+              <div>
+                <p class="text-sm text-gray-500 uppercase font-semibold mb-1">Ime</p>
+                <p class="text-lg font-semibold text-gray-900">{{ orderStore.selected.customer_name }}</p>
+              </div>
 
-              <p>
-                <strong>Telefon:</strong>
+              <div>
+                <p class="text-sm text-gray-500 uppercase font-semibold mb-1">Telefon</p>
                 <a
                   :href="`tel:${orderStore.selected.customer_phone}`"
-                  class="text-blue-600 hover:underline ml-2"
+                  class="text-lg font-semibold text-[#3555e4] hover:text-[#2646c8] hover:underline cursor-pointer"
                 >
                   {{ orderStore.selected.customer_phone }}
                 </a>
-              </p>
+              </div>
 
-              <p v-if="orderStore.selected.customer_email">
-                <strong>Email:</strong>
+              <div v-if="orderStore.selected.customer_email">
+                <p class="text-sm text-gray-500 uppercase font-semibold mb-1">Email</p>
                 <a
                   :href="`mailto:${orderStore.selected.customer_email}`"
-                  class="text-blue-600 hover:underline ml-2"
+                  class="text-lg font-semibold text-[#3555e4] hover:text-[#2646c8] hover:underline cursor-pointer"
                 >
                   {{ orderStore.selected.customer_email }}
                 </a>
-              </p>
+              </div>
 
-              <p v-if="orderStore.selected.delivery_address">
-                <strong>Adresa:</strong> {{ orderStore.selected.delivery_address }}
-              </p>
+              <div v-if="orderStore.selected.delivery_address">
+                <p class="text-sm text-gray-500 uppercase font-semibold mb-1">Adresa</p>
+                <p class="text-base text-gray-900">{{ orderStore.selected.delivery_address }}</p>
+              </div>
             </div>
           </div>
 
           <!-- Items -->
           <div>
-            <h4 class="font-semibold text-lg mb-3">Stavke</h4>
+            <h4 class="font-bold text-xl mb-4 text-gray-900">Stavke</h4>
 
-            <div v-for="item in orderStore.selected.items" :key="item.id" class="bg-gray-50 p-3 rounded mb-2 flex justify-between">
-              <div>
-                <p class="font-medium">{{ item.product_name }}</p>
-                <p v-if="item.variant_name" class="text-sm text-gray-600">{{ item.variant_name }}</p>
-                <p class="text-sm text-gray-600">Količina: {{ item.quantity }}</p>
-              </div>
+            <div class="space-y-3">
+              <div
+                v-for="item in orderStore.selected.items"
+                :key="item.id"
+                class="bg-white border border-gray-200 p-5 rounded-xl hover:shadow-md transition"
+              >
+                <div class="flex justify-between items-start">
 
-              <div class="text-right">
-                <p class="font-semibold">{{ formatPrice(item.total_price) }}</p>
-                <p class="text-sm text-gray-600">{{ formatPrice(item.unit_price) }} / kom</p>
+                  <div class="flex-1">
+                    <p class="font-bold text-lg text-gray-900 mb-1">{{ item.product_name }}</p>
+                    <p v-if="item.variant_name" class="text-sm text-gray-600 mb-2">{{ item.variant_name }}</p>
+
+                    <p class="text-sm text-gray-500">
+                      Količina:
+                      <span class="font-semibold text-gray-700">{{ item.quantity }}</span> kom
+                    </p>
+
+                    <p class="text-sm text-gray-500 mt-1">{{ formatPrice(item.unit_price) }} / kom</p>
+                  </div>
+
+                  <div class="text-right ml-4">
+                    <p class="text-xl font-bold text-green-700">
+                      {{ formatPrice(item.total_price) }}
+                    </p>
+                  </div>
+
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Total -->
-          <div class="border-t pt-4">
-            <div class="flex justify-between text-xl font-bold">
-              <span>Ukupno:</span>
-              <span class="text-green-700">{{ formatPrice(orderStore.selected.total_amount) }}</span>
+          <!-- Total (BLUE) -->
+          <div class="border-t-2 border-gray-300 pt-6">
+            <div class="flex justify-between items-center bg-gradient-to-r from-[#3555e4] to-[#64b5f6] 
+            text-white p-5 rounded-xl">
+              <span class="text-xl font-bold">Ukupno:</span>
+              <span class="text-3xl font-bold">{{ formatPrice(orderStore.selected.total_amount) }}</span>
             </div>
           </div>
 
           <!-- Napomena -->
           <div v-if="orderStore.selected.notes">
-            <h4 class="font-semibold text-lg mb-2">Napomena kupca</h4>
-            <p class="bg-yellow-50 p-3 rounded text-sm">{{ orderStore.selected.notes }}</p>
+            <h4 class="font-bold text-xl mb-3 text-gray-900">Napomena kupca</h4>
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-5 rounded-r-lg">
+              <p class="text-base text-gray-800">{{ orderStore.selected.notes }}</p>
+            </div>
           </div>
 
-          <!-- UPDATE STATUS -->
+          <!-- UPDATE STATUS (BLUE NOW) -->
           <div>
-            <h4 class="font-semibold text-lg mb-3">Ažuriraj status</h4>
+            <h4 class="font-bold text-xl mb-4 text-gray-900">Ažuriraj status</h4>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-3">
               <button
                 v-for="(label, status) in statusLabels"
                 :key="status"
-                @click="orderStore.updateStatus(orderStore.selected.id, status)"
-                :class="orderStore.selected.status === status ? 'ring-2 ring-blue-500' : ''"
-                class="px-4 py-2 rounded text-sm font-medium transition hover:scale-105"
-                :style="{
-                  backgroundColor: orderStore.selected.status === status ? '#3b82f6' : '#e5e7eb',
-                  color: orderStore.selected.status === status ? 'white' : '#374151'
+                @click="async () => { 
+                  await orderStore.updateStatus(orderStore.selected.id, status)
+                  await refreshOrders()
                 }"
+                :class="orderStore.selected.status === status 
+                  ? 'bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white shadow-lg scale-105' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                class="px-6 py-3 rounded-xl text-base font-semibold transition-all cursor-pointer"
               >
                 {{ label }}
               </button>
             </div>
           </div>
 
+          <!-- DELETE ORDER -->
+          <div class="border-t pt-6 mt-6">
+            <button
+              @click="deleteOrder"
+              class="w-full px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-base font-semibold transition cursor-pointer"
+            >
+              Obriši narudžbinu
+            </button>
+          </div>
+
         </div>
 
       </div>
     </div>
+
+    <!-- Confirm Delete Modal -->
+    <ConfirmModal
+      :show="showConfirmDelete"
+      message="Da li ste sigurni da želite da obrišete ovu narudžbinu? Ova akcija je nepovratna."
+      title="Potvrda brisanja"
+      confirmText="Obriši"
+      cancelText="Odustani"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
   </div>
 </template>
+
+<style scoped>
+.order-list-enter-active {
+  transition: all 0.4s ease;
+}
+
+.order-list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.order-list-enter-from {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+
+.order-list-leave-to {
+  opacity: 0;
+  transform: translateX(20px) scale(0.95);
+}
+
+.order-list-move {
+  transition: transform 0.3s ease;
+}
+</style>

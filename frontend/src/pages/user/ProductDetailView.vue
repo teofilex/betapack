@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
@@ -15,6 +15,11 @@ const loading = ref(true)
 const selectedVariant = ref(null)
 const selectedImageIndex = ref(0)
 const quantity = ref(1)
+
+// Reset quantity to 1 when variant changes
+watch(selectedVariant, () => {
+  quantity.value = 1
+})
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('sr-RS', {
@@ -45,7 +50,12 @@ const images = computed(() => {
   if (!product.value || !product.value.images || product.value.images.length === 0) {
     return []
   }
-  return product.value.images
+  // Sort images: primary first, then by order
+  return [...product.value.images].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1
+    if (!a.is_primary && b.is_primary) return 1
+    return (a.order || 0) - (b.order || 0)
+  })
 })
 
 const fetchProduct = async () => {
@@ -73,8 +83,9 @@ const addToCart = () => {
   }
   cartStore.add(cartItem, quantity.value)
 
-  // Show notification or redirect
-  router.push('/cart')
+  // Reset quantity to 1 after adding
+  quantity.value = 1
+  // Don't redirect - stay on page so user can add more variants or change quantity
 }
 
 const selectImage = (index) => {
@@ -100,7 +111,7 @@ onMounted(() => {
         <!-- Back Button -->
         <button
           @click="goBack"
-          class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition"
+          class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition cursor-pointer"
         >
           <span>←</span>
           <span>Nazad na katalog</span>
@@ -143,7 +154,7 @@ onMounted(() => {
                   :key="img.id"
                   @click="selectImage(index)"
                   :class="selectedImageIndex === index ? 'ring-2 ring-[#1976d2]' : 'ring-1 ring-gray-200'"
-                  class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition"
+                  class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer"
                 >
                   <img
                     :src="`http://localhost:8000${img.image}`"
@@ -193,12 +204,9 @@ onMounted(() => {
                         ? 'bg-[#1976d2] text-white ring-2 ring-[#1976d2]'
                         : 'bg-white text-gray-700 ring-1 ring-gray-300 hover:ring-[#1976d2]'
                     ]"
-                    class="px-4 py-3 rounded-lg font-medium transition text-sm"
+                    class="px-4 py-3 rounded-lg font-medium transition text-sm cursor-pointer"
                   >
                     <div>{{ variant.name }}</div>
-                    <div v-if="variant.price_adjustment !== 0" class="text-xs mt-1">
-                      {{ variant.price_adjustment > 0 ? '+' : '' }}{{ formatPrice(variant.price_adjustment) }}
-                    </div>
                   </button>
                 </div>
               </div>
@@ -209,7 +217,7 @@ onMounted(() => {
                 <div class="flex items-center gap-3">
                   <button
                     @click="quantity = Math.max(1, quantity - 1)"
-                    class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition"
+                    class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer"
                   >
                     -
                   </button>
@@ -221,7 +229,7 @@ onMounted(() => {
                   />
                   <button
                     @click="quantity++"
-                    class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition"
+                    class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer"
                   >
                     +
                   </button>
@@ -251,14 +259,22 @@ onMounted(() => {
               <div class="space-y-3">
                 <button
                   @click="addToCart"
-                  class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-4 rounded-lg transition text-lg shadow-md"
+                  class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-4 rounded-lg transition text-lg shadow-md hover:shadow-xl cursor-pointer transform hover:scale-[1.02]"
                 >
                   🛒 Dodaj u korpu
                 </button>
+                
+                <!-- Link to Cart/Checkout -->
+                <router-link
+                  to="/cart"
+                  class="block w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-4 rounded-lg transition-all text-lg shadow-md hover:shadow-xl cursor-pointer transform hover:scale-[1.02] text-center"
+                >
+                  🛍️ Idi na korpu i naruči
+                </router-link>
 
                 <button
                   @click="router.push('/kontakt')"
-                  class="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-4 rounded-lg border-2 border-gray-300 transition"
+                  class="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-4 rounded-lg border-2 border-gray-300 transition cursor-pointer"
                 >
                   📞 Kontaktirajte nas za ponudu
                 </button>

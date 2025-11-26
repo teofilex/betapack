@@ -1,0 +1,19 @@
+{
+    "customer_name": "Marko Petrović",
+    "customer_phone": "0612345678",
+    "customer_email": "marko.petrovic@example.com",
+    "delivery_address": "Bulevar Kralja Aleksandra 123, Beograd",
+    "notes": "Molim hitnu dostavu do 15h",
+    "items": [
+        {
+            "product_id": 1,
+            "quantity": 2
+        },
+        {
+            "product_id": 2,
+            "variant_id": null,
+            "quantity": 1
+        }
+    ]
+}
+
