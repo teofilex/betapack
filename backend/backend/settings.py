@@ -48,8 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'cloudinary_storage',  # Must be BEFORE staticfiles
     'django.contrib.staticfiles',
+    'cloudinary_storage',
     'cloudinary',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -154,10 +154,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Whitenoise configuration for serving static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Cloudinary configuration for media files
+# Cloudinary configuration for media files ONLY (not static files)
 print(f"DEBUG MODE: {DEBUG}")  # Debug log
 if not DEBUG:
-    # Production - use Cloudinary
+    # Production - use Cloudinary for MEDIA files only
     import cloudinary
     import cloudinary.uploader
     import cloudinary.api
@@ -170,7 +170,10 @@ if not DEBUG:
 
     print(f"CLOUDINARY CONFIG: CLOUD_NAME={CLOUDINARY_STORAGE['CLOUD_NAME']}")  # Debug log
 
+    # Use Cloudinary ONLY for media files (uploads), NOT for static files
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+    # Keep STATICFILES_STORAGE as Whitenoise (already set above)
     MEDIA_URL = '/media/'  # Cloudinary will handle this
     print(f"Using Cloudinary for media files")  # Debug log
 else:
