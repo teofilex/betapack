@@ -155,6 +155,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Cloudinary configuration for media files
+print(f"DEBUG MODE: {DEBUG}")  # Debug log
 if not DEBUG:
     # Production - use Cloudinary
     import cloudinary
@@ -167,12 +168,16 @@ if not DEBUG:
         'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
     }
 
+    print(f"CLOUDINARY CONFIG: CLOUD_NAME={CLOUDINARY_STORAGE['CLOUD_NAME']}")  # Debug log
+
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = '/media/'  # Cloudinary will handle this
+    print(f"Using Cloudinary for media files")  # Debug log
 else:
     # Development - use local media files
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    print(f"Using local media files at {MEDIA_ROOT}")  # Debug log
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
