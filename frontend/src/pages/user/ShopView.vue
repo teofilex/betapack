@@ -149,6 +149,24 @@ const getProductPrice = (product) => {
   return parseFloat(product.current_price) || 0
 }
 
+// Check if selected variant is on sale
+const isVariantOnSale = (product) => {
+  const variant = getSelectedVariant(product)
+  if (variant) {
+    return variant.on_sale
+  }
+  return product.on_sale
+}
+
+// Get original price of selected variant (before sale)
+const getVariantOriginalPrice = (product) => {
+  const variant = getSelectedVariant(product)
+  if (variant) {
+    return parseFloat(variant.price)
+  }
+  return parseFloat(product.price)
+}
+
 // Add product to cart directly from card
 const addToCartFromCard = (product) => {
   const quantity = getQuantity(product.id)
@@ -419,10 +437,10 @@ onMounted(async () => {
                       <div class="mt-auto">
                         <div class="flex items-center justify-between mb-3">
                           <div>
-                            <p v-if="product.on_sale || product.has_sale_variants" class="text-sm text-gray-400 line-through mb-1">
-                              {{ formatPrice(product.price) }}
+                            <p v-if="isVariantOnSale(product)" class="text-sm text-gray-400 line-through mb-1">
+                              {{ formatPrice(getVariantOriginalPrice(product)) }}
                             </p>
-                            <p class="text-xl lg:text-2xl font-bold" :class="(product.on_sale || product.has_sale_variants) ? 'text-red-600' : 'text-green-700'">
+                            <p class="text-xl lg:text-2xl font-bold" :class="isVariantOnSale(product) ? 'text-red-600' : 'text-green-700'">
                               {{ formatPrice(getProductPrice(product)) }}
                             </p>
                           </div>
