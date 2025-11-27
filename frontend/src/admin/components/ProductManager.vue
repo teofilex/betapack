@@ -160,6 +160,18 @@ const openAddModal = () => {
     in_stock: true,
     stock_quantity: 0
   }
+
+  // Reset first variant form
+  variantForm.value = {
+    name: '',
+    price: 0,
+    on_sale: false,
+    sale_price: null,
+    sku: '',
+    in_stock: true,
+    stock_quantity: 0
+  }
+
   productImages.value = []
   productVariants.value = []
   showVariantForm.value = false
@@ -367,17 +379,31 @@ const saveProduct = async () => {
   error.value = ''
 
   try {
+    // Validation for new products: must have at least one variant
+    if (!isEditing.value) {
+      // Validate first variant price
+      if (!variantForm.value.price || variantForm.value.price <= 0) {
+        openConfirm('Cena varijante je obavezna i mora biti veća od 0!', null)
+        saving.value = false
+        return
+      }
+
+      // Set default variant name if empty
+      if (!variantForm.value.name.trim()) {
+        variantForm.value.name = 'Standardna'
+      }
+    }
+
     const data = {
       name: form.value.name,
       description: form.value.description,
-      price: parseFloat(form.value.price),
+      // Use first variant's price as product price (for backward compatibility)
+      price: !isEditing.value ? parseFloat(variantForm.value.price) : parseFloat(form.value.price || 0),
       category: form.value.category,
       subcategory: form.value.subcategory || null,
-      on_sale: form.value.on_sale,
-      sale_price:
-        form.value.on_sale && form.value.sale_price
-          ? parseFloat(form.value.sale_price)
-          : null,
+      // Product-level on_sale and sale_price are deprecated, set to false/null
+      on_sale: false,
+      sale_price: null,
       featured: form.value.featured || false,
       in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
       stock_quantity: form.value.stock_quantity || 0
@@ -397,6 +423,21 @@ const saveProduct = async () => {
       })
       productId = response.data.id
       await productStore.fetch() // Refresh list
+
+      // For new products, create the first variant immediately
+      try {
+        await api.post('product-variants/', {
+          product: productId,
+          ...variantForm.value
+        }, {
+          headers: authHeaders
+        })
+      } catch (err) {
+        console.error('Error creating first variant:', err)
+        const errorMsg = err.response?.data?.detail || err.response?.data?.message || 'Greška pri kreiranju varijante.'
+        error.value = errorMsg
+        throw err
+      }
     }
 
     // Upload images if any
@@ -839,18 +880,6 @@ onMounted(async () => {
           ></textarea>
         </div>
 
-        <!-- PRICE -->
-        <div>
-          <label class="block mb-2 font-medium text-gray-800">Cena (RSD) *</label>
-          <input
-            v-model="form.price"
-            type="number"
-            required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                   focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
-          />
-        </div>
-
         <!-- CATEGORY -->
         <div>
           <label class="block mb-2 font-medium text-gray-800">Kategorija *</label>
@@ -886,12 +915,6 @@ onMounted(async () => {
           </select>
         </div>
 
-        <!-- On sale -->
-        <label class="flex items-center gap-2 mt-2 cursor-pointer">
-          <input v-model="form.on_sale" type="checkbox" class="cursor-pointer" />
-          <span class="text-gray-800 font-medium cursor-pointer">Proizvod je na akciji</span>
-        </label>
-
         <!-- Featured -->
         <label class="flex items-center gap-2 mt-2 cursor-pointer">
           <input v-model="form.featured" type="checkbox" class="cursor-pointer" />
@@ -919,14 +942,97 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div v-if="form.on_sale">
-          <label class="block font-medium mt-3 mb-1 text-gray-800">Akcijska cena *</label>
-          <input
-            v-model="form.sale_price"
-            type="number"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                   focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
-          />
+        <!-- PRVA VARIJANTA (obavezno za nove proizvode) -->
+        <div v-if="!isEditing" class="border-t pt-6 mt-6 bg-blue-50 p-6 rounded-xl">
+          <h4 class="font-semibold text-lg mb-2 text-gray-800">📐 Prva varijanta (obavezno)</h4>
+          <p class="text-sm text-gray-600 mb-4">
+            Svaki proizvod mora imati bar jednu varijantu. Ako proizvod nema različitih dimenzija, samo unesi cenu.
+          </p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2 font-medium text-gray-800">
+                Naziv dimenzije (opciono)
+              </label>
+              <input
+                v-model="variantForm.name"
+                placeholder="npr. 45×45mm ili ostavi prazno za standardnu varijantu"
+                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                       focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
+              />
+              <p class="text-xs text-gray-500 mt-1">Ako proizvod nema dimenzije, ostavi prazno ili unesi "Standardna"</p>
+            </div>
+
+            <div>
+              <label class="block mb-2 font-medium text-gray-800">Cena (RSD) *</label>
+              <input
+                v-model.number="variantForm.price"
+                type="number"
+                step="0.01"
+                required
+                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                       focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
+              />
+            </div>
+
+            <div>
+              <label class="block mb-2 font-medium text-gray-800">SKU / Šifra (opciono)</label>
+              <input
+                v-model="variantForm.sku"
+                placeholder="npr. TACNA-45"
+                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                       focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
+              />
+            </div>
+
+            <div class="flex items-center gap-2 bg-yellow-50 p-3 rounded-lg">
+              <input
+                v-model="variantForm.on_sale"
+                type="checkbox"
+                id="first-variant-on-sale"
+                class="cursor-pointer"
+              />
+              <label for="first-variant-on-sale" class="text-gray-800 font-medium cursor-pointer">
+                Stavi na akciju
+              </label>
+            </div>
+
+            <div v-if="variantForm.on_sale">
+              <label class="block mb-2 font-medium text-gray-800">Akcijska cena (RSD) *</label>
+              <input
+                v-model.number="variantForm.sale_price"
+                type="number"
+                step="0.01"
+                :required="variantForm.on_sale"
+                class="w-full px-4 py-3 rounded-xl bg-red-50 border border-red-300
+                       focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
+              />
+              <p class="text-xs text-red-600 mt-1">Akcijska cena mora biti niža od osnovne cene</p>
+            </div>
+
+            <div>
+              <label class="block mb-2 font-medium text-gray-800">Količina na stanju</label>
+              <input
+                v-model.number="variantForm.stock_quantity"
+                type="number"
+                min="0"
+                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                       focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
+              />
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input
+                v-model="variantForm.in_stock"
+                type="checkbox"
+                id="first-variant-in-stock"
+                class="cursor-pointer"
+              />
+              <label for="first-variant-in-stock" class="text-gray-800 font-medium cursor-pointer">
+                Na stanju
+              </label>
+            </div>
+          </div>
         </div>
 
         <!-- SLIKE PROIZVODA (samo za nove proizvode) -->
