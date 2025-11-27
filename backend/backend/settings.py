@@ -166,9 +166,9 @@ if not DEBUG:
     print(f"CLOUDINARY CONFIG: CLOUD_NAME={CLOUDINARY_STORAGE['CLOUD_NAME']}")  # Debug log
 
     # Use custom Cloudinary storage backend
-    DEFAULT_FILE_STORAGE = 'backend.cloudinary_storage.CloudinaryMediaStorage'
+    DEFAULT_FILE_STORAGE = 'shop.storage.CloudinaryMediaStorage'
     MEDIA_URL = 'https://res.cloudinary.com/{}/'.format(CLOUDINARY_STORAGE['CLOUD_NAME'])
-    print(f"Using Cloudinary for media files with custom storage backend")  # Debug log
+    print(f"Using Cloudinary for media files with custom storage backend: {DEFAULT_FILE_STORAGE}")  # Debug log
 else:
     # Development - use local media files
     MEDIA_URL = '/media/'
