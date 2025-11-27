@@ -423,8 +423,7 @@ onMounted(async () => {
                               {{ formatPrice(product.price) }}
                             </p>
                             <p class="text-xl lg:text-2xl font-bold" :class="(product.on_sale || product.has_sale_variants) ? 'text-red-600' : 'text-green-700'">
-                              <span v-if="product.variants && product.variants.length > 0" class="text-sm text-gray-500">od </span>
-                              {{ formatPrice(product.min_price || getProductPrice(product)) }}
+                              {{ formatPrice(getProductPrice(product)) }}
                             </p>
                           </div>
                         </div>
