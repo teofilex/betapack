@@ -55,8 +55,9 @@ const filterCategory = ref('')
 const filterSubcategory = ref('')
 const searchQuery = ref('')
 
-// Tab navigation (for editing mode)
-const currentTab = ref('basic') // 'basic', 'variants', 'images'
+// Tab navigation (for editing mode) - each variant has its own tab
+const currentTab = ref('basic') // 'basic' or variant ID
+const productVariantsForEdit = ref([]) // List of variants for the edited product
 
 // Reset subcategory when category changes
 watch(filterCategory, () => {
@@ -167,13 +168,26 @@ const openAddModal = () => {
   showModal.value = true
 }
 
-const openEditModal = product => {
+const openEditModal = async (product) => {
   isEditing.value = true
   form.value = {
     ...product,
     in_stock: product.in_stock !== undefined ? product.in_stock : true,
     stock_quantity: product.stock_quantity || 0
   }
+
+  // Fetch variants for this product
+  try {
+    const authStore = useAuthStore()
+    const response = await api.get(`product-variants/?product_id=${product.id}`, {
+      headers: { Authorization: `Bearer ${authStore.accessToken}` }
+    })
+    productVariantsForEdit.value = response.data
+  } catch (err) {
+    console.error('Error fetching variants:', err)
+    productVariantsForEdit.value = []
+  }
+
   currentTab.value = 'basic' // Reset to basic tab
   showModal.value = true
 }
@@ -229,6 +243,7 @@ const closeModal = () => {
   error.value = ''
   productImages.value = []
   productVariants.value = []
+  productVariantsForEdit.value = []
   showVariantForm.value = false
   editingVariant.value = null
 }
@@ -289,14 +304,37 @@ const openVariantForm = (variant = null) => {
 const closeVariantForm = () => {
   showVariantForm.value = false
   editingVariant.value = null
+  editingExistingVariant.value = null
 }
 
-const saveVariant = () => {
+const saveVariant = async () => {
   if (!variantForm.value.name.trim()) {
     openConfirm('Naziv varijante je obavezan!', null)
     return
   }
 
+  // If editing an existing variant (from tabs)
+  if (editingExistingVariant.value) {
+    try {
+      const authStore = useAuthStore()
+      const authHeaders = { Authorization: `Bearer ${authStore.accessToken}` }
+
+      await api.patch(`product-variants/${editingExistingVariant.value.id}/`, variantForm.value, {
+        headers: authHeaders
+      })
+
+      // Refresh data
+      await handleTabUpdate()
+      closeVariantForm()
+    } catch (err) {
+      console.error('Error updating variant:', err)
+      const errorMsg = err.response?.data?.detail || err.response?.data?.message || 'Greška pri ažuriranju varijante'
+      openConfirm(errorMsg, null)
+    }
+    return
+  }
+
+  // For new products (not yet saved)
   if (editingVariant.value) {
     const index = productVariants.value.findIndex(v => v === editingVariant.value)
     if (index !== -1) {
@@ -313,6 +351,14 @@ const removeVariant = (variant) => {
   if (index !== -1) {
     productVariants.value.splice(index, 1)
   }
+}
+
+// Open edit form for existing variant (from tab)
+const editingExistingVariant = ref(null)
+const openVariantEditForm = (variant) => {
+  editingExistingVariant.value = variant
+  variantForm.value = { ...variant }
+  showVariantForm.value = true
 }
 
 // Save
@@ -447,6 +493,20 @@ const handleDetailUpdate = async () => {
 const handleTabUpdate = async () => {
   await productStore.fetch()
   await userProductStore.fetchProducts()
+
+  // Refresh variants list for the current product
+  if (form.value.id) {
+    try {
+      const authStore = useAuthStore()
+      const response = await api.get(`product-variants/?product_id=${form.value.id}`, {
+        headers: { Authorization: `Bearer ${authStore.accessToken}` }
+      })
+      productVariantsForEdit.value = response.data
+    } catch (err) {
+      console.error('Error refreshing variants:', err)
+    }
+  }
+
   emit('update-count')
 }
 
@@ -717,36 +777,41 @@ onMounted(async () => {
       @close="closeModal"
     >
       <!-- Tab Navigation (only when editing) -->
-      <div v-if="isEditing" class="flex gap-2 mb-6 border-b-2 border-gray-200">
+      <div v-if="isEditing" class="flex gap-2 mb-6 border-b-2 border-gray-200 overflow-x-auto">
         <button
           type="button"
           @click="currentTab = 'basic'"
           :class="currentTab === 'basic'
             ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
             : 'text-gray-600 hover:text-gray-800'"
-          class="px-6 py-3 transition-all cursor-pointer"
+          class="px-6 py-3 transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
         >
           📝 Osnovni podaci
         </button>
+
+        <!-- Tab for each variant -->
         <button
+          v-for="variant in productVariantsForEdit"
+          :key="variant.id"
           type="button"
-          @click="currentTab = 'variants'"
-          :class="currentTab === 'variants'
+          @click="currentTab = variant.id"
+          :class="currentTab === variant.id
             ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
             : 'text-gray-600 hover:text-gray-800'"
-          class="px-6 py-3 transition-all cursor-pointer"
+          class="px-6 py-3 transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
         >
-          📐 Varijante
+          📐 {{ variant.name }}
         </button>
+
         <button
           type="button"
-          @click="currentTab = 'images'"
-          :class="currentTab === 'images'
-            ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
-            : 'text-gray-600 hover:text-gray-800'"
-          class="px-6 py-3 transition-all cursor-pointer"
+          @click="currentTab = 'add-variant'"
+          :class="currentTab === 'add-variant'
+            ? 'border-b-4 border-green-600 text-green-600 font-bold'
+            : 'text-green-600 hover:text-green-700'"
+          class="px-6 py-3 transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
         >
-          🖼️ Slike
+          ➕ Nova varijanta
         </button>
       </div>
 
@@ -1002,17 +1067,76 @@ onMounted(async () => {
         </div>
       </form>
 
-      <!-- Variants Tab Content -->
-      <div v-if="isEditing && currentTab === 'variants'" class="space-y-4">
-        <ProductVariantManager
-          :product-id="form.id"
-          @updated="handleTabUpdate"
-        />
+      <!-- Individual Variant Tab Content -->
+      <div
+        v-for="variant in productVariantsForEdit"
+        :key="`tab-${variant.id}`"
+        v-show="isEditing && currentTab === variant.id"
+        class="space-y-6"
+      >
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Varijanta: {{ variant.name }}</h3>
+
+        <!-- Variant Details Form -->
+        <div class="space-y-4 bg-gray-50 p-6 rounded-xl">
+          <h4 class="font-semibold text-lg text-gray-800 mb-3">Informacije o varijanti</h4>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Naziv (dimenzije)</label>
+              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900">{{ variant.name }}</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900">{{ variant.sku || 'N/A' }}</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Osnovna cena</label>
+              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 font-semibold">{{ variant.price }} RSD</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Status akcije</label>
+              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg" :class="variant.on_sale ? 'text-red-600 font-bold' : 'text-gray-600'">
+                {{ variant.on_sale ? `Akcija: ${variant.sale_price} RSD` : 'Nije na akciji' }}
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Količina na stanju</label>
+              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg font-semibold" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
+                {{ variant.in_stock ? variant.stock_quantity : 'Nije na stanju' }}
+              </p>
+            </div>
+
+            <div class="flex items-end">
+              <button
+                @click="openVariantEditForm(variant)"
+                type="button"
+                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium cursor-pointer transition-all w-full"
+              >
+                ✏️ Izmeni varijantu
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Images for this product -->
+        <div class="bg-gray-50 p-6 rounded-xl">
+          <h4 class="font-semibold text-lg text-gray-800 mb-3">Slike proizvoda</h4>
+          <p class="text-sm text-gray-600 mb-4">Slike se primenjuju na ceo proizvod (sve varijante dele iste slike)</p>
+          <ProductImageManager
+            :product-id="form.id"
+            @updated="handleTabUpdate"
+          />
+        </div>
       </div>
 
-      <!-- Images Tab Content -->
-      <div v-if="isEditing && currentTab === 'images'" class="space-y-4">
-        <ProductImageManager
+      <!-- Add New Variant Tab Content -->
+      <div v-if="isEditing && currentTab === 'add-variant'" class="space-y-4">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Dodaj novu varijantu</h3>
+        <ProductVariantManager
           :product-id="form.id"
           @updated="handleTabUpdate"
         />
@@ -1030,7 +1154,7 @@ onMounted(async () => {
     <!-- Variant Form Modal -->
     <AdminModal
       :show="showVariantForm"
-      :title="editingVariant ? 'Izmeni varijantu' : 'Nova varijanta'"
+      :title="(editingVariant || editingExistingVariant) ? 'Izmeni varijantu' : 'Nova varijanta'"
       max-width="max-w-md"
       z-index="z-[2000]"
       @close="closeVariantForm"
