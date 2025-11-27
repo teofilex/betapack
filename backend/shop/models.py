@@ -130,8 +130,17 @@ class ProductVariant(models.Model):
 
 def get_image_storage():
     """Get the appropriate storage backend for images"""
-    from django.core.files.storage import default_storage
-    return default_storage
+    from django.conf import settings
+
+    # Direktno vraćaj instancu CloudinaryMediaStorage ako je produkcija
+    if not settings.DEBUG:
+        from shop.storage import CloudinaryMediaStorage
+        print("[MODELS] Returning CloudinaryMediaStorage instance")
+        return CloudinaryMediaStorage()
+    else:
+        from django.core.files.storage import default_storage
+        print("[MODELS] Returning default_storage")
+        return default_storage
 
 
 class ProductImage(models.Model):
