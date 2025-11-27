@@ -20,21 +20,17 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductImageSerializer(serializers.ModelSerializer):
     # Koristimo SerializerMethodField za read, ali dozvoljavamo write preko image field-a
     image_url = serializers.SerializerMethodField()
-    
+
     def get_image_url(self, obj):
-        # Vrati relativni URL slike
+        # Vrati URL slike - može biti Cloudinary ili lokalni /media/
         if obj.image and obj.image.name:
             try:
                 url = obj.image.url
-                # Django ImageField.url već vraća /media/products/...
-                if url.startswith('/media/'):
+                # Ako je URL potpuna adresa (http/https), vrati ga direktno (Cloudinary)
+                if url.startswith('http://') or url.startswith('https://'):
                     return url
-                elif url.startswith('media/'):
-                    return '/' + url
-                elif url.startswith('/'):
-                    return '/media' + url if not url.startswith('/media') else url
-                else:
-                    return '/media/' + url
+                # Inače je lokalni URL, vrati ga direktno
+                return url
             except (ValueError, AttributeError):
                 return None
         return None
