@@ -7,7 +7,7 @@ import shop.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shop', '0001_initial'),
+        ('shop', '0008_alter_contactmessage_phone'),
     ]
 
     operations = [
