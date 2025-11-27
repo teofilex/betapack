@@ -52,12 +52,14 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
+    current_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     final_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = ProductVariant
         fields = [
-            'id', 'product', 'name', 'price_adjustment', 'final_price', 'sku',
+            'id', 'product', 'name', 'price', 'on_sale', 'sale_price',
+            'current_price', 'final_price', 'sku',
             'in_stock', 'stock_quantity', 'created_at'
         ]
 
@@ -66,6 +68,8 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     current_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    has_sale_variants = serializers.BooleanField(read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
 
@@ -74,7 +78,8 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'price', 'on_sale', 'sale_price',
             'category', 'category_name', 'subcategory', 'subcategory_name',
-            'current_price', 'featured', 'in_stock', 'stock_quantity',
+            'current_price', 'min_price', 'has_sale_variants',
+            'featured', 'in_stock', 'stock_quantity',
             'variants', 'images', 'created_at', 'updated_at'
         ]
 

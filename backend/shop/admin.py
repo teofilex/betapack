@@ -8,7 +8,7 @@ from .models import (
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 1
-    fields = ['name', 'price_adjustment', 'sku', 'in_stock', 'stock_quantity']
+    fields = ['name', 'price', 'on_sale', 'sale_price', 'sku', 'in_stock', 'stock_quantity']
 
 
 class ProductImageInline(admin.TabularInline):
@@ -40,8 +40,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ['product', 'name', 'price_adjustment', 'final_price', 'in_stock', 'stock_quantity']
-    list_filter = ['product__category', 'in_stock']
+    list_display = ['product', 'name', 'price', 'on_sale', 'sale_price', 'current_price', 'in_stock', 'stock_quantity']
+    list_filter = ['product__category', 'on_sale', 'in_stock']
     search_fields = ['product__name', 'name', 'sku']
 
 

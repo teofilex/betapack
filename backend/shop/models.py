@@ -80,15 +80,31 @@ class Product(models.Model):
 
     @property
     def current_price(self):
+        """Trenutna cena proizvoda (akcijska ako je na akciji, inače osnovna)"""
         if self.on_sale and self.sale_price:
             return self.sale_price
         return self.price
+
+    @property
+    def min_price(self):
+        """Minimalna cena među svim varijantama (za prikaz 'od' cene)"""
+        if self.variants.exists():
+            # Uzmi najnižu current_price među varijantama
+            variant_prices = [v.current_price for v in self.variants.all()]
+            return min(variant_prices) if variant_prices else self.current_price
+        return self.current_price
+
+    @property
+    def has_sale_variants(self):
+        """Da li bar jedna varijanta ima akciju"""
+        return self.variants.filter(on_sale=True).exists()
 
 
 class ProductVariant(models.Model):
     """
     Varijante proizvoda - npr. različite dimenzije za isti proizvod
     Primer: Tačna 70 može imati više dimenzija
+    Svaka varijanta ima svoju cenu i može nezavisno biti na akciji
     """
     product = models.ForeignKey(
         Product,
@@ -97,12 +113,21 @@ class ProductVariant(models.Model):
     )
     name = models.CharField(max_length=100, help_text="Npr: 180×135×18mm")
 
-    # Opciono: dodatna cena za varijantu
-    price_adjustment = models.DecimalField(
+    # Cena varijante (svaka varijanta ima sopstvenu cenu)
+    price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0,
-        help_text="Dodatna cena za ovu varijantu (+/-)"
+        help_text="Osnovna cena ove varijante"
+    )
+
+    # Akcija za varijantu (nezavisno od drugih varijanti)
+    on_sale = models.BooleanField(default=False, help_text="Da li je varijanta na akciji")
+    sale_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Akcijska cena varijante"
     )
 
     # Opciono: šifra/SKU za varijantu
@@ -122,10 +147,16 @@ class ProductVariant(models.Model):
         return f"{self.product.name} - {self.name}"
 
     @property
+    def current_price(self):
+        """Trenutna cena varijante (akcijska ako je na akciji, inače osnovna)"""
+        if self.on_sale and self.sale_price:
+            return self.sale_price
+        return self.price
+
+    @property
     def final_price(self):
-        """Finalna cena varijante = osnovna cena proizvoda + adjustment"""
-        base_price = self.product.current_price
-        return base_price + self.price_adjustment
+        """Alias za current_price (za kompatibilnost)"""
+        return self.current_price
 
 
 def get_image_storage():

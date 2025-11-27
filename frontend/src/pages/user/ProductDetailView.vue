@@ -31,8 +31,24 @@ const formatPrice = (price) => {
 }
 
 const salePercent = computed(() => {
+  // Ako je varijanta odabrana, koristi njene cene
+  if (selectedVariant.value && selectedVariant.value.on_sale) {
+    const regularPrice = parseFloat(selectedVariant.value.price)
+    const salePrice = parseFloat(selectedVariant.value.sale_price)
+    return Math.round(((regularPrice - salePrice) / regularPrice) * 100)
+  }
+
+  // Inače koristi cene proizvoda (ako nema varijanti)
   if (!product.value || !product.value.on_sale) return 0
   return Math.round(((product.value.price - product.value.sale_price) / product.value.price) * 100)
+})
+
+const isOnSale = computed(() => {
+  // Proveri da li je odabrana varijanta na akciji ili proizvod
+  if (selectedVariant.value) {
+    return selectedVariant.value.on_sale
+  }
+  return product.value && product.value.on_sale
 })
 
 const finalPrice = computed(() => {
@@ -143,7 +159,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Sale Badge -->
-                <div v-if="product.on_sale" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
+                <div v-if="isOnSale" class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
                   -{{ salePercent }}%
                 </div>
               </div>
@@ -176,8 +192,10 @@ onMounted(() => {
 
               <!-- Price -->
               <div class="mb-6">
-                <div v-if="product.on_sale" class="flex items-center gap-3">
-                  <span class="text-2xl text-gray-400 line-through">{{ formatPrice(product.price) }}</span>
+                <div v-if="isOnSale" class="flex items-center gap-3">
+                  <span class="text-2xl text-gray-400 line-through">
+                    {{ formatPrice(selectedVariant ? selectedVariant.price : product.price) }}
+                  </span>
                   <span class="text-4xl font-bold text-red-600">{{ formatPrice(finalPrice) }}</span>
                 </div>
                 <div v-else>

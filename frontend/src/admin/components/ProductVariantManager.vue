@@ -21,7 +21,9 @@ const variantToDelete = ref(null)
 
 const form = ref({
   name: '',
-  price_adjustment: 0,
+  price: 0,
+  on_sale: false,
+  sale_price: null,
   sku: '',
   in_stock: true,
   stock_quantity: 0
@@ -48,7 +50,9 @@ const openForm = (variant = null) => {
     editing.value = null
     form.value = {
       name: '',
-      price_adjustment: 0,
+      price: 0,
+      on_sale: false,
+      sale_price: null,
       sku: '',
       in_stock: true,
       stock_quantity: 0
@@ -172,9 +176,14 @@ watch(() => props.productId, (newId) => {
             <p class="font-semibold text-lg text-gray-900 mb-1">{{ variant.name }}</p>
             <div class="flex flex-wrap gap-4 text-sm text-gray-600">
               <span><strong>SKU:</strong> {{ variant.sku || 'N/A' }}</span>
-              <span><strong>Doplata:</strong> 
-                <span :class="variant.price_adjustment >= 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ variant.price_adjustment >= 0 ? '+' : '' }}{{ variant.price_adjustment }} RSD
+              <span><strong>Cena:</strong>
+                <span v-if="variant.on_sale" class="text-red-600">
+                  <span class="line-through text-gray-400">{{ variant.price }} RSD</span>
+                  <span class="ml-2 font-bold">{{ variant.sale_price }} RSD</span>
+                  <span class="ml-1 bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs">AKCIJA</span>
+                </span>
+                <span v-else class="text-green-600 font-medium">
+                  {{ variant.price }} RSD
                 </span>
               </span>
             </div>
@@ -236,15 +245,38 @@ watch(() => props.productId, (newId) => {
         </div>
 
         <div>
-          <label class="block font-medium mb-1 text-gray-800">Dodatna cena (+/-)</label>
+          <label class="block font-medium mb-1 text-gray-800">Osnovna cena (RSD) *</label>
           <input
-            v-model.number="form.price_adjustment"
+            v-model.number="form.price"
             type="number"
             step="0.01"
+            required
             class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
                    focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
           />
-          <p class="text-xs text-gray-500 mt-1">Npr: +50 za veću dimenziju, -20 za manju</p>
+        </div>
+
+        <div class="flex items-center gap-2 bg-yellow-50 p-3 rounded-lg">
+          <input
+            v-model="form.on_sale"
+            type="checkbox"
+            id="variant-on-sale"
+            class="cursor-pointer"
+          />
+          <label for="variant-on-sale" class="text-gray-800 font-medium cursor-pointer">Stavi na akciju</label>
+        </div>
+
+        <div v-if="form.on_sale">
+          <label class="block font-medium mb-1 text-gray-800">Akcijska cena (RSD) *</label>
+          <input
+            v-model.number="form.sale_price"
+            type="number"
+            step="0.01"
+            :required="form.on_sale"
+            class="w-full px-4 py-3 rounded-xl bg-red-50 border border-red-300
+                   focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
+          />
+          <p class="text-xs text-red-600 mt-1">Akcijska cena mora biti niža od osnovne cene</p>
         </div>
 
         <div>

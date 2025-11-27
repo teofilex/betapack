@@ -255,8 +255,13 @@ onMounted(async () => {
 
                         <div class="flex items-center justify-between mt-3">
                           <div>
-                            <p v-if="product.on_sale" class="text-base text-gray-400 line-through mb-1">{{ formatPrice(product.price) }}</p>
-                            <p class="text-xl font-bold text-green-700">{{ formatPrice(product.current_price) }}</p>
+                            <p v-if="product.on_sale || (product.has_sale_variants)" class="text-base text-gray-400 line-through mb-1">
+                              {{ formatPrice(product.price) }}
+                            </p>
+                            <p class="text-xl font-bold" :class="(product.on_sale || product.has_sale_variants) ? 'text-red-600' : 'text-green-700'">
+                              <span v-if="product.variants && product.variants.length > 0" class="text-sm text-gray-500">od </span>
+                              {{ formatPrice(product.min_price || product.current_price) }}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -414,9 +419,12 @@ onMounted(async () => {
                       <div class="mt-auto">
                         <div class="flex items-center justify-between mb-3">
                           <div>
-                            <p v-if="product.on_sale" class="text-sm text-gray-400 line-through mb-1">{{ formatPrice(product.price) }}</p>
-                            <p class="text-xl lg:text-2xl font-bold" :class="product.on_sale ? 'text-red-600' : 'text-green-700'">
-                              {{ formatPrice(getProductPrice(product)) }}
+                            <p v-if="product.on_sale || product.has_sale_variants" class="text-sm text-gray-400 line-through mb-1">
+                              {{ formatPrice(product.price) }}
+                            </p>
+                            <p class="text-xl lg:text-2xl font-bold" :class="(product.on_sale || product.has_sale_variants) ? 'text-red-600' : 'text-green-700'">
+                              <span v-if="product.variants && product.variants.length > 0" class="text-sm text-gray-500">od </span>
+                              {{ formatPrice(product.min_price || getProductPrice(product)) }}
                             </p>
                           </div>
                         </div>

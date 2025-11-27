@@ -6,6 +6,8 @@ import { useCategoryStore } from '@/admin/store/categories'
 import { useSubcategoryStore } from '@/admin/store/subcategories'
 import { useAuthStore } from '@/store/auth'
 import ProductDetailModal from './ProductDetailModal.vue'
+import ProductVariantManager from './ProductVariantManager.vue'
+import ProductImageManager from './ProductImageManager.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import AdminModal from './AdminModal.vue'
 import { api } from '@/services/api'
@@ -53,6 +55,9 @@ const filterCategory = ref('')
 const filterSubcategory = ref('')
 const searchQuery = ref('')
 
+// Tab navigation (for editing mode)
+const currentTab = ref('basic') // 'basic', 'variants', 'images'
+
 // Reset subcategory when category changes
 watch(filterCategory, () => {
   filterSubcategory.value = ''
@@ -86,7 +91,9 @@ const showVariantForm = ref(false)
 const editingVariant = ref(null)
 const variantForm = ref({
   name: '',
-  price_adjustment: 0,
+  price: 0,
+  on_sale: false,
+  sale_price: null,
   sku: '',
   in_stock: true,
   stock_quantity: 0
@@ -167,6 +174,7 @@ const openEditModal = product => {
     in_stock: product.in_stock !== undefined ? product.in_stock : true,
     stock_quantity: product.stock_quantity || 0
   }
+  currentTab.value = 'basic' // Reset to basic tab
   showModal.value = true
 }
 
@@ -267,7 +275,9 @@ const openVariantForm = (variant = null) => {
     editingVariant.value = null
     variantForm.value = {
       name: '',
-      price_adjustment: 0,
+      price: 0,
+      on_sale: false,
+      sale_price: null,
       sku: '',
       in_stock: true,
       stock_quantity: 0
@@ -430,6 +440,13 @@ const closeDetailModal = () => {
 
 const handleDetailUpdate = async () => {
   await productStore.fetch()
+  emit('update-count')
+}
+
+// Handle updates from variant/image managers in tabs
+const handleTabUpdate = async () => {
+  await productStore.fetch()
+  await userProductStore.fetchProducts()
   emit('update-count')
 }
 
@@ -699,7 +716,42 @@ onMounted(async () => {
       max-width="max-w-[750px]"
       @close="closeModal"
     >
-      <form @submit.prevent="saveProduct" class="space-y-6">
+      <!-- Tab Navigation (only when editing) -->
+      <div v-if="isEditing" class="flex gap-2 mb-6 border-b-2 border-gray-200">
+        <button
+          type="button"
+          @click="currentTab = 'basic'"
+          :class="currentTab === 'basic'
+            ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
+            : 'text-gray-600 hover:text-gray-800'"
+          class="px-6 py-3 transition-all cursor-pointer"
+        >
+          📝 Osnovni podaci
+        </button>
+        <button
+          type="button"
+          @click="currentTab = 'variants'"
+          :class="currentTab === 'variants'
+            ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
+            : 'text-gray-600 hover:text-gray-800'"
+          class="px-6 py-3 transition-all cursor-pointer"
+        >
+          📐 Varijante
+        </button>
+        <button
+          type="button"
+          @click="currentTab = 'images'"
+          :class="currentTab === 'images'
+            ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
+            : 'text-gray-600 hover:text-gray-800'"
+          class="px-6 py-3 transition-all cursor-pointer"
+        >
+          🖼️ Slike
+        </button>
+      </div>
+
+      <!-- Basic Info Tab (or full form for new products) -->
+      <form v-show="!isEditing || currentTab === 'basic'" @submit.prevent="saveProduct" class="space-y-6">
         <!-- NAME -->
         <div>
           <label class="block mb-2 font-medium text-gray-800">Naziv *</label>
@@ -890,7 +942,12 @@ onMounted(async () => {
                 <p class="font-medium">{{ variant.name }}</p>
                 <p class="text-sm text-gray-600">
                   SKU: {{ variant.sku || 'N/A' }} |
-                  Dodatna cena: {{ variant.price_adjustment >= 0 ? '+' : '' }}{{ variant.price_adjustment }} RSD
+                  <span v-if="variant.on_sale" class="text-red-600">
+                    <span class="line-through text-gray-400">{{ variant.price }} RSD</span>
+                    <span class="ml-1 font-bold">{{ variant.sale_price }} RSD</span>
+                    <span class="ml-1 text-xs bg-red-100 text-red-800 px-1 rounded">AKCIJA</span>
+                  </span>
+                  <span v-else class="text-green-600">{{ variant.price }} RSD</span>
                 </p>
                 <p class="text-xs" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
                   {{ variant.in_stock ? `Na stanju: ${variant.stock_quantity}` : 'Nije na stanju' }}
@@ -924,8 +981,8 @@ onMounted(async () => {
         <!-- ERROR -->
         <p v-if="error" class="text-red-600 font-semibold">{{ error }}</p>
 
-        <!-- BUTTONS -->
-        <div class="flex justify-end gap-4 pt-4">
+        <!-- BUTTONS (only show in basic tab when editing, always show for new products) -->
+        <div v-if="!isEditing || currentTab === 'basic'" class="flex justify-end gap-4 pt-4">
           <button
             type="button"
             @click="closeModal"
@@ -944,6 +1001,22 @@ onMounted(async () => {
           </button>
         </div>
       </form>
+
+      <!-- Variants Tab Content -->
+      <div v-if="isEditing && currentTab === 'variants'" class="space-y-4">
+        <ProductVariantManager
+          :product-id="form.id"
+          @updated="handleTabUpdate"
+        />
+      </div>
+
+      <!-- Images Tab Content -->
+      <div v-if="isEditing && currentTab === 'images'" class="space-y-4">
+        <ProductImageManager
+          :product-id="form.id"
+          @updated="handleTabUpdate"
+        />
+      </div>
     </AdminModal>
 
 
@@ -985,15 +1058,38 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="block font-medium mb-1 text-gray-800">Dodatna cena (+/-)</label>
+          <label class="block font-medium mb-1 text-gray-800">Osnovna cena (RSD) *</label>
           <input
-            v-model.number="variantForm.price_adjustment"
+            v-model.number="variantForm.price"
             type="number"
             step="0.01"
+            required
             class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
-          <p class="text-xs text-gray-500 mt-1">Npr: +50 za veću dimenziju, -20 za manju</p>
+        </div>
+
+        <div class="flex items-center gap-2 bg-yellow-50 p-3 rounded-lg">
+          <input
+            v-model="variantForm.on_sale"
+            type="checkbox"
+            id="product-variant-on-sale"
+            class="cursor-pointer"
+          />
+          <label for="product-variant-on-sale" class="text-gray-800 font-medium cursor-pointer">Stavi na akciju</label>
+        </div>
+
+        <div v-if="variantForm.on_sale">
+          <label class="block font-medium mb-1 text-gray-800">Akcijska cena (RSD) *</label>
+          <input
+            v-model.number="variantForm.sale_price"
+            type="number"
+            step="0.01"
+            :required="variantForm.on_sale"
+            class="w-full px-4 py-3 rounded-xl bg-red-50 border border-red-300
+                   focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
+          />
+          <p class="text-xs text-red-600 mt-1">Akcijska cena mora biti niža od osnovne cene</p>
         </div>
 
         <div>
