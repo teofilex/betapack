@@ -5,6 +5,7 @@ import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -335,7 +336,7 @@ const submitOrder = async () => {
                   <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       v-if="item.images && item.images.length > 0"
-                      :src="`http://localhost:8000${item.images[0].image}`"
+                      :src="getImageUrl(item.images[0].image)"
                       :alt="item.name"
                       class="w-full h-full object-contain"
                     />

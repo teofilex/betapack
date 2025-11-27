@@ -5,6 +5,7 @@ import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -133,7 +134,7 @@ onMounted(() => {
               <div class="relative bg-gray-100 rounded-xl overflow-hidden mb-4 aspect-square">
                 <img
                   v-if="images.length > 0"
-                  :src="`http://localhost:8000${images[selectedImageIndex].image}`"
+                  :src="getImageUrl(images[selectedImageIndex].image)"
                   :alt="product.name"
                   class="w-full h-full object-contain"
                 />
@@ -157,7 +158,7 @@ onMounted(() => {
                   class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer bg-gray-100"
                 >
                   <img
-                    :src="`http://localhost:8000${img.image}`"
+                    :src="getImageUrl(img.image)"
                     :alt="product.name"
                     class="w-full h-full object-contain"
                   />

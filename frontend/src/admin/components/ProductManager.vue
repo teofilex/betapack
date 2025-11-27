@@ -9,6 +9,7 @@ import ProductDetailModal from './ProductDetailModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import AdminModal from './AdminModal.vue'
 import { api } from '@/services/api'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const showConfirm = ref(false)
 const confirmMessage = ref("")
@@ -609,7 +610,7 @@ onMounted(async () => {
                 class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-300"
               >
                 <img
-                  :src="`http://localhost:8000${img.image}`"
+                  :src="getImageUrl(img.image)"
                   :alt="product.name"
                   class="w-full h-full object-contain bg-white"
                 />

@@ -6,6 +6,7 @@ import TheFooter from '@/components/TheFooter.vue'
 import { useProductStore } from '@/store/products'
 import { useCategoryStore } from '@/store/categories'
 import { useCartStore } from '@/store/cart'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const router = useRouter()
 const productStore = useProductStore()
@@ -235,7 +236,7 @@ onMounted(async () => {
                       <div class="relative h-48 bg-gray-100 overflow-hidden">
                         <img
                           v-if="getProductImage(product)"
-                          :src="`http://localhost:8000${getProductImage(product).image}`"
+                          :src="getImageUrl(getProductImage(product).image)"
                           :alt="product.name"
                           class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                         />
@@ -392,7 +393,7 @@ onMounted(async () => {
                     <div class="relative h-56 lg:h-64 bg-gray-100 overflow-hidden flex-shrink-0">
                       <img
                         v-if="getProductImage(product)"
-                        :src="`http://localhost:8000${getProductImage(product).image}`"
+                        :src="getImageUrl(getProductImage(product).image)"
                         :alt="product.name"
                         class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                       />

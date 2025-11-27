@@ -1,12 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
-
-import { ref } from 'vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const showConfirm = ref(false)
 const confirmMessage = ref("")
@@ -115,7 +114,7 @@ const goToCheckout = () => {
               <div class="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                 <img
                   v-if="item.images && item.images.length > 0"
-                  :src="`http://localhost:8000${item.images[0].image}`"
+                  :src="getImageUrl(item.images[0].image)"
                   :alt="item.name"
                   class="w-full h-full object-contain"
                 />
