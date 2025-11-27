@@ -26,23 +26,34 @@ class CloudinaryMediaStorage(Storage):
         """
         Save file to Cloudinary
         """
-        # Upload to Cloudinary
-        result = cloudinary.uploader.upload(
-            content,
-            folder='products',
-            resource_type='auto',
-            use_filename=True,
-            unique_filename=True
-        )
-        # Return the public_id (Cloudinary's identifier)
-        return result['public_id']
+        print(f"[CLOUDINARY] Attempting to upload file: {name}")
+        try:
+            # Upload to Cloudinary
+            result = cloudinary.uploader.upload(
+                content,
+                folder='products',
+                resource_type='auto',
+                use_filename=True,
+                unique_filename=True
+            )
+            print(f"[CLOUDINARY] Upload successful! Public ID: {result['public_id']}")
+            print(f"[CLOUDINARY] Secure URL: {result.get('secure_url')}")
+            # Return the public_id (Cloudinary's identifier)
+            return result['public_id']
+        except Exception as e:
+            print(f"[CLOUDINARY] Upload FAILED: {e}")
+            raise
 
     def url(self, name):
         """
         Return the URL for accessing the file
         """
-        # Build Cloudinary URL
-        return cloudinary.CloudinaryImage(name).build_url()
+        # Build Cloudinary URL with proper format
+        # Cloudinary URLs need /image/upload/ in the path
+        return cloudinary.CloudinaryImage(name).build_url(
+            secure=True,
+            resource_type='image'
+        )
 
     def exists(self, name):
         """
