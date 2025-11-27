@@ -54,9 +54,9 @@ const isOnSale = computed(() => {
 const finalPrice = computed(() => {
   if (!product.value) return 0
 
-  // If variant is selected, use variant's final_price
-  if (selectedVariant.value && selectedVariant.value.final_price) {
-    return parseFloat(selectedVariant.value.final_price)
+  // If variant is selected, use variant's current_price (which accounts for sale)
+  if (selectedVariant.value) {
+    return parseFloat(selectedVariant.value.current_price || selectedVariant.value.price)
   }
 
   // Otherwise use product's current_price

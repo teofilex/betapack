@@ -51,9 +51,9 @@ const filteredProducts = computed(() => {
     )
   }
 
-  // Filter by on_sale
+  // Filter by on_sale - include products with sale variants
   if (showOnlyOnSale.value) {
-    products = products.filter(p => p.on_sale)
+    products = products.filter(p => p.on_sale || p.has_sale_variants)
   }
 
   return products
