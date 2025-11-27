@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/store/auth'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const props = defineProps({
   productId: Number
@@ -165,7 +166,7 @@ if (props.productId) {
         >
           <img
             v-if="img.image"
-            :src="img.image.startsWith('http') ? img.image : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://127.0.0.1:8000'}${img.image}`"
+            :src="getImageUrl(img.image)"
             :alt="img.alt_text"
             class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
           />
@@ -221,7 +222,7 @@ if (props.productId) {
           <div class="relative">
             <img
               v-if="previewImage.image"
-              :src="previewImage.image.startsWith('http') ? previewImage.image : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://127.0.0.1:8000'}${previewImage.image}`"
+              :src="getImageUrl(previewImage.image)"
               :alt="previewImage.alt_text || 'Preview'"
               class="w-full h-auto max-h-[90vh] object-contain"
             />

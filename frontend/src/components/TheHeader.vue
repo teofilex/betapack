@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/store/cart'
 import { useAuthStore } from '@/store/auth'
+import { getImageUrl } from '@/composables/useImageUrl'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -146,7 +147,7 @@ const handleLogout = () => {
                     <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                       <img
                         v-if="item.images && item.images.length > 0"
-                        :src="item.images[0].image.startsWith('http') ? item.images[0].image : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://127.0.0.1:8000'}${item.images[0].image}`"
+                        :src="getImageUrl(item.images[0].image)"
                         :alt="item.name"
                         class="w-full h-full object-contain"
                       />
