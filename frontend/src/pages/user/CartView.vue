@@ -117,7 +117,7 @@ const goToCheckout = () => {
                   v-if="item.images && item.images.length > 0"
                   :src="`http://localhost:8000${item.images[0].image}`"
                   :alt="item.name"
-                  class="w-full h-full object-cover"
+                  class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                   <span class="text-4xl">📦</span>

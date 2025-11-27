@@ -9,9 +9,9 @@ export function useAdminNav() {
 
     const views = [
         { id: 'categories', label: 'Kategorije', icon: '📁' },
-        { id: 'subcategories', label: 'Podkategorije', icon: '📂' },
         { id: 'products', label: 'Proizvodi', icon: '📦' },
-        { id: 'orders', label: 'Narudžbine', icon: '🛒' }
+        { id: 'orders', label: 'Narudžbine', icon: '🛒' },
+        { id: 'contact', label: 'Kontakt poruke', icon: '✉️' }
     ]
 
     return { activeView, setView, views }

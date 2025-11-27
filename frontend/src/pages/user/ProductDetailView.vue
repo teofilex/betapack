@@ -135,7 +135,7 @@ onMounted(() => {
                   v-if="images.length > 0"
                   :src="`http://localhost:8000${images[selectedImageIndex].image}`"
                   :alt="product.name"
-                  class="w-full h-full object-cover"
+                  class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                   <span class="text-8xl">📦</span>
@@ -154,12 +154,12 @@ onMounted(() => {
                   :key="img.id"
                   @click="selectImage(index)"
                   :class="selectedImageIndex === index ? 'ring-2 ring-[#1976d2]' : 'ring-1 ring-gray-200'"
-                  class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer"
+                  class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer bg-gray-100"
                 >
                   <img
                     :src="`http://localhost:8000${img.image}`"
                     :alt="product.name"
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-contain"
                   />
                 </button>
               </div>

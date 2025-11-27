@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { api } from '@/services/api'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 
@@ -24,17 +25,93 @@ const sending = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 
-const sendMessage = () => {
-  sending.value = true
+// Validacija
+const validateEmail = (email) => {
+  if (!email) return true // Opciono polje
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+const validatePhone = (phone) => {
+  if (!phone) return true // Opciono polje
+  // Srpski telefoni: 06X/XXX-XXXX ili 06XXXXXXXX ili +381...
+  const phoneRegex = /^(\+381|0)(6[0-9]|[1-3][0-9])[0-9]{6,7}$/
+  // Dozvoli i sa razmakom, crtom ili kosom crtom
+  const cleanPhone = phone.replace(/[\s\-\/]/g, '')
+  return phoneRegex.test(cleanPhone)
+}
+
+const validateForm = () => {
+  // Proveri da li je ime uneto
+  if (!form.value.name.trim()) {
+    errorMessage.value = 'Ime je obavezno.'
+    return false
+  }
+
+  // Proveri da li je poruka uneta
+  if (!form.value.message.trim()) {
+    errorMessage.value = 'Poruka je obavezna.'
+    return false
+  }
+
+  // Proveri da je bar email ili telefon unet
+  const hasEmail = form.value.email && form.value.email.trim()
+  const hasPhone = form.value.phone && form.value.phone.trim()
+
+  if (!hasEmail && !hasPhone) {
+    errorMessage.value = 'Morate navesti bar email ili telefon.'
+    return false
+  }
+
+  // Ako je email unet, proveri format
+  if (hasEmail && !validateEmail(form.value.email)) {
+    errorMessage.value = 'Unesite ispravan email.'
+    return false
+  }
+
+  // Ako je telefon unet, proveri format
+  if (hasPhone && !validatePhone(form.value.phone)) {
+    errorMessage.value = 'Unesite ispravan broj telefona (npr. 065/123-4567 ili 0651234567).'
+    return false
+  }
+
+  return true
+}
+
+const sendMessage = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
-  // Simulacija slanja (kasnije možeš dodati API call)
-  setTimeout(() => {
-    successMessage.value = 'Poruka uspešno poslata! Kontaktiraćemo vas uskoro.'
-    form.value = { name: '', email: '', phone: '', message: '' }
+  // Validacija forme
+  if (!validateForm()) {
+    return
+  }
+
+  sending.value = true
+
+  try {
+    const response = await api.post('/contact/', form.value)
+
+    if (response.data.success) {
+      successMessage.value = 'Poruka uspešno poslata! Kontaktiraćemo vas uskoro.'
+      form.value = { name: '', email: '', phone: '', message: '' }
+    }
+  } catch (error) {
+    console.error('Error sending contact message:', error)
+
+    // Prikazi specificnu gresku sa servera
+    if (error.response?.data?.non_field_errors) {
+      errorMessage.value = error.response.data.non_field_errors[0]
+    } else if (error.response?.data) {
+      // Prikazi prvu gresku iz response
+      const firstError = Object.values(error.response.data)[0]
+      errorMessage.value = Array.isArray(firstError) ? firstError[0] : firstError
+    } else {
+      errorMessage.value = 'Došlo je do greške prilikom slanja poruke. Pokušajte ponovo.'
+    }
+  } finally {
     sending.value = false
-  }, 1000)
+  }
 }
 </script>
 
@@ -66,7 +143,6 @@ const sendMessage = () => {
                 </label>
                 <input
                   v-model="form.name"
-                  required
                   type="text"
                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
                   placeholder="Vaše ime"
@@ -87,16 +163,19 @@ const sendMessage = () => {
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Telefon *
+                  Telefon
                 </label>
                 <input
                   v-model="form.phone"
-                  required
                   type="tel"
                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
-                  placeholder="060/123-4567"
+                  placeholder="065/123-4567"
                 />
               </div>
+
+              <p class="text-sm text-gray-600 -mt-2">
+                * Molimo unesite bar email ili telefon
+              </p>
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -122,7 +201,7 @@ const sendMessage = () => {
               <button
                 type="submit"
                 :disabled="sending"
-                class="w-full bg-gradient-to-r from-#1976d2 to-#1565c0 hover:from-#1565c0 hover:to-[#1565c0] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                class="w-full bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#1565c0] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50"
               >
                 {{ sending ? 'Slanje...' : 'Pošalji poruku' }}
               </button>

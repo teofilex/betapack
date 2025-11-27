@@ -2,9 +2,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/store/cart'
+import { useAuthStore } from '@/store/auth'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 const mobileMenuOpen = ref(false)
 const showCartPreview = ref(false)
@@ -12,6 +14,7 @@ const showCartPreview = ref(false)
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartItems = computed(() => cartStore.items)
 const cartTotal = computed(() => cartStore.total)
+const isAdmin = computed(() => authStore.isAdmin)
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('sr-RS', {
@@ -35,6 +38,11 @@ const updateQuantity = (item, newQuantity) => {
 const removeItem = (item) => {
   cartStore.remove(item.cartId || item.id)
 }
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/')
+}
 </script>
 
 <template>
@@ -44,7 +52,7 @@ const removeItem = (item) => {
 
         <!-- Logo -->
         <div class="flex items-center gap-3 lg:gap-4 cursor-pointer" @click="navigateTo('/')">
-          <img src="/logo.png" alt="Beta Pack Logo" class="h-14 lg:h-16 w-auto" />
+          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-14 lg:h-16 w-auto" />
           <div class="text-xl lg:text-2xl font-bold text-white">
             BETA PACK
           </div>
@@ -74,8 +82,28 @@ const removeItem = (item) => {
 
         <!-- Cart & Actions -->
         <div class="flex items-center gap-4">
+          <!-- Admin Link (only for admin users) -->
+          <button
+            v-if="isAdmin"
+            @click="navigateTo('/admin')"
+            class="hidden md:flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 lg:px-5 py-2.5 lg:py-3 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer border-2 border-gray-600 hover:border-gray-500"
+          >
+            <span class="text-xl lg:text-2xl">⚙️</span>
+            <span>Admin</span>
+          </button>
+
+          <!-- Logout Button (only for logged in users) -->
+          <button
+            v-if="authStore.isAuthenticated"
+            @click="handleLogout"
+            class="hidden md:flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 lg:px-5 py-2.5 lg:py-3 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer"
+          >
+            <span class="text-xl lg:text-2xl">🚪</span>
+            <span>Logout</span>
+          </button>
+
           <!-- Cart with hover preview -->
-          <div 
+          <div
             class="relative"
             @mouseenter="showCartPreview = true"
             @mouseleave="showCartPreview = false"
@@ -120,7 +148,7 @@ const removeItem = (item) => {
                         v-if="item.images && item.images.length > 0"
                         :src="`http://localhost:8000${item.images[0].image}`"
                         :alt="item.name"
-                        class="w-full h-full object-cover"
+                        class="w-full h-full object-contain"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                         <span class="text-2xl">📦</span>
@@ -245,6 +273,22 @@ const removeItem = (item) => {
           class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer"
         >
           Kontakt
+        </button>
+        <!-- Admin Link (Mobile) -->
+        <button
+          v-if="isAdmin"
+          @click="navigateTo('/admin')"
+          class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer border-t border-gray-700 mt-2"
+        >
+          ⚙️ Admin Panel
+        </button>
+        <!-- Logout Button (Mobile) -->
+        <button
+          v-if="authStore.isAuthenticated"
+          @click="handleLogout"
+          class="block w-full text-left text-red-400 hover:text-white hover:bg-red-600/20 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer border-t border-gray-700"
+        >
+          🚪 Logout
         </button>
       </nav>
     </div>

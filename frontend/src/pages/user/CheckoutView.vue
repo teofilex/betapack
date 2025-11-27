@@ -37,6 +37,42 @@ const validatePhone = (phone) => {
   return pattern.test(phone.replace(/[\s\-\/]/g, ''))
 }
 
+const validateField = (fieldName) => {
+  // Clear error for this field
+  delete errors.value[fieldName]
+
+  switch (fieldName) {
+    case 'customer_name':
+      if (!form.value.customer_name.trim()) {
+        errors.value.customer_name = 'Ime je obavezno'
+      }
+      break
+
+    case 'customer_phone':
+      if (!form.value.customer_phone.trim()) {
+        errors.value.customer_phone = 'Broj telefona je obavezan'
+      } else if (!validatePhone(form.value.customer_phone)) {
+        errors.value.customer_phone = 'Unesite ispravan broj telefona (npr: 0641234567)'
+      }
+      break
+
+    case 'customer_email':
+      if (form.value.customer_email && form.value.customer_email.trim()) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailPattern.test(form.value.customer_email.trim())) {
+          errors.value.customer_email = 'Unesite ispravnu email adresu'
+        }
+      }
+      break
+
+    case 'delivery_address':
+      if (!form.value.delivery_address.trim()) {
+        errors.value.delivery_address = 'Adresa dostave je obavezna'
+      }
+      break
+  }
+}
+
 const validateForm = () => {
   errors.value = {}
 
@@ -55,6 +91,10 @@ const validateForm = () => {
     if (!emailPattern.test(form.value.customer_email.trim())) {
       errors.value.customer_email = 'Unesite ispravnu email adresu'
     }
+  }
+
+  if (!form.value.delivery_address.trim()) {
+    errors.value.delivery_address = 'Adresa dostave je obavezna'
   }
 
   return Object.keys(errors.value).length === 0
@@ -76,7 +116,7 @@ const submitOrder = async () => {
       customer_name: form.value.customer_name.trim(),
       customer_phone: form.value.customer_phone.replace(/[\s\-\/]/g, ''),
       customer_email: form.value.customer_email?.trim() || null,
-      delivery_address: form.value.delivery_address?.trim() || null,
+      delivery_address: form.value.delivery_address.trim(),
       notes: form.value.notes?.trim() || null,
       items: cartItems.value.map(item => ({
         product_id: item.id,
@@ -88,7 +128,6 @@ const submitOrder = async () => {
     // Remove null fields to avoid sending them (backend will handle defaults)
     // Actually, let's send null explicitly for optional fields
     if (!orderData.customer_email) orderData.customer_email = null
-    if (!orderData.delivery_address) orderData.delivery_address = null
     if (!orderData.notes) orderData.notes = null
 
     // Submit order
@@ -105,9 +144,43 @@ const submitOrder = async () => {
 
   } catch (error) {
     console.error('Order submission error:', error)
-    const errorMessage = error.response?.data?.detail || 
-                        error.response?.data?.message || 
-                        (typeof error.response?.data === 'object' ? JSON.stringify(error.response.data) : null) ||
+
+    // Handle validation errors from backend
+    if (error.response?.data && typeof error.response.data === 'object') {
+      const backendErrors = error.response.data
+
+      // Map backend field errors to frontend errors
+      if (backendErrors.customer_name) {
+        errors.value.customer_name = Array.isArray(backendErrors.customer_name)
+          ? backendErrors.customer_name[0]
+          : backendErrors.customer_name
+      }
+      if (backendErrors.customer_phone) {
+        errors.value.customer_phone = Array.isArray(backendErrors.customer_phone)
+          ? backendErrors.customer_phone[0]
+          : backendErrors.customer_phone
+      }
+      if (backendErrors.customer_email) {
+        errors.value.customer_email = Array.isArray(backendErrors.customer_email)
+          ? backendErrors.customer_email[0]
+          : backendErrors.customer_email
+      }
+      if (backendErrors.delivery_address) {
+        errors.value.delivery_address = Array.isArray(backendErrors.delivery_address)
+          ? backendErrors.delivery_address[0]
+          : backendErrors.delivery_address
+      }
+
+      // If there are field-specific errors, show them
+      if (Object.keys(errors.value).length > 0) {
+        alert('Molimo ispravite označena polja pre slanja narudžbine.')
+        return
+      }
+    }
+
+    // Generic error message
+    const errorMessage = error.response?.data?.detail ||
+                        error.response?.data?.message ||
                         error.message ||
                         'Došlo je do greške pri slanju narudžbine. Molimo pokušajte ponovo ili nas kontaktirajte telefonom.'
     alert(errorMessage)
@@ -150,73 +223,80 @@ const submitOrder = async () => {
                 <!-- Name -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Ime i prezime *
+                    Ime i prezime <span class="text-red-600">*</span>
                   </label>
                   <input
                     v-model="form.customer_name"
+                    @blur="validateField('customer_name')"
                     required
                     type="text"
-                    class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
-                    :class="errors.customer_name ? 'border-red-500' : 'border-gray-300'"
+                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent transition-colors"
+                    :class="errors.customer_name ? 'border-red-500 bg-red-50' : 'border-gray-300'"
                     placeholder="Petar Petrović"
                   />
-                  <p v-if="errors.customer_name" class="text-red-500 text-sm mt-1">{{ errors.customer_name }}</p>
+                  <p v-if="errors.customer_name" class="text-red-600 text-sm mt-1 font-medium">{{ errors.customer_name }}</p>
                 </div>
 
                 <!-- Phone -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Broj telefona *
+                    Broj telefona <span class="text-red-600">*</span>
                   </label>
                   <input
                     v-model="form.customer_phone"
+                    @blur="validateField('customer_phone')"
                     required
                     type="tel"
-                    class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
-                    :class="errors.customer_phone ? 'border-red-500' : 'border-gray-300'"
+                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent transition-colors"
+                    :class="errors.customer_phone ? 'border-red-500 bg-red-50' : 'border-gray-300'"
                     placeholder="060/123-4567"
                   />
-                  <p v-if="errors.customer_phone" class="text-red-500 text-sm mt-1">{{ errors.customer_phone }}</p>
-                  <p class="text-gray-500 text-sm mt-1">Format: 06X/XXX-XXXX ili +381XXXXXXXXX</p>
+                  <p v-if="errors.customer_phone" class="text-red-600 text-sm mt-1 font-medium">{{ errors.customer_phone }}</p>
+                  <p v-else class="text-gray-500 text-sm mt-1">Format: 06X/XXX-XXXX ili +381XXXXXXXXX</p>
                 </div>
 
                 <!-- Email -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Email (opciono)
+                    Email <span class="text-gray-400">(opciono)</span>
                   </label>
                   <input
                     v-model="form.customer_email"
+                    @blur="validateField('customer_email')"
                     type="email"
-                    class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
-                    :class="errors.customer_email ? 'border-red-500' : 'border-gray-300'"
+                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent transition-colors"
+                    :class="errors.customer_email ? 'border-red-500 bg-red-50' : 'border-gray-300'"
                     placeholder="vas.email@primer.com"
                   />
-                  <p v-if="errors.customer_email" class="text-red-500 text-sm mt-1">{{ errors.customer_email }}</p>
+                  <p v-if="errors.customer_email" class="text-red-600 text-sm mt-1 font-medium">{{ errors.customer_email }}</p>
                 </div>
 
                 <!-- Address -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Adresa dostave (opciono)
+                    Adresa dostave <span class="text-red-600">*</span>
                   </label>
                   <textarea
                     v-model="form.delivery_address"
+                    @blur="validateField('delivery_address')"
+                    required
                     rows="2"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none"
+                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none transition-colors"
+                    :class="errors.delivery_address ? 'border-red-500 bg-red-50' : 'border-gray-300'"
                     placeholder="Ulica i broj, Grad"
                   ></textarea>
+                  <p v-if="errors.delivery_address" class="text-red-600 text-sm mt-1 font-medium">{{ errors.delivery_address }}</p>
                 </div>
 
                 <!-- Notes -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Napomena (opciono)
+                    Napomena <span class="text-gray-400">(opciono)</span>
                   </label>
                   <textarea
                     v-model="form.notes"
                     rows="3"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none"
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none transition-colors"
                     placeholder="Dodatne informacije o narudžbini..."
                   ></textarea>
                 </div>
@@ -257,7 +337,7 @@ const submitOrder = async () => {
                       v-if="item.images && item.images.length > 0"
                       :src="`http://localhost:8000${item.images[0].image}`"
                       :alt="item.name"
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-contain"
                     />
                     <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                       <span class="text-2xl">📦</span>

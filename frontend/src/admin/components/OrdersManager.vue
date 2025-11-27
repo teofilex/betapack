@@ -26,12 +26,12 @@ const statusLabels = {
 // Tabovi za filtriranje
 const activeTab = ref('all')
 const tabs = [
-  { id: 'all', label: 'Sve', count: null, icon: '📋', color: 'from-gray-600 to-gray-500' },
-  { id: 'pending', label: 'Na čekanju', count: null, icon: '⏳', color: 'from-yellow-500 to-yellow-400' },
-  { id: 'confirmed', label: 'Potvrđena', count: null, icon: '✅', color: 'from-blue-500 to-blue-400' },
-  { id: 'processing', label: 'U obradi', count: null, icon: '⚙️', color: 'from-purple-500 to-purple-400' },
-  { id: 'completed', label: 'Završena', count: null, icon: '🎉', color: 'from-green-500 to-green-400' },
-  { id: 'cancelled', label: 'Otkazana', count: null, icon: '❌', color: 'from-red-500 to-red-400' }
+  { id: 'all', label: 'Sve', count: null, icon: '📋', color: 'bg-gray-600 hover:bg-gray-700' },
+  { id: 'pending', label: 'Na čekanju', count: null, icon: '⏳', color: 'bg-yellow-500 hover:bg-yellow-600' },
+  { id: 'confirmed', label: 'Potvrđena', count: null, icon: '✅', color: 'bg-[#1976d2] hover:bg-[#1565c0]' },
+  { id: 'processing', label: 'U obradi', count: null, icon: '⚙️', color: 'bg-purple-700 hover:bg-purple-800' },
+  { id: 'completed', label: 'Završena', count: null, icon: '🎉', color: 'bg-green-500 hover:bg-green-600' },
+  { id: 'cancelled', label: 'Otkazana', count: null, icon: '❌', color: 'bg-red-500 hover:bg-red-600' }
 ]
 
 // Filtrirane porudžbine
@@ -200,15 +200,18 @@ const startSSE = () => {
   <div>
 
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-      <h2 class="text-3xl font-bold text-gray-900">Narudžbine</h2>
+    <div class="flex justify-between items-center mb-8 pt-8">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-1">🛒 Narudžbine</h2>
+        <p class="text-xs text-gray-500 font-medium">Upravljajte narudžbinama</p>
+      </div>
 
       <button
         @click="refreshOrders"
-        class="px-6 py-3 bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-lg font-semibold 
-        hover:from-[#2f4ad8] hover:to-[#5caeef] shadow-md hover:shadow-lg transition cursor-pointer"
+        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
       >
-        🔄 Osveži
+        <span class="text-base">🔄</span>
+        <span>Osveži</span>
       </button>
     </div>
 
@@ -220,7 +223,7 @@ const startSSE = () => {
           :key="tab.id"
           @click="activeTab = tab.id"
           :class="activeTab === tab.id
-            ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
+            ? `${tab.color} text-white shadow-lg scale-105`
             : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:shadow-md'"
           class="px-6 py-4 font-bold text-base transition-all duration-300 cursor-pointer whitespace-nowrap flex items-center gap-3 rounded-xl border-2 min-w-[140px] justify-center"
           :style="activeTab === tab.id ? { borderColor: 'transparent' } : { borderColor: '#e5e7eb' }"
@@ -242,7 +245,7 @@ const startSSE = () => {
 
     <!-- Loading -->
     <div v-if="orderStore.loading" class="text-center py-16 text-gray-600 text-lg">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#3555e4] mb-4"></div>
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1976d2] mb-4"></div>
       <p>Učitavanje narudžbina...</p>
     </div>
 
@@ -261,7 +264,7 @@ const startSSE = () => {
             <div class="flex-1">
               <!-- Order ID and Date -->
               <div class="flex items-center gap-3 mb-4">
-                <div class="bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-xl px-4 py-2 shadow-md">
+                <div class="bg-[#1976d2] text-white rounded-xl px-4 py-2 shadow-md">
                   <span class="text-sm font-bold opacity-90">#</span>
                   <span class="text-2xl font-bold">{{ order.id }}</span>
                 </div>
@@ -332,8 +335,8 @@ const startSSE = () => {
               <!-- View Button -->
               <button
                 @click.stop="openDetailModal(order)"
-                class="px-6 py-3 bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white rounded-xl font-bold shadow-lg 
-                hover:from-[#2f4ad8] hover:to-[#5caeef] hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 flex items-center gap-2"
+                class="px-6 py-3 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-xl font-bold shadow-lg
+                hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 flex items-center gap-2"
               >
                 <span>👁️</span>
                 <span>Pregled</span>
@@ -364,8 +367,8 @@ const startSSE = () => {
     >
       <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 
-        <!-- Modal Header (BLUE) -->
-        <div class="p-6 border-b bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white flex justify-between">
+        <!-- Modal Header -->
+        <div class="p-6 border-b bg-[#1976d2] text-white flex justify-between">
           <div>
             <h3 class="text-3xl font-bold mb-1">
               Narudžbina #{{ orderStore.selected.id }}
@@ -393,7 +396,7 @@ const startSSE = () => {
                 <p class="text-sm text-gray-500 uppercase font-semibold mb-1">Telefon</p>
                 <a
                   :href="`tel:${orderStore.selected.customer_phone}`"
-                  class="text-lg font-semibold text-[#3555e4] hover:text-[#2646c8] hover:underline cursor-pointer"
+                  class="text-lg font-semibold text-[#1976d2] hover:text-[#1565c0] hover:underline cursor-pointer"
                 >
                   {{ orderStore.selected.customer_phone }}
                 </a>
@@ -403,7 +406,7 @@ const startSSE = () => {
                 <p class="text-sm text-gray-500 uppercase font-semibold mb-1">Email</p>
                 <a
                   :href="`mailto:${orderStore.selected.customer_email}`"
-                  class="text-lg font-semibold text-[#3555e4] hover:text-[#2646c8] hover:underline cursor-pointer"
+                  class="text-lg font-semibold text-[#1976d2] hover:text-[#1565c0] hover:underline cursor-pointer"
                 >
                   {{ orderStore.selected.customer_email }}
                 </a>
@@ -451,9 +454,9 @@ const startSSE = () => {
             </div>
           </div>
 
-          <!-- Total (BLUE) -->
+          <!-- Total -->
           <div class="border-t-2 border-gray-300 pt-6">
-            <div class="flex justify-between items-center bg-gradient-to-r from-[#3555e4] to-[#64b5f6] 
+            <div class="flex justify-between items-center bg-green-600
             text-white p-5 rounded-xl">
               <span class="text-xl font-bold">Ukupno:</span>
               <span class="text-3xl font-bold">{{ formatPrice(orderStore.selected.total_amount) }}</span>
@@ -468,7 +471,7 @@ const startSSE = () => {
             </div>
           </div>
 
-          <!-- UPDATE STATUS (BLUE NOW) -->
+          <!-- UPDATE STATUS -->
           <div>
             <h4 class="font-bold text-xl mb-4 text-gray-900">Ažuriraj status</h4>
 
@@ -476,12 +479,12 @@ const startSSE = () => {
               <button
                 v-for="(label, status) in statusLabels"
                 :key="status"
-                @click="async () => { 
+                @click="async () => {
                   await orderStore.updateStatus(orderStore.selected.id, status)
                   await refreshOrders()
                 }"
-                :class="orderStore.selected.status === status 
-                  ? 'bg-gradient-to-r from-[#3555e4] to-[#64b5f6] text-white shadow-lg scale-105' 
+                :class="orderStore.selected.status === status
+                  ? 'bg-[#1976d2] hover:bg-[#1565c0] text-white shadow-lg scale-105'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
                 class="px-6 py-3 rounded-xl text-base font-semibold transition-all cursor-pointer"
               >

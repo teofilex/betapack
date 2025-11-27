@@ -37,17 +37,17 @@ const orderId = route.params.orderId
           <!-- Info -->
           <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 text-left">
             <h2 class="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-              <span>📱</span>
+              <span>📋</span>
               <span>Šta dalje?</span>
             </h2>
             <ul class="space-y-2 text-blue-800">
               <li class="flex items-start gap-2">
                 <span class="text-green-600 mt-0.5">✓</span>
-                <span>Primićete SMS potvrdu na vaš broj telefona</span>
+                <span>Vaša narudžbina je uspešno primljena</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-green-600 mt-0.5">✓</span>
-                <span>Naš tim će vas kontaktirati u najkraćem roku</span>
+                <span>Naš tim će vas kontaktirati telefonom u najkraćem roku</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="text-green-600 mt-0.5">✓</span>

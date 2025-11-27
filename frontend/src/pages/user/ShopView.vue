@@ -237,7 +237,7 @@ onMounted(async () => {
                           v-if="getProductImage(product)"
                           :src="`http://localhost:8000${getProductImage(product).image}`"
                           :alt="product.name"
-                          class="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                          class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                         />
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                           <span class="text-4xl">📦</span>
@@ -394,7 +394,7 @@ onMounted(async () => {
                         v-if="getProductImage(product)"
                         :src="`http://localhost:8000${getProductImage(product).image}`"
                         :alt="product.name"
-                        class="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                        class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                         <span class="text-5xl">📦</span>

@@ -19,7 +19,7 @@ const contactInfo = {
         <!-- O kompaniji -->
         <div>
           <div class="flex items-center gap-2 mb-4">
-            <img src="/logo.png" alt="Beta Pack Logo" class="h-10 w-auto" />
+            <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 w-auto" />
             <h3 class="text-xl font-bold text-white">BETA PACK</h3>
           </div>
           <p class="text-sm leading-relaxed">
