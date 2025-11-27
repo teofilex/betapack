@@ -49,8 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary_storage',
-    'cloudinary',
+    'cloudinary',  # Only need base cloudinary package, not django-cloudinary-storage
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -158,10 +157,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 print(f"DEBUG MODE: {DEBUG}")  # Debug log
 if not DEBUG:
     # Production - use Cloudinary for MEDIA files only
-    import cloudinary
-    import cloudinary.uploader
-    import cloudinary.api
-
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
         'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
@@ -170,12 +165,10 @@ if not DEBUG:
 
     print(f"CLOUDINARY CONFIG: CLOUD_NAME={CLOUDINARY_STORAGE['CLOUD_NAME']}")  # Debug log
 
-    # Use Cloudinary ONLY for media files (uploads), NOT for static files
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-    # Keep STATICFILES_STORAGE as Whitenoise (already set above)
-    MEDIA_URL = '/media/'  # Cloudinary will handle this
-    print(f"Using Cloudinary for media files")  # Debug log
+    # Use custom Cloudinary storage backend
+    DEFAULT_FILE_STORAGE = 'backend.cloudinary_storage.CloudinaryMediaStorage'
+    MEDIA_URL = 'https://res.cloudinary.com/{}/'.format(CLOUDINARY_STORAGE['CLOUD_NAME'])
+    print(f"Using Cloudinary for media files with custom storage backend")  # Debug log
 else:
     # Development - use local media files
     MEDIA_URL = '/media/'
