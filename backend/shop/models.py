@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import RegexValidator
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -127,6 +128,12 @@ class ProductVariant(models.Model):
         return base_price + self.price_adjustment
 
 
+def get_image_storage():
+    """Get the appropriate storage backend for images"""
+    from django.core.files.storage import default_storage
+    return default_storage
+
+
 class ProductImage(models.Model):
     """
     Slike proizvoda - više slika po proizvodu
@@ -136,7 +143,10 @@ class ProductImage(models.Model):
         on_delete=models.CASCADE,
         related_name='images'
     )
-    image = models.ImageField(upload_to='products/%Y/%m/')
+    image = models.ImageField(
+        upload_to='products/%Y/%m/',
+        storage=get_image_storage
+    )
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False, help_text="Glavna slika")
     order = models.IntegerField(default=0, help_text="Redosled prikaza")
