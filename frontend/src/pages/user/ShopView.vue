@@ -143,8 +143,8 @@ const setSelectedVariant = (productId, variant) => {
 // Get price for a product (considering selected variant)
 const getProductPrice = (product) => {
   const variant = getSelectedVariant(product)
-  if (variant && variant.final_price) {
-    return parseFloat(variant.final_price)
+  if (variant) {
+    return parseFloat(variant.current_price || variant.price)
   }
   return parseFloat(product.current_price) || 0
 }
