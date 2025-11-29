@@ -359,6 +359,12 @@ const saveVariant = async () => {
 }
 
 const removeVariant = (variant) => {
+  // Proveri da li je ovo poslednja varijanta
+  if (productVariants.value.length <= 1) {
+    openConfirm('Ne možeš obrisati poslednju varijantu! Proizvod mora imati bar jednu varijantu.', null)
+    return
+  }
+
   const index = productVariants.value.indexOf(variant)
   if (index !== -1) {
     productVariants.value.splice(index, 1)
@@ -1153,7 +1159,11 @@ onMounted(async () => {
                 <button
                   @click="removeVariant(variant)"
                   type="button"
-                  class="px-2 py-1 bg-red-500 text-white rounded text-xs font-medium cursor-pointer flex items-center gap-1"
+                  :disabled="productVariants.length <= 1"
+                  :class="productVariants.length <= 1
+                    ? 'px-2 py-1 bg-gray-400 text-white rounded text-xs font-medium cursor-not-allowed opacity-50 flex items-center gap-1'
+                    : 'px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium cursor-pointer flex items-center gap-1'"
+                  :title="productVariants.length <= 1 ? 'Ne možeš obrisati poslednju varijantu!' : 'Obriši varijantu'"
                 >
                   <span>🗑️</span>
                   <span>Obriši</span>

@@ -114,6 +114,15 @@ const saveVariant = async () => {
 }
 
 const deleteVariant = (id) => {
+  // Proveri da li je ovo poslednja varijanta
+  if (variants.value.length <= 1) {
+    openConfirm(
+      'Ne možeš obrisati poslednju varijantu! Proizvod mora imati bar jednu varijantu.',
+      null
+    )
+    return
+  }
+
   const variant = variants.value.find(v => v.id === id)
   const variantName = variant ? variant.name : 'ovu varijantu'
   variantToDelete.value = id
@@ -203,7 +212,11 @@ watch(() => props.productId, (newId) => {
             </button>
             <button
               @click="deleteVariant(variant.id)"
-              class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium cursor-pointer transition-all flex items-center gap-1"
+              :disabled="variants.length <= 1"
+              :class="variants.length <= 1 
+                ? 'px-2.5 py-1.5 bg-gray-400 text-white rounded text-xs font-medium cursor-not-allowed opacity-50 flex items-center gap-1' 
+                : 'px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium cursor-pointer transition-all flex items-center gap-1'"
+              :title="variants.length <= 1 ? 'Ne možeš obrisati poslednju varijantu!' : 'Obriši varijantu'"
             >
               <span>🗑️</span>
               <span>Obriši</span>
