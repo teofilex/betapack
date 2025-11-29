@@ -228,30 +228,30 @@ onMounted(async () => {
 
     <main class="flex-1">
 
-      <!-- Banner Carousel -->
-      <div class="relative bg-gray-900 overflow-hidden" style="height: 450px;">
-        <div class="absolute inset-0 flex items-center justify-center">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white z-10">
-            <h1 class="text-3xl lg:text-5xl font-bold mb-4 text-white drop-shadow-lg leading-relaxed">
-              Kovano gvožđe i bravarijski proizvodi
-            </h1>
-            <p class="text-base lg:text-lg text-gray-300 mb-6 max-w-2xl mx-auto leading-relaxed">
-              Širok asortiman kvalitetnih proizvoda - profili, ograde, ukrasni elementi i mnogo više
-            </p>
-            <div class="flex gap-2 justify-center">
-              <a
-                href="#products"
-                class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer shadow text-xs lg:text-sm"
-              >
-                Pogledaj katalog
-              </a>
-              <router-link
-                to="/kontakt"
-                class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer shadow text-xs lg:text-sm"
-              >
-                Kontaktiraj nas
-              </router-link>
-            </div>
+      <!-- Hero Image -->
+      <div class="relative overflow-hidden" style="height: 450px;">
+        <!-- Background Image -->
+        <img
+          src="/Betapack-hero-image-edited.png"
+          alt="BetaPack - Kovano gvožđe i bravarijski proizvodi"
+          class="absolute inset-0 w-full h-full object-cover"
+        />
+
+        <!-- Buttons positioned at bottom -->
+        <div class="absolute inset-0 flex items-end justify-center pb-12">
+          <div class="flex gap-3 px-4">
+            <a
+              href="#products"
+              class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+            >
+              Pogledaj katalog
+            </a>
+            <router-link
+              to="/kontakt"
+              class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+            >
+              Kontaktiraj nas
+            </router-link>
           </div>
         </div>
       </div>
