@@ -119,89 +119,89 @@ const sendMessage = async () => {
   <div class="min-h-screen flex flex-col bg-gray-50">
     <TheHeader />
 
-    <main class="flex-1 py-12">
+    <main class="flex-1 py-6">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <!-- Page Header -->
-        <div class="text-center mb-12">
-          <h1 class="text-4xl font-bold text-gray-900 mb-4">Kontaktirajte nas</h1>
-          <p class="text-lg text-gray-600">
+        <div class="text-center mb-5">
+          <h1 class="text-xl lg:text-2xl font-bold text-gray-900 mb-1.5">Kontaktirajte nas</h1>
+          <p class="text-xs lg:text-sm text-gray-600">
             Imamo pitanje ili potrebu za ponudom? Slobodno nas kontaktirajte!
           </p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           <!-- Kontakt Forma -->
-          <div class="bg-white rounded-xl shadow-lg p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Pošaljite poruku</h2>
+          <div class="bg-white rounded-xl shadow-lg p-3 lg:p-5">
+            <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-3">Pošaljite poruku</h2>
 
-            <form @submit.prevent="sendMessage" class="space-y-5">
+            <form @submit.prevent="sendMessage" class="space-y-2.5">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">
                   Ime i prezime *
                 </label>
                 <input
                   v-model="form.name"
                   type="text"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-sm"
                   placeholder="Vaše ime"
                 />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">
                   Email
                 </label>
                 <input
                   v-model="form.email"
                   type="email"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-sm"
                   placeholder="vas.email@primer.com"
                 />
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">
                   Telefon
                 </label>
                 <input
                   v-model="form.phone"
                   type="tel"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent text-sm"
                   placeholder="065/123-4567"
                 />
               </div>
 
-              <p class="text-sm text-gray-600 -mt-2">
+              <p class="text-xs text-gray-600 -mt-2">
                 * Molimo unesite bar email ili telefon
               </p>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">
                   Poruka *
                 </label>
                 <textarea
                   v-model="form.message"
                   required
-                  rows="5"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none"
+                  rows="4"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none text-sm"
                   placeholder="Opišite vašu potrebu ili postavite pitanje..."
                 ></textarea>
               </div>
 
-              <div v-if="successMessage" class="bg-green-100 text-green-800 px-4 py-3 rounded-lg">
+              <div v-if="successMessage" class="bg-green-100 text-green-800 px-3 py-2 rounded-lg text-sm">
                 {{ successMessage }}
               </div>
 
-              <div v-if="errorMessage" class="bg-red-100 text-red-800 px-4 py-3 rounded-lg">
+              <div v-if="errorMessage" class="bg-red-100 text-red-800 px-3 py-2 rounded-lg text-sm">
                 {{ errorMessage }}
               </div>
 
               <button
                 type="submit"
                 :disabled="sending"
-                class="w-full bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#1565c0] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                class="w-full bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#1565c0] text-white font-semibold py-2.5 px-5 rounded-lg transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed text-sm"
               >
                 {{ sending ? 'Slanje...' : 'Pošalji poruku' }}
               </button>
@@ -209,29 +209,29 @@ const sendMessage = async () => {
           </div>
 
           <!-- Kontakt Informacije -->
-          <div class="space-y-6">
+          <div class="space-y-5">
 
             <!-- Info kartice -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-              <h2 class="text-2xl font-bold text-gray-900 mb-6">Kontakt informacije</h2>
+            <div class="bg-white rounded-xl shadow-lg p-3 lg:p-5">
+              <h2 class="text-base lg:text-lg font-bold text-gray-900 mb-3">Kontakt informacije</h2>
 
-              <div class="space-y-6">
+              <div class="space-y-3">
                 <!-- Telefoni -->
-                <div class="flex items-start gap-4">
-                  <div class="bg-blue-100 p-3 rounded-lg">
-                    <span class="text-2xl">📞</span>
+                <div class="flex items-start gap-2.5">
+                  <div class="bg-blue-100 p-1.5 rounded-lg">
+                    <span class="text-base">📞</span>
                   </div>
                   <div class="flex-1">
-                    <h3 class="font-semibold text-gray-900 mb-2">Pozovite nas</h3>
+                    <h3 class="font-semibold text-xs text-gray-900 mb-0.5">Pozovite nas</h3>
                     <a
                       :href="`tel:${contactInfo.phone1.replace(/\//g, '')}`"
-                      class="block text-[#1565c0] hover:text-[#1565c0] font-semibold text-lg mb-1 hover:underline"
+                      class="block text-[#1565c0] hover:text-[#1565c0] font-semibold text-xs mb-0.5 hover:underline cursor-pointer"
                     >
                       {{ contactInfo.phone1 }}
                     </a>
                     <a
                       :href="`tel:${contactInfo.phone2.replace(/\//g, '')}`"
-                      class="block text-[#1565c0] hover:text-[#1565c0] font-semibold text-lg hover:underline"
+                      class="block text-[#1565c0] hover:text-[#1565c0] font-semibold text-xs hover:underline cursor-pointer"
                     >
                       {{ contactInfo.phone2 }}
                     </a>
@@ -239,15 +239,15 @@ const sendMessage = async () => {
                 </div>
 
                 <!-- Email -->
-                <div class="flex items-start gap-4">
-                  <div class="bg-blue-100 p-3 rounded-lg">
-                    <span class="text-2xl">✉️</span>
+                <div class="flex items-start gap-2.5">
+                  <div class="bg-blue-100 p-1.5 rounded-lg">
+                    <span class="text-base">✉️</span>
                   </div>
                   <div class="flex-1">
-                    <h3 class="font-semibold text-gray-900 mb-2">Email</h3>
+                    <h3 class="font-semibold text-xs text-gray-900 mb-0.5">Email</h3>
                     <a
                       :href="`mailto:${contactInfo.email}`"
-                      class="text-blue-600 hover:text-blue-700 hover:underline"
+                      class="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
                     >
                       {{ contactInfo.email }}
                     </a>
@@ -255,18 +255,18 @@ const sendMessage = async () => {
                 </div>
 
                 <!-- Adresa -->
-                <div class="flex items-start gap-4">
-                  <div class="bg-green-100 p-3 rounded-lg">
-                    <span class="text-2xl">📍</span>
+                <div class="flex items-start gap-2.5">
+                  <div class="bg-green-100 p-1.5 rounded-lg">
+                    <span class="text-base">📍</span>
                   </div>
                   <div class="flex-1">
-                    <h3 class="font-semibold text-gray-900 mb-2">Adresa</h3>
-                    <p class="text-gray-700">{{ contactInfo.address }}</p>
-                    <p class="text-gray-700">{{ contactInfo.city }}</p>
+                    <h3 class="font-semibold text-xs text-gray-900 mb-1.5">Adresa</h3>
+                    <p class="text-xs text-gray-700">{{ contactInfo.address }}</p>
+                    <p class="text-xs text-gray-700">{{ contactInfo.city }}</p>
                     <a
                       :href="`https://www.google.com/maps?q=${contactInfo.coordinates.lat},${contactInfo.coordinates.lng}`"
                       target="_blank"
-                      class="inline-block mt-3 text-blue-600 hover:text-blue-700 hover:underline"
+                      class="inline-block mt-3 text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
                     >
                       Prikaži na mapi →
                     </a>
@@ -276,10 +276,10 @@ const sendMessage = async () => {
             </div>
 
             <!-- Radno vreme -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-              <h2 class="text-2xl font-bold text-gray-900 mb-6">Radno vreme</h2>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h2 class="text-xl font-bold text-gray-900 mb-5">Radno vreme</h2>
 
-              <div class="space-y-3">
+              <div class="space-y-2.5">
                 <div class="flex justify-between items-center py-2 border-b">
                   <span class="text-gray-700">Ponedeljak - Petak</span>
                   <span class="font-semibold text-gray-900">08:00 - 17:00</span>
@@ -300,11 +300,11 @@ const sendMessage = async () => {
         </div>
 
         <!-- Google Maps -->
-        <div class="mt-12 bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="mt-9 bg-white rounded-xl shadow-lg overflow-hidden">
           <iframe
             :src="`https://www.google.com/maps?q=${contactInfo.coordinates.lat},${contactInfo.coordinates.lng}&output=embed`"
             width="100%"
-            height="450"
+            height="360"
             style="border:0;"
             allowfullscreen=""
             loading="lazy"

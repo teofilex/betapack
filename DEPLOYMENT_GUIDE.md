@@ -49,8 +49,11 @@ ALLOWED_HOSTS=tvoj-domen.com,www.tvoj-domen.com
 # Database (Railway/Render automatski postave DATABASE_URL)
 DATABASE_URL=postgresql://...
 
-# CORS
-CORS_ALLOWED_ORIGINS=https://tvoj-frontend-domen.com
+# CORS (možeš dodati više domena odvojeno zarezom)
+CORS_ALLOWED_ORIGINS=https://tvoj-frontend-domen.com,https://www.tvoj-frontend-domen.com,https://betapack.vercel.app
+
+# CSRF Trusted Origins (opciono, ako treba dodatni domeni)
+CSRF_TRUSTED_ORIGINS=https://tvoj-frontend-domen.com,https://www.tvoj-frontend-domen.com
 
 # Email (Gmail sa App Password)
 EMAIL_HOST=smtp.gmail.com

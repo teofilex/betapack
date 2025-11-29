@@ -235,17 +235,17 @@ onMounted(async () => {
 <template>
   <div>
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex justify-between items-center mb-4">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-1">📁 Kategorije i Podkategorije</h2>
+        <h2 class="text-xs lg:text-sm font-bold text-gray-900 mb-1 flex items-center gap-1">📁 Kategorije i Podkategorije</h2>
         <p class="text-xs text-gray-500 font-medium">Organizujte proizvode u kategorije i podkategorije</p>
       </div>
 
       <button
         @click="openAddCategoryModal"
-        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-xs font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
       >
-        <span class="text-base">➕</span>
+        <span class="text-sm">➕</span>
         <span>Dodaj Kategoriju</span>
       </button>
     </div>
@@ -253,7 +253,7 @@ onMounted(async () => {
     <!-- Loading -->
     <div v-if="loading" class="text-center py-16">
       <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-[#1976d2] mb-4"></div>
-      <p class="text-gray-600 text-lg font-semibold">Učitavanje...</p>
+      <p class="text-gray-600 text-sm font-semibold">Učitavanje...</p>
     </div>
 
     <!-- Categories List -->
@@ -261,16 +261,16 @@ onMounted(async () => {
       <div
         v-for="cat in categories"
         :key="cat.id"
-        class="bg-white border-2 border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300"
+        class="bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
       >
         <!-- Category Header -->
-        <div class="p-6">
-          <div class="flex justify-between items-start mb-4">
+        <div class="p-3">
+          <div class="flex justify-between items-start mb-2">
             <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <h3 class="text-2xl font-bold text-gray-900">{{ cat.name }}</h3>
-                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">
-                  📦 {{ cat.product_count || 0 }} proizvoda
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-xs font-bold text-gray-900">{{ cat.name }}</h3>
+                <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">
+                  📦 {{ cat.product_count || 0 }}
                 </span>
               </div>
 
@@ -279,17 +279,17 @@ onMounted(async () => {
               </p>
             </div>
 
-            <div class="flex gap-2 ml-4">
+            <div class="flex gap-1.5 ml-2">
               <button
                 @click="openEditCategoryModal(cat)"
-                class="px-4 py-2.5 border-2 border-[#1976d2] text-[#1976d2] hover:bg-[#1976d2] hover:text-white rounded-lg transition-all cursor-pointer text-sm font-medium"
+                class="px-2 py-1 border border-[#1976d2] text-[#1976d2] hover:bg-[#1976d2] hover:text-white rounded-lg transition-all cursor-pointer text-xs font-medium"
               >
                 ✏️ Izmeni
               </button>
 
               <button
                 @click="deleteCategory(cat)"
-                class="px-4 py-2.5 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white rounded-lg transition-all cursor-pointer text-sm font-medium"
+                class="px-2 py-1 border border-red-500 text-red-600 hover:bg-red-500 hover:text-white rounded-lg transition-all cursor-pointer text-xs font-medium"
               >
                 🗑️ Obriši
               </button>
@@ -297,21 +297,21 @@ onMounted(async () => {
           </div>
 
           <!-- Subcategories Toggle -->
-          <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div class="flex items-center justify-between pt-2 border-t border-gray-200">
             <button
               @click="toggleCategory(cat.id)"
-              class="flex items-center gap-2 text-[#1976d2] hover:text-[#1565c0] font-semibold transition cursor-pointer"
+              class="flex items-center gap-1 text-[#1976d2] hover:text-[#1565c0] font-medium transition cursor-pointer text-xs"
             >
-              <span class="text-lg">{{ isCategoryExpanded(cat.id) ? '▼' : '▶' }}</span>
+              <span class="text-sm">{{ isCategoryExpanded(cat.id) ? '▼' : '▶' }}</span>
               <span>Podkategorije ({{ getSubcategoriesForCategory(cat.id).length }})</span>
             </button>
 
             <button
               @click="openAddSubcategoryModal(cat.id)"
-              class="px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
+              class="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-xs font-medium shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <span>➕</span>
-              <span>Dodaj Podkategoriju</span>
+              <span class="text-sm">➕</span>
+              <span>Dodaj</span>
             </button>
           </div>
         </div>
@@ -319,33 +319,33 @@ onMounted(async () => {
         <!-- Subcategories List -->
         <div
           v-if="isCategoryExpanded(cat.id)"
-          class="border-t-2 border-gray-200 bg-gray-50 p-6"
+          class="border-t border-gray-200 bg-gray-50 p-3"
         >
-          <div v-if="getSubcategoriesForCategory(cat.id).length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-if="getSubcategoriesForCategory(cat.id).length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div
               v-for="sub in getSubcategoriesForCategory(cat.id)"
               :key="sub.id"
-              class="bg-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-[#1976d2] transition-all"
+              class="bg-white border border-gray-200 rounded-lg p-2 hover:shadow-md hover:border-[#1976d2] transition-all"
             >
               <div class="flex justify-between items-start">
                 <div class="flex-1">
-                  <h4 class="text-lg font-bold text-gray-900 mb-1">📂 {{ sub.name }}</h4>
+                  <h4 class="text-xs font-bold text-gray-900 mb-1 flex items-center gap-1">📂 {{ sub.name }}</h4>
                   <p v-if="sub.description" class="text-gray-600 text-xs leading-relaxed">
                     {{ sub.description }}
                   </p>
                 </div>
 
-                <div class="flex gap-2 ml-3">
+                <div class="flex gap-1 ml-2">
                   <button
                     @click="openEditSubcategoryModal(sub)"
-                    class="px-3 py-1.5 border-2 border-[#1976d2] text-[#1976d2] hover:bg-[#1976d2] hover:text-white rounded-lg transition-all cursor-pointer text-xs font-medium"
+                    class="px-2 py-1 border border-[#1976d2] text-[#1976d2] hover:bg-[#1976d2] hover:text-white rounded-lg transition-all cursor-pointer text-xs font-medium"
                   >
                     ✏️
                   </button>
 
                   <button
                     @click="deleteSubcategory(sub)"
-                    class="px-3 py-1.5 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white rounded-lg transition-all cursor-pointer text-xs font-medium"
+                    class="px-2 py-1 border border-red-500 text-red-600 hover:bg-red-500 hover:text-white rounded-lg transition-all cursor-pointer text-xs font-medium"
                   >
                     🗑️
                   </button>
@@ -358,7 +358,7 @@ onMounted(async () => {
             <p class="text-gray-500 text-sm mb-3">Nema podkategorija u ovoj kategoriji</p>
             <button
               @click="openAddSubcategoryModal(cat.id)"
-              class="px-4 py-2 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer"
+              class="px-2 py-1 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-md text-xs font-medium shadow-md hover:shadow-lg transition-all cursor-pointer"
             >
               ➕ Dodaj Prvu Podkategoriju
             </button>
@@ -368,17 +368,17 @@ onMounted(async () => {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-20">
-      <div class="inline-block bg-gray-100 rounded-full p-8 mb-4">
-        <span class="text-6xl">📁</span>
+    <div v-else class="text-center py-10">
+      <div class="inline-block bg-gray-100 rounded-full p-4 mb-3">
+        <span class="text-2xl">📁</span>
       </div>
-      <p class="text-xl font-bold text-gray-600 mb-2">
+      <p class="text-sm font-bold text-gray-600 mb-1">
         Nema kategorija
       </p>
-      <p class="text-gray-500 mb-6">Dodajte prvu kategoriju da započnete!</p>
+      <p class="text-sm text-gray-500 mb-3">Dodajte prvu kategoriju da započnete!</p>
       <button
         @click="openAddCategoryModal"
-        class="px-6 py-3 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer"
+        class="px-4 py-2.5 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer text-xs flex items-center gap-1.5"
       >
         ➕ Dodaj Prvu Kategoriju
       </button>
@@ -390,35 +390,35 @@ onMounted(async () => {
       :title="isEditingCategory ? 'Izmeni Kategoriju' : 'Nova Kategorija'"
       @close="closeCategoryModal"
     >
-      <form @submit.prevent="saveCategory" class="space-y-6">
+      <form @submit.prevent="saveCategory" class="space-y-4">
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Naziv *</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Naziv *</label>
           <input
             v-model="categoryForm.name"
             required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
 
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Opis</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Opis</label>
           <textarea
             v-model="categoryForm.description"
             rows="3"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm resize-none"
           ></textarea>
         </div>
 
-        <p v-if="categoryError" class="text-red-600 font-medium">{{ categoryError }}</p>
+        <p v-if="categoryError" class="text-red-600 text-sm font-medium px-1">{{ categoryError }}</p>
 
-        <div class="flex justify-end gap-4 pt-4">
+        <div class="flex justify-end gap-2 pt-1">
           <button
             type="button"
             @click="closeCategoryModal"
-            class="px-6 py-3 bg-gray-300 rounded-xl font-semibold hover:bg-gray-400
-                   transition cursor-pointer"
+            class="px-3 py-2 bg-gray-300 rounded-lg font-semibold hover:bg-gray-400
+                   transition cursor-pointer text-xs"
           >
             Otkaži
           </button>
@@ -426,8 +426,8 @@ onMounted(async () => {
           <button
             type="submit"
             :disabled="savingCategory"
-            class="px-6 py-3 bg-[#1976d2] text-white rounded-xl font-semibold shadow
-                   hover:bg-[#1565c0] transition cursor-pointer disabled:opacity-60"
+            class="px-3 py-2 bg-[#1976d2] text-white rounded-lg font-semibold shadow
+                   hover:bg-[#1565c0] transition cursor-pointer disabled:opacity-60 text-xs"
           >
             {{ savingCategory ? 'Čuvanje...' : 'Sačuvaj' }}
           </button>
@@ -439,18 +439,19 @@ onMounted(async () => {
     <AdminModal
       :show="showSubcategoryModal"
       :title="isEditingSubcategory ? 'Izmeni Podkategoriju' : 'Nova Podkategorija'"
-      max-width="max-w-[820px]"
+      max-width="max-w-[400px]"
       @close="closeSubcategoryModal"
     >
-      <form @submit.prevent="saveSubcategory" class="space-y-7">
+      <form @submit.prevent="saveSubcategory" class="space-y-4">
         <!-- CATEGORY (hidden when adding from category) -->
         <div v-if="!selectedCategoryForSubcategory || isEditingSubcategory">
-          <label class="block mb-2 font-medium text-gray-800">Kategorija *</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Kategorija *</label>
           <select
             v-model="subcategoryForm.category"
             required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                   focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition cursor-pointer shadow-sm"
+            class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white border border-gray-300 text-xs sm:text-sm
+                   focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none transition-all 
+                   shadow-sm hover:border-gray-400 cursor-pointer"
           >
             <option value="">Izaberi kategoriju</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -461,36 +462,36 @@ onMounted(async () => {
 
         <!-- NAME -->
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Naziv *</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Naziv *</label>
           <input
             v-model="subcategoryForm.name"
             required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
 
         <!-- DESCRIPTION -->
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Opis</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Opis</label>
           <textarea
             v-model="subcategoryForm.description"
             rows="3"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm resize-none"
           ></textarea>
         </div>
 
         <!-- ERROR -->
-        <p v-if="subcategoryError" class="text-red-600 font-medium">{{ subcategoryError }}</p>
+        <p v-if="subcategoryError" class="text-red-600 text-xs font-medium px-1">{{ subcategoryError }}</p>
 
         <!-- BUTTONS -->
-        <div class="flex justify-end gap-4 pt-6">
+        <div class="flex justify-end gap-2 pt-1">
           <button
             type="button"
             @click="closeSubcategoryModal"
-            class="px-7 py-3 rounded-xl bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold
-                   transition cursor-pointer"
+            class="px-3 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold
+                   transition cursor-pointer text-xs"
           >
             Otkaži
           </button>
@@ -498,8 +499,8 @@ onMounted(async () => {
           <button
             type="submit"
             :disabled="savingSubcategory"
-            class="px-7 py-3 rounded-xl bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold
-                   transition cursor-pointer disabled:opacity-60"
+            class="px-3 py-2 rounded-lg bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold
+                   transition cursor-pointer disabled:opacity-60 text-xs"
           >
             {{ savingSubcategory ? "Čuvanje..." : "Sačuvaj" }}
           </button>

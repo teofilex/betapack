@@ -564,48 +564,55 @@ onMounted(async () => {
 <template>
   <div>
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-1">📦 Proizvodi</h2>
+    <div class="flex justify-between items-center mb-4">
+        <div>
+        <h2 class="text-xs lg:text-sm font-bold text-gray-900 mb-1 flex items-center gap-1">📦 Proizvodi</h2>
         <p class="text-xs text-gray-500 font-medium">Upravljajte proizvodima u vašoj prodavnici</p>
       </div>
 
       <button
         @click="openAddModal"
-        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md text-xs font-medium shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
       >
-        <span class="text-base">➕</span>
+        <span class="text-sm">➕</span>
         <span>Dodaj Proizvod</span>
       </button>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-6 mb-8">
-      <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+    <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-4 mb-4">
+      <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-1.5">
         <span>🔍</span>
         <span>Filteri i pretraga</span>
       </h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <!-- Search -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">🔎 Pretraga</label>
+          <label class="block text-xs font-bold text-gray-700 mb-1">🔎 Pretraga</label>
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Pretraži proizvode..."
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] transition shadow-sm"
+            class="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1976d2] focus:border-[#1976d2] transition shadow-sm text-sm"
           />
         </div>
 
         <!-- Category Filter -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Kategorija</label>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Kategorija</label>
           <select
             v-model="filterCategory"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent cursor-pointer"
+            class="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg 
+                   focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none 
+                   transition-all shadow-sm hover:border-gray-400 cursor-pointer 
+                   text-xs sm:text-sm bg-white mobile-select"
           >
             <option value="">Sve kategorije</option>
-            <option v-for="cat in categoryStore.list" :key="cat.id" :value="cat.id">
+            <option 
+              v-for="cat in categoryStore.list" 
+              :key="cat.id" 
+              :value="cat.id"
+            >
               {{ cat.name }}
             </option>
           </select>
@@ -613,10 +620,13 @@ onMounted(async () => {
 
         <!-- Subcategory Filter -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Podkategorija</label>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Podkategorija</label>
           <select
             v-model="filterSubcategory"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent cursor-pointer"
+            class="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg 
+                   focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none 
+                   transition-all shadow-sm hover:border-gray-400 cursor-pointer 
+                   text-xs sm:text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed mobile-select"
             :disabled="!filterCategory"
           >
             <option value="">Sve podkategorije</option>
@@ -633,30 +643,30 @@ onMounted(async () => {
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-16">
-      <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-[#3555e4] mb-4"></div>
-      <p class="text-gray-600 text-lg font-semibold">Učitavanje proizvoda...</p>
+    <div v-if="loading" class="text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#3555e4] mb-2"></div>
+      <p class="text-gray-600 text-sm font-semibold">Učitavanje proizvoda...</p>
     </div>
 
     <!-- List -->
     <div
       v-else-if="Array.isArray(filteredProducts) && filteredProducts.length > 0"
-      class="grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-6"
+      class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3"
     >
       <div
         v-for="product in filteredProducts"
         :key="product.id"
-        class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-xl hover:border-[#1976d2] transition-all duration-300 transform hover:scale-[1.02] group"
+        class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg hover:border-[#1976d2] transition-all duration-300 transform hover:scale-[1.01] group"
       >
         <!-- Header -->
-        <div class="flex justify-between items-start mb-4">
+        <div class="flex justify-between items-start mb-2">
           <div class="flex-1">
-            <h3 class="text-xl font-bold text-gray-900 mb-1 line-clamp-2">{{ product.name }}</h3>
-            <div class="flex items-center gap-2 mt-2">
-              <span class="text-sm font-semibold text-[#1976d2]">
+            <h3 class="text-[11px] font-bold text-gray-900 mb-0.5 line-clamp-2">{{ product.name }}</h3>
+            <div class="flex items-center gap-1.5 mt-1">
+              <span class="text-[10px] font-semibold text-[#1976d2]">
                 📁 {{ product.category_name || 'Bez kategorije' }}
               </span>
-              <span v-if="product.subcategory_name" class="text-sm text-gray-500">
+              <span v-if="product.subcategory_name" class="text-[10px] text-gray-500">
                 / {{ product.subcategory_name }}
               </span>
             </div>
@@ -664,37 +674,37 @@ onMounted(async () => {
 
           <span
             v-if="product.on_sale"
-            class="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg whitespace-nowrap"
+            class="px-2 py-1 bg-red-500 text-white rounded text-[10px] font-bold shadow-md whitespace-nowrap flex items-center gap-0.5"
           >
             🔥 AKCIJA
           </span>
         </div>
 
         <!-- Description -->
-        <p class="text-gray-600 text-sm mt-3 mb-4 line-clamp-2 leading-relaxed">
+        <p class="text-gray-600 text-[10px] mt-2 mb-2 line-clamp-2 leading-relaxed">
           {{ product.description }}
         </p>
 
         <!-- Price -->
-        <div class="mb-4 pb-4 border-b border-gray-200">
-          <div class="flex items-center gap-3">
-            <span v-if="product.on_sale" class="line-through text-gray-400 text-lg">
+        <div class="mb-2 pb-2 border-b border-gray-200">
+          <div class="flex items-center gap-2">
+            <span v-if="product.on_sale" class="line-through text-gray-400 text-[10px]">
               {{ formatPrice(product.price) }}
             </span>
-            <span class="text-2xl font-bold text-green-600">
+            <span class="text-[11px] font-bold text-green-600">
               {{ formatPrice(product.current_price) }}
             </span>
           </div>
         </div>
 
         <!-- Stock Quantity Display -->
-        <div class="mb-4 flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">📦</span>
+        <div class="mb-1.5 flex items-center justify-between bg-gray-50 p-1.5 rounded border border-gray-200">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs">📦</span>
             <div>
-              <span class="text-xs font-semibold text-gray-600 uppercase">Količina:</span>
+              <span class="text-[10px] font-semibold text-gray-600 uppercase">Količina:</span>
               <span
-                class="text-lg font-bold ml-2"
+                class="text-[11px] font-bold ml-1.5"
                 :class="(product.stock_quantity || 0) > 0 ? 'text-green-600' : 'text-gray-400'"
               >
                 {{ (product.stock_quantity !== undefined && product.stock_quantity !== null) ? (product.stock_quantity > 0 ? product.stock_quantity : '0') : '∞ Neograničeno' }}
@@ -703,29 +713,30 @@ onMounted(async () => {
           </div>
           <button
             @click.stop="openStockModal(product)"
-            class="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-medium cursor-pointer shadow-sm hover:shadow transition-all"
+            class="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-[10px] font-medium cursor-pointer shadow-sm hover:shadow transition-all flex items-center gap-0.5"
           >
-            ➕ Dodaj
+            <span>➕</span>
+            <span>Dodaj</span>
           </button>
         </div>
 
         <!-- Slike i Varijante Pregled -->
-        <div class="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+        <div class="mb-1.5 p-1.5 bg-gray-50 rounded border border-gray-200">
           <!-- Slike -->
-          <div class="mb-3">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold text-gray-700 uppercase flex items-center gap-1">
+          <div class="mb-2">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-semibold text-gray-700 uppercase flex items-center gap-0.5">
                 🖼️ Slike
               </span>
-              <span class="text-xs font-bold text-[#1976d2]">
+              <span class="text-[10px] font-bold text-[#1976d2]">
                 {{ product.images?.length || 0 }}
               </span>
             </div>
-            <div v-if="product.images && product.images.length > 0" class="flex gap-2 overflow-x-auto">
+            <div v-if="product.images && product.images.length > 0" class="flex gap-1 overflow-x-auto">
               <div
                 v-for="img in product.images.slice(0, 4)"
                 :key="img.id"
-                class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-300"
+                class="w-8 h-8 rounded overflow-hidden flex-shrink-0 border border-gray-300"
               >
                 <img
                   :src="getImageUrl(img.image)"
@@ -733,61 +744,63 @@ onMounted(async () => {
                   class="w-full h-full object-contain bg-white"
                 />
               </div>
-              <div v-if="product.images.length > 4" class="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+              <div v-if="product.images.length > 4" class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600">
                 +{{ product.images.length - 4 }}
               </div>
             </div>
-            <p v-else class="text-xs text-gray-400">Nema slika</p>
+            <p v-else class="text-[10px] text-gray-400">Nema slika</p>
           </div>
 
           <!-- Varijante -->
           <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold text-gray-700 uppercase flex items-center gap-1">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-semibold text-gray-700 uppercase flex items-center gap-0.5">
                 📐 Varijante
               </span>
-              <span class="text-xs font-bold text-[#1976d2]">
+              <span class="text-[10px] font-bold text-[#1976d2]">
                 {{ product.variants?.length || 0 }}
               </span>
             </div>
-            <div v-if="product.variants && product.variants.length > 0" class="flex flex-wrap gap-1">
+            <div v-if="product.variants && product.variants.length > 0" class="flex flex-wrap gap-0.5">
               <span
                 v-for="variant in product.variants.slice(0, 3)"
                 :key="variant.id"
-                class="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-medium text-gray-700"
+                class="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-[10px] font-medium text-gray-700"
               >
                 {{ variant.name }}
               </span>
-              <span v-if="product.variants.length > 3" class="px-2 py-1 bg-gray-200 rounded text-xs font-bold text-gray-600">
+              <span v-if="product.variants.length > 3" class="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-bold text-gray-600">
                 +{{ product.variants.length - 3 }}
               </span>
             </div>
-            <p v-else class="text-xs text-gray-400">Nema varijanti</p>
+            <p v-else class="text-[10px] text-gray-400">Nema varijanti</p>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-2 mt-4">
+        <div class="flex gap-1.5 mt-2">
           <button
             @click="openDetailModal(product)"
-            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-xs font-medium cursor-pointer shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5"
+            class="px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-[10px] font-medium cursor-pointer shadow-sm hover:shadow transition-all flex items-center justify-center gap-1"
           >
-            <span class="text-sm">🎨</span>
+            <span class="text-xs">🎨</span>
             <span>Varijante/Slike</span>
           </button>
 
           <button
             @click="openEditModal(product)"
-            class="px-4 py-2.5 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-lg text-sm font-medium cursor-pointer shadow-sm hover:shadow transition-all"
+            class="px-2 py-1 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded text-[10px] font-medium cursor-pointer shadow-sm hover:shadow transition-all flex items-center gap-1"
           >
-            ✏️ Izmeni
+            <span>✏️</span>
+            <span>Izmeni</span>
           </button>
 
           <button
             @click="deleteProduct(product)"
-            class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium cursor-pointer shadow-sm hover:shadow transition-all"
+            class="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-[10px] font-medium cursor-pointer shadow-sm hover:shadow transition-all flex items-center gap-1"
           >
-            🗑️ Obriši
+            <span>🗑️</span>
+            <span>Obriši</span>
           </button>
         </div>
       </div>
@@ -796,15 +809,15 @@ onMounted(async () => {
     <!-- Empty -->
     <div v-else class="py-20 text-center">
       <div class="inline-block bg-gray-100 rounded-full p-8 mb-4">
-        <span class="text-6xl">📦</span>
+        <span class="text-4xl">📦</span>
       </div>
-      <p class="text-xl font-bold text-gray-600 mb-2">
+      <p class="text-base font-bold text-gray-600 mb-2">
         Nema proizvoda
       </p>
-      <p class="text-gray-500 mb-6">Dodajte prvi proizvod da započnete!</p>
+      <p class="text-sm text-gray-500 mb-3">Dodajte prvi proizvod da započnete!</p>
       <button
         @click="openAddModal"
-        class="px-6 py-3 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer"
+        class="px-4 py-2.5 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer text-xs flex items-center gap-1.5"
       >
         ➕ Dodaj Prvi Proizvod
       </button>
@@ -814,18 +827,18 @@ onMounted(async () => {
     <AdminModal
       :show="showModal"
       :title="isEditing ? 'Izmeni Proizvod' : 'Novi Proizvod'"
-      max-width="max-w-[750px]"
+      :max-width="isEditing ? 'max-w-[600px]' : 'max-w-[480px]'"
       @close="closeModal"
     >
       <!-- Tab Navigation (only when editing) -->
-      <div v-if="isEditing" class="flex gap-2 mb-6 border-b-2 border-gray-200 overflow-x-auto">
+      <div v-if="isEditing" class="flex gap-1.5 mb-3 border-b border-gray-200 overflow-x-auto">
         <button
           type="button"
           @click="currentTab = 'basic'"
           :class="currentTab === 'basic'
-            ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
+            ? 'border-b-2 border-[#1976d2] text-[#1976d2] font-bold'
             : 'text-gray-600 hover:text-gray-800'"
-          class="px-6 py-3 transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+          class="px-3 py-2 transition-all cursor-pointer whitespace-nowrap flex-shrink-0 text-sm"
         >
           📝 Osnovni podaci
         </button>
@@ -837,9 +850,9 @@ onMounted(async () => {
           type="button"
           @click="currentTab = variant.id"
           :class="currentTab === variant.id
-            ? 'border-b-4 border-[#1976d2] text-[#1976d2] font-bold'
+            ? 'border-b-2 border-[#1976d2] text-[#1976d2] font-bold'
             : 'text-gray-600 hover:text-gray-800'"
-          class="px-6 py-3 transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+          class="px-3 py-2 transition-all cursor-pointer whitespace-nowrap flex-shrink-0 text-sm"
         >
           📐 {{ variant.name }}
         </button>
@@ -848,46 +861,47 @@ onMounted(async () => {
           type="button"
           @click="currentTab = 'add-variant'"
           :class="currentTab === 'add-variant'
-            ? 'border-b-4 border-green-600 text-green-600 font-bold'
+            ? 'border-b-2 border-green-600 text-green-600 font-bold'
             : 'text-green-600 hover:text-green-700'"
-          class="px-6 py-3 transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+          class="px-3 py-2 transition-all cursor-pointer whitespace-nowrap flex-shrink-0 text-sm"
         >
           ➕ Nova varijanta
         </button>
       </div>
 
       <!-- Basic Info Tab (or full form for new products) -->
-      <form v-show="!isEditing || currentTab === 'basic'" @submit.prevent="saveProduct" class="space-y-6">
+      <form v-show="!isEditing || currentTab === 'basic'" @submit.prevent="saveProduct" class="space-y-4">
         <!-- NAME -->
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Naziv *</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Naziv *</label>
           <input
             v-model="form.name"
             required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 
+            class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
 
         <!-- DESCRIPTION -->
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Opis *</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Opis *</label>
           <textarea
             v-model="form.description"
             rows="4"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 
+            class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs 
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition resize-none shadow-sm"
           ></textarea>
         </div>
 
         <!-- CATEGORY -->
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Kategorija *</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Kategorija *</label>
           <select
             v-model="form.category"
             required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                   focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm cursor-pointer"
+            class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white border border-gray-300 text-xs sm:text-sm
+                   focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none transition-all 
+                   shadow-sm hover:border-gray-400 cursor-pointer"
           >
             <option value="">Izaberi kategoriju</option>
             <option v-for="c in categoryStore.list" :value="c.id" :key="c.id">
@@ -898,11 +912,12 @@ onMounted(async () => {
 
         <!-- SUBCATEGORY -->
         <div>
-          <label class="block mb-2 font-medium text-gray-800">Podkategorija</label>
+          <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Podkategorija</label>
           <select
             v-model="form.subcategory"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
-                   focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm cursor-pointer"
+            class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white border border-gray-300 text-xs sm:text-sm
+                   focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none transition-all 
+                   shadow-sm hover:border-gray-400 cursor-pointer"
           >
             <option value="">Bez podkategorije</option>
             <option
@@ -916,107 +931,107 @@ onMounted(async () => {
         </div>
 
         <!-- Featured -->
-        <label class="flex items-center gap-2 mt-2 cursor-pointer">
+        <label class="flex items-center gap-2 mt-2 cursor-pointer px-1">
           <input v-model="form.featured" type="checkbox" class="cursor-pointer" />
-          <span class="text-gray-800 font-medium cursor-pointer">Preporučeni proizvod</span>
+          <span class="text-gray-800 text-xs font-medium cursor-pointer">Preporučeni proizvod</span>
         </label>
 
         <!-- Stock Management -->
-        <div class="border-t pt-6 mt-6">
-          <label class="flex items-center gap-2 mb-4 cursor-pointer">
+        <div class="border-t pt-4 mt-4">
+          <label class="flex items-center gap-2 mb-3 cursor-pointer px-1">
             <input v-model="form.in_stock" type="checkbox" class="cursor-pointer" />
-            <span class="text-gray-800 font-medium cursor-pointer">Proizvod je na stanju</span>
+            <span class="text-gray-800 text-xs font-medium cursor-pointer">Proizvod je na stanju</span>
           </label>
 
           <div>
-            <label class="block mb-2 font-medium text-gray-800">Količina na stanju (opciono)</label>
+            <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Količina na stanju (opciono)</label>
             <input
               v-model.number="form.stock_quantity"
               type="number"
               min="0"
               placeholder="0 = neograničeno"
-              class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+              class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                      focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
             />
-            <p class="text-xs text-gray-500 mt-1">Ostavite 0 za neograničenu količinu</p>
+            <p class="text-[10px] text-gray-500 mt-0.5 px-1">Ostavite 0 za neograničenu količinu</p>
           </div>
         </div>
 
         <!-- PRVA VARIJANTA (obavezno za nove proizvode) -->
-        <div v-if="!isEditing" class="border-t pt-6 mt-6 bg-blue-50 p-6 rounded-xl">
-          <h4 class="font-semibold text-lg mb-2 text-gray-800">📐 Prva varijanta (obavezno)</h4>
-          <p class="text-sm text-gray-600 mb-4">
+        <div v-if="!isEditing" class="border-t pt-5 mt-5 bg-blue-50 p-4 rounded-lg">
+          <h4 class="font-semibold text-xs mb-1.5 text-gray-800 px-1">📐 Prva varijanta (obavezno)</h4>
+          <p class="text-[10px] text-gray-600 mb-3 px-1">
             Svaki proizvod mora imati bar jednu varijantu. Ako proizvod nema različitih dimenzija, samo unesi cenu.
           </p>
 
-          <div class="space-y-4">
+          <div class="space-y-3">
             <div>
-              <label class="block mb-2 font-medium text-gray-800">
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">
                 Naziv dimenzije (opciono)
               </label>
               <input
                 v-model="variantForm.name"
                 placeholder="npr. 45×45mm ili ostavi prazno za standardnu varijantu"
-                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
-              <p class="text-xs text-gray-500 mt-1">Ako proizvod nema dimenzije, ostavi prazno ili unesi "Standardna"</p>
+              <p class="text-[10px] text-gray-500 mt-0.5 px-1">Ako proizvod nema dimenzije, ostavi prazno ili unesi "Standardna"</p>
             </div>
 
             <div>
-              <label class="block mb-2 font-medium text-gray-800">Cena (RSD) *</label>
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Cena (RSD) *</label>
               <input
                 v-model.number="variantForm.price"
                 type="number"
                 step="0.01"
                 required
-                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
             </div>
 
             <div>
-              <label class="block mb-2 font-medium text-gray-800">SKU / Šifra (opciono)</label>
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">SKU / Šifra (opciono)</label>
               <input
                 v-model="variantForm.sku"
                 placeholder="npr. TACNA-45"
-                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
             </div>
 
-            <div class="flex items-center gap-2 bg-yellow-50 p-3 rounded-lg">
+            <div class="flex items-center gap-2 bg-yellow-50 p-2 rounded-lg">
               <input
                 v-model="variantForm.on_sale"
                 type="checkbox"
                 id="first-variant-on-sale"
                 class="cursor-pointer"
               />
-              <label for="first-variant-on-sale" class="text-gray-800 font-medium cursor-pointer">
+              <label for="first-variant-on-sale" class="text-gray-800 text-xs font-medium cursor-pointer px-1">
                 Stavi na akciju
               </label>
             </div>
 
             <div v-if="variantForm.on_sale">
-              <label class="block mb-2 font-medium text-gray-800">Akcijska cena (RSD) *</label>
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Akcijska cena (RSD) *</label>
               <input
                 v-model.number="variantForm.sale_price"
                 type="number"
                 step="0.01"
                 :required="variantForm.on_sale"
-                class="w-full px-4 py-3 rounded-xl bg-red-50 border border-red-300
+                class="w-full px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-300 text-xs
                        focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
               />
-              <p class="text-xs text-red-600 mt-1">Akcijska cena mora biti niža od osnovne cene</p>
+              <p class="text-[10px] text-red-600 mt-0.5 px-1">Akcijska cena mora biti niža od osnovne cene</p>
             </div>
 
             <div>
-              <label class="block mb-2 font-medium text-gray-800">Količina na stanju</label>
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Količina na stanju</label>
               <input
                 v-model.number="variantForm.stock_quantity"
                 type="number"
                 min="0"
-                class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
             </div>
@@ -1028,7 +1043,7 @@ onMounted(async () => {
                 id="first-variant-in-stock"
                 class="cursor-pointer"
               />
-              <label for="first-variant-in-stock" class="text-gray-800 font-medium cursor-pointer">
+              <label for="first-variant-in-stock" class="text-gray-800 text-xs font-medium cursor-pointer px-1">
                 Na stanju
               </label>
             </div>
@@ -1036,51 +1051,51 @@ onMounted(async () => {
         </div>
 
         <!-- SLIKE PROIZVODA (samo za nove proizvode) -->
-        <div v-if="!isEditing" class="border-t pt-6 mt-6">
-          <h4 class="font-semibold text-lg mb-4 text-gray-800">Slike proizvoda</h4>
+        <div v-if="!isEditing" class="border-t pt-5 mt-5">
+          <h4 class="font-semibold text-sm mb-3 text-gray-800 px-1">Slike proizvoda</h4>
           
           <!-- Upload -->
-          <div class="mb-4">
+          <div class="mb-3">
             <input
               type="file"
               @change="handleImageSelect"
               accept="image/*"
               multiple
-              class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm cursor-pointer"
             />
-            <p class="text-xs text-gray-500 mt-1">Možete odabrati više slika odjednom</p>
+            <p class="text-xs text-gray-500 mt-1 px-1">Možete odabrati više slika odjednom</p>
           </div>
 
           <!-- Preview slika -->
-          <div v-if="productImages.length > 0" class="grid grid-cols-3 gap-4 mb-4">
+          <div v-if="productImages.length > 0" class="grid grid-cols-4 gap-1.5 mb-2">
             <div
               v-for="(img, index) in productImages"
               :key="index"
-              class="relative border rounded-lg overflow-hidden group"
+              class="relative border rounded overflow-hidden group"
             >
               <img
                 :src="img.preview"
                 :alt="`Preview ${index + 1}`"
-                class="w-full h-32 object-cover"
+                class="w-full h-14 object-cover"
               />
               
-              <div v-if="img.is_primary" class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
+              <div v-if="img.is_primary" class="absolute top-0.5 left-0.5 bg-green-500 text-white px-1 py-0.5 text-[10px] rounded">
                 Glavna
               </div>
 
-              <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+              <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-0.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
                 <button
                   v-if="!img.is_primary"
                   @click="setPrimaryImage(index)"
                   type="button"
-                  class="flex-1 px-2 py-1 bg-green-600 text-white text-xs rounded cursor-pointer"
+                  class="flex-1 px-1 py-0.5 bg-green-600 text-white text-[10px] rounded cursor-pointer"
                 >
                   Glavna
                 </button>
                 <button
                   @click="removeImage(index)"
                   type="button"
-                  class="px-2 py-1 bg-red-600 text-white text-xs rounded cursor-pointer"
+                  class="px-1 py-0.5 bg-red-600 text-white text-[10px] rounded cursor-pointer"
                 >
                   Obriši
                 </button>
@@ -1090,55 +1105,58 @@ onMounted(async () => {
         </div>
 
         <!-- VARIJANTE (samo za nove proizvode) -->
-        <div v-if="!isEditing" class="border-t pt-6 mt-6">
-          <div class="flex justify-between items-center mb-4">
-            <h4 class="font-semibold text-lg text-gray-800">Varijante (Dimenzije)</h4>
+        <div v-if="!isEditing" class="border-t pt-5 mt-5">
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="font-medium text-sm text-gray-800 px-1">Varijante (Dimenzije)</h4>
             <button
               @click="openVariantForm()"
               type="button"
-              class="px-4 py-2 bg-green-600 text-white rounded text-sm cursor-pointer"
+              class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium cursor-pointer flex items-center gap-1.5"
             >
-              + Dodaj varijantu
+              <span>➕</span>
+              <span>Dodaj varijantu</span>
             </button>
           </div>
 
           <!-- Lista varijanti -->
-          <div v-if="productVariants.length > 0" class="space-y-2 mb-4">
+          <div v-if="productVariants.length > 0" class="space-y-1.5 mb-2">
             <div
               v-for="(variant, index) in productVariants"
               :key="index"
-              class="flex items-center justify-between border rounded-lg p-3 bg-gray-50"
+              class="flex items-center justify-between border rounded-lg p-1.5 bg-gray-50"
             >
-              <div>
-                <p class="font-medium">{{ variant.name }}</p>
-                <p class="text-sm text-gray-600">
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-xs text-gray-900">{{ variant.name || 'Standardna' }}</p>
+                <p class="text-[11px] text-gray-600">
                   SKU: {{ variant.sku || 'N/A' }} |
                   <span v-if="variant.on_sale" class="text-red-600">
                     <span class="line-through text-gray-400">{{ variant.price }} RSD</span>
                     <span class="ml-1 font-bold">{{ variant.sale_price }} RSD</span>
-                    <span class="ml-1 text-xs bg-red-100 text-red-800 px-1 rounded">AKCIJA</span>
+                    <span class="ml-1 text-[9px] bg-red-100 text-red-800 px-0.5 rounded">AKCIJA</span>
                   </span>
-                  <span v-else class="text-green-600">{{ variant.price }} RSD</span>
+                  <span v-else class="text-green-600 font-medium">{{ variant.price }} RSD</span>
                 </p>
-                <p class="text-xs" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
+                <p class="text-[11px] mt-0.5" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
                   {{ variant.in_stock ? `Na stanju: ${variant.stock_quantity}` : 'Nije na stanju' }}
                 </p>
               </div>
 
-              <div class="flex gap-2">
+              <div class="flex gap-1 ml-2">
                 <button
                   @click="openVariantForm(variant)"
                   type="button"
-                  class="px-3 py-1 bg-[#1976d2] text-white rounded text-sm cursor-pointer"
+                  class="px-2 py-1 bg-[#1976d2] text-white rounded text-xs font-medium cursor-pointer flex items-center gap-1"
                 >
-                  Izmeni
+                  <span>✏️</span>
+                  <span>Izmeni</span>
                 </button>
                 <button
                   @click="removeVariant(variant)"
                   type="button"
-                  class="px-3 py-1 bg-red-500 text-white rounded text-sm cursor-pointer"
+                  class="px-2 py-1 bg-red-500 text-white rounded text-xs font-medium cursor-pointer flex items-center gap-1"
                 >
-                  Obriši
+                  <span>🗑️</span>
+                  <span>Obriši</span>
                 </button>
               </div>
             </div>
@@ -1153,11 +1171,11 @@ onMounted(async () => {
         <p v-if="error" class="text-red-600 font-semibold">{{ error }}</p>
 
         <!-- BUTTONS (only show in basic tab when editing, always show for new products) -->
-        <div v-if="!isEditing || currentTab === 'basic'" class="flex justify-end gap-4 pt-4">
+        <div v-if="!isEditing || currentTab === 'basic'" class="flex justify-end gap-2 pt-1">
           <button
             type="button"
             @click="closeModal"
-            class="px-6 py-3 bg-gray-300 rounded-xl font-semibold hover:bg-gray-400 transition cursor-pointer"
+            class="px-3 py-2 bg-gray-300 rounded-lg font-semibold hover:bg-gray-400 transition cursor-pointer text-xs"
           >
             Otkaži
           </button>
@@ -1165,8 +1183,8 @@ onMounted(async () => {
           <button
             type="submit"
             :disabled="saving"
-            class="px-6 py-3 bg-[#1976d2] text-white rounded-xl font-semibold shadow
-                   hover:bg-[#1565c0] transition cursor-pointer disabled:opacity-60"
+            class="px-3 py-2 bg-[#1976d2] text-white rounded-lg font-semibold shadow
+                   hover:bg-[#1565c0] transition cursor-pointer disabled:opacity-60 text-xs"
           >
             {{ saving ? "Čuvanje..." : "Sačuvaj" }}
           </button>
@@ -1178,40 +1196,40 @@ onMounted(async () => {
         v-for="variant in productVariantsForEdit"
         :key="`tab-${variant.id}`"
         v-show="isEditing && currentTab === variant.id"
-        class="space-y-6"
+        class="space-y-4"
       >
-        <h3 class="text-xl font-bold text-gray-900 mb-4">Varijanta: {{ variant.name }}</h3>
+        <h3 class="text-base font-bold text-gray-900 mb-3 px-1">Varijanta: {{ variant.name }}</h3>
 
         <!-- Variant Details Form -->
-        <div class="space-y-4 bg-gray-50 p-6 rounded-xl">
-          <h4 class="font-semibold text-lg text-gray-800 mb-3">Informacije o varijanti</h4>
+        <div class="space-y-3 bg-gray-50 p-4 rounded-lg mb-4">
+          <h4 class="font-semibold text-sm text-gray-800 mb-3 px-1">Informacije o varijanti</h4>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Naziv (dimenzije)</label>
-              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900">{{ variant.name }}</p>
+              <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">Naziv (dimenzije)</label>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900">{{ variant.name }}</p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900">{{ variant.sku || 'N/A' }}</p>
+              <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">SKU</label>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900">{{ variant.sku || 'N/A' }}</p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Osnovna cena</label>
-              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 font-semibold">{{ variant.price }} RSD</p>
+              <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">Osnovna cena</label>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-base text-gray-900 font-semibold">{{ variant.price }} RSD</p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Status akcije</label>
-              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg" :class="variant.on_sale ? 'text-red-600 font-bold' : 'text-gray-600'">
+              <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">Status akcije</label>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm" :class="variant.on_sale ? 'text-red-600 font-bold' : 'text-gray-600'">
                 {{ variant.on_sale ? `Akcija: ${variant.sale_price} RSD` : 'Nije na akciji' }}
               </p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Količina na stanju</label>
-              <p class="px-4 py-3 bg-white border border-gray-300 rounded-lg font-semibold" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
+              <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">Količina na stanju</label>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-semibold" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
                 {{ variant.in_stock ? variant.stock_quantity : 'Nije na stanju' }}
               </p>
             </div>
@@ -1220,18 +1238,19 @@ onMounted(async () => {
               <button
                 @click="openVariantEditForm(variant)"
                 type="button"
-                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium cursor-pointer transition-all w-full"
+                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium cursor-pointer transition-all w-full text-sm flex items-center gap-1.5 justify-center"
               >
-                ✏️ Izmeni varijantu
+                <span>✏️</span>
+                <span>Izmeni varijantu</span>
               </button>
             </div>
           </div>
         </div>
 
         <!-- Images for this product -->
-        <div class="bg-gray-50 p-6 rounded-xl">
-          <h4 class="font-semibold text-lg text-gray-800 mb-3">Slike proizvoda</h4>
-          <p class="text-sm text-gray-600 mb-4">Slike se primenjuju na ceo proizvod (sve varijante dele iste slike)</p>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <h4 class="font-semibold text-xs text-gray-800 mb-2 px-1">Slike proizvoda</h4>
+          <p class="text-xs text-gray-600 mb-2 px-1">Slike se primenjuju na ceo proizvod (sve varijante dele iste slike)</p>
           <ProductImageManager
             :product-id="form.id"
             @updated="handleTabUpdate"
@@ -1241,7 +1260,7 @@ onMounted(async () => {
 
       <!-- Add New Variant Tab Content -->
       <div v-if="isEditing && currentTab === 'add-variant'" class="space-y-4">
-        <h3 class="text-xl font-bold text-gray-900 mb-4">Dodaj novu varijantu</h3>
+        <h3 class="text-sm font-bold text-gray-900 mb-3 px-1">Dodaj novu varijantu</h3>
         <ProductVariantManager
           :product-id="form.id"
           @updated="handleTabUpdate"
@@ -1265,36 +1284,36 @@ onMounted(async () => {
       z-index="z-[2000]"
       @close="closeVariantForm"
     >
-      <form @submit.prevent="saveVariant" class="space-y-4">
+      <form @submit.prevent="saveVariant" class="space-y-2">
         <div>
-          <label class="block font-medium mb-1 text-gray-800">Naziv (dimenzije) *</label>
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Naziv (dimenzije) *</label>
           <input
             v-model="variantForm.name"
             required
             placeholder="npr. 180×135×18mm"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
 
         <div>
-          <label class="block font-medium mb-1 text-gray-800">SKU (šifra)</label>
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">SKU (šifra)</label>
           <input
             v-model="variantForm.sku"
             placeholder="npr. TACNA-70-180"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
 
         <div>
-          <label class="block font-medium mb-1 text-gray-800">Osnovna cena (RSD) *</label>
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Osnovna cena (RSD) *</label>
           <input
             v-model.number="variantForm.price"
             type="number"
             step="0.01"
             required
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
@@ -1306,28 +1325,28 @@ onMounted(async () => {
             id="product-variant-on-sale"
             class="cursor-pointer"
           />
-          <label for="product-variant-on-sale" class="text-gray-800 font-medium cursor-pointer">Stavi na akciju</label>
+          <label for="product-variant-on-sale" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Stavi na akciju</label>
         </div>
 
         <div v-if="variantForm.on_sale">
-          <label class="block font-medium mb-1 text-gray-800">Akcijska cena (RSD) *</label>
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Akcijska cena (RSD) *</label>
           <input
             v-model.number="variantForm.sale_price"
             type="number"
             step="0.01"
             :required="variantForm.on_sale"
-            class="w-full px-4 py-3 rounded-xl bg-red-50 border border-red-300
+            class="w-full px-3 py-2 rounded-lg bg-red-50 border border-red-300 text-sm
                    focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
           />
-          <p class="text-xs text-red-600 mt-1">Akcijska cena mora biti niža od osnovne cene</p>
+          <p class="text-xs text-red-600 mt-1 px-1">Akcijska cena mora biti niža od osnovne cene</p>
         </div>
 
         <div>
-          <label class="block font-medium mb-1 text-gray-800">Količina na stanju</label>
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Količina na stanju</label>
           <input
             v-model.number="variantForm.stock_quantity"
             type="number"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
@@ -1339,22 +1358,22 @@ onMounted(async () => {
             id="variant-in-stock-form"
             class="cursor-pointer"
           />
-          <label for="variant-in-stock-form" class="text-gray-800 font-medium cursor-pointer">Na stanju</label>
+          <label for="variant-in-stock-form" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Na stanju</label>
         </div>
 
-        <div class="flex justify-end gap-3 pt-4">
+        <div class="flex justify-end gap-2 pt-1">
           <button
             type="button"
             @click="closeVariantForm"
-            class="px-6 py-3 bg-gray-300 rounded-xl font-semibold hover:bg-gray-400
-                   transition cursor-pointer"
+            class="px-3 py-2 bg-gray-300 rounded-lg font-semibold hover:bg-gray-400
+                   transition cursor-pointer text-xs"
           >
             Otkaži
           </button>
           <button
             type="submit"
-            class="px-6 py-3 bg-[#1976d2] text-white rounded-xl font-semibold shadow
-                   hover:bg-[#1565c0] transition cursor-pointer"
+            class="px-3 py-2 bg-[#1976d2] text-white rounded-lg font-semibold shadow
+                   hover:bg-[#1565c0] transition cursor-pointer text-xs"
           >
             Sačuvaj
           </button>
@@ -1379,14 +1398,15 @@ onMounted(async () => {
       max-width="max-w-md"
       @close="closeStockModal"
     >
-      <div v-if="stockProduct" class="space-y-5">
-        <div class="bg-gray-50 p-4 rounded-xl">
-          <p class="text-gray-700 mb-2">
-            <span class="font-semibold">Proizvod:</span> {{ stockProduct.name }}
+      <div v-if="stockProduct" class="space-y-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <p class="text-gray-700 mb-2 text-sm">
+            <span class="font-semibold px-1">Proizvod:</span> 
+            <span class="px-1">{{ stockProduct.name }}</span>
           </p>
-          <p class="text-gray-700">
-            <span class="font-semibold">Trenutna količina:</span> 
-            <span class="text-2xl font-bold text-green-600 ml-2">
+          <p class="text-gray-700 text-sm">
+            <span class="font-semibold px-1">Trenutna količina:</span> 
+            <span class="text-lg font-bold text-green-600 ml-2 px-1">
               {{ stockProduct.stock_quantity || 0 }}
             </span>
           </p>
@@ -1394,14 +1414,14 @@ onMounted(async () => {
 
         <!-- Operation Selection -->
         <div>
-          <label class="block mb-3 font-medium text-gray-800">Operacija</label>
-          <div class="flex gap-3">
+          <label class="block mb-2 text-xs font-medium text-gray-800 px-1">Operacija</label>
+          <div class="flex gap-2">
             <button
               @click="stockOperation = 'add'"
               :class="stockOperation === 'add' 
                 ? 'bg-green-600 text-white shadow-md' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-              class="flex-1 px-4 py-3 rounded-xl font-medium transition-all cursor-pointer"
+              class="flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
             >
               ➕ Dodaj
             </button>
@@ -1410,7 +1430,7 @@ onMounted(async () => {
               :class="stockOperation === 'subtract' 
                 ? 'bg-red-600 text-white shadow-md' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-              class="flex-1 px-4 py-3 rounded-xl font-medium transition-all cursor-pointer"
+              class="flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
             >
               ➖ Smanji
             </button>
@@ -1418,7 +1438,7 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="block mb-2 font-medium text-gray-800">
+          <label class="block mb-1.5 text-xs font-medium text-gray-800 px-1">
             Količina za {{ stockOperation === 'add' ? 'dodavanje' : 'smanjenje' }} *
           </label>
           <input
@@ -1426,29 +1446,29 @@ onMounted(async () => {
             type="number"
             min="1"
             placeholder="Unesite količinu"
-            class="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200
+            class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
-          <p v-if="stockOperation === 'subtract' && stockProduct.stock_quantity" class="text-xs text-gray-500 mt-1">
+          <p v-if="stockOperation === 'subtract' && stockProduct.stock_quantity" class="text-xs text-gray-500 mt-1 px-1">
             Nova količina: {{ Math.max(0, (stockProduct.stock_quantity || 0) - (stockQuantityChange || 0)) }}
           </p>
         </div>
 
-        <div class="flex gap-3 pt-2">
+        <div class="flex gap-2 pt-1">
           <button
             @click="updateStockQuantity"
             :disabled="!stockQuantityChange || stockQuantityChange <= 0"
             :class="stockOperation === 'add' 
               ? 'bg-green-600 hover:bg-green-700' 
               : 'bg-red-600 hover:bg-red-700'"
-            class="flex-1 px-4 py-3 disabled:bg-gray-400 
-                   text-white rounded-xl font-medium transition-all cursor-pointer shadow-md hover:shadow-lg"
+            class="flex-1 px-3 py-2 disabled:bg-gray-400 
+                   text-white rounded-lg text-sm font-semibold transition-all cursor-pointer shadow-md hover:shadow-lg"
           >
             {{ stockOperation === 'add' ? 'Dodaj količinu' : 'Smanji količinu' }}
           </button>
           <button
             @click="closeStockModal"
-            class="px-4 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-xl font-medium transition-all cursor-pointer"
+            class="px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-semibold transition-all cursor-pointer"
           >
             Odustani
           </button>

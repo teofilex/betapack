@@ -10,7 +10,7 @@ const props = defineProps({
   },
   maxWidth: {
     type: String,
-    default: 'max-w-[650px]'
+    default: 'max-w-[400px]'
   },
   zIndex: {
     type: String,
@@ -34,24 +34,24 @@ const close = () => {
   >
     <div
       :class="maxWidth"
-      class="bg-white rounded-3xl w-full max-h-[90vh] shadow-2xl overflow-hidden animate-slide-up"
+      class="bg-white rounded-lg w-full max-h-[98vh] shadow-xl overflow-hidden animate-slide-up"
     >
       <!-- HEADER -->
-      <div class="px-10 py-7 bg-gradient-to-r from-blue-600 to-blue-500 flex justify-between items-center">
-        <h3 class="text-2xl font-semibold text-white">
+      <div class="px-6 py-6 bg-gradient-to-r from-blue-600 to-blue-500 flex justify-between items-center">
+        <h3 class="text-base font-bold text-white">
           {{ title }}
         </h3>
 
         <button
           @click="close"
-          class="text-white text-4xl leading-none hover:scale-125 transition cursor-pointer"
+          class="text-white text-2xl leading-none hover:scale-110 transition cursor-pointer"
         >
           &times;
         </button>
       </div>
 
       <!-- CONTENT -->
-      <div class="px-10 py-8 max-h-[calc(90vh-140px)] overflow-y-auto">
+      <div class="px-6 py-6 max-h-[calc(98vh-200px)] overflow-y-auto">
         <slot></slot>
       </div>
     </div>

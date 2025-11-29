@@ -36,6 +36,12 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 CSRF_TRUSTED_ORIGINS = [
     f'https://{host}' for host in ALLOWED_HOSTS if host not in ['localhost', '127.0.0.1']
 ]
+
+# Add additional trusted origins from environment variable
+if os.environ.get('CSRF_TRUSTED_ORIGINS'):
+    additional_origins = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',')
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in additional_origins])
+
 if DEBUG:
     CSRF_TRUSTED_ORIGINS.extend(['http://localhost:8000', 'http://localhost:5173'])
 
@@ -201,13 +207,50 @@ if DEBUG:
         "http://localhost:5173",
     ]
 else:
-    # Production - add your production domain
-    CORS_ALLOWED_ORIGINS = os.environ.get(
-        'CORS_ALLOWED_ORIGINS',
-        'https://yourdomain.com'
-    ).split(',')
+    # Production - read from environment variable
+    # Format: CORS_ALLOWED_ORIGINS=https://domain1.com,https://domain2.com
+    cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+    
+    if cors_origins_env:
+        # Split by comma and strip whitespace
+        cors_origins = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
+    else:
+        # Fallback: generate from ALLOWED_HOSTS
+        cors_origins = [
+            f'https://{host}' for host in ALLOWED_HOSTS 
+            if host not in ['localhost', '127.0.0.1']
+        ]
+    
+    CORS_ALLOWED_ORIGINS = cors_origins
 
 CORS_ALLOW_CREDENTIALS = True
+# Allow all methods and headers for CORS
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+# Expose headers to frontend
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'authorization',
+]
+# Preflight cache duration (in seconds)
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Email Configuration
 if DEBUG:

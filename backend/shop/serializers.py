@@ -223,7 +223,7 @@ class ContactMessageSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = ContactMessage
-        fields = ['id', 'name', 'email', 'phone', 'message', 'created_at']
+        fields = ['id', 'name', 'email', 'phone', 'message', 'is_read', 'is_replied', 'created_at']
         read_only_fields = ['id', 'created_at']
         extra_kwargs = {
             'email': {'required': False, 'allow_blank': True, 'allow_null': True},

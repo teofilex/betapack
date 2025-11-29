@@ -79,22 +79,22 @@ const goToCheckout = () => {
         <!-- Back Button -->
         <button
           @click="router.push('/')"
-          class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition"
+          class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition cursor-pointer"
         >
           <span>←</span>
           <span>Nazad na prodavnicu</span>
         </button>
 
-        <h1 class="text-4xl font-bold text-gray-900 mb-8">Korpa</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">Korpa</h1>
 
         <!-- Empty Cart -->
-        <div v-if="cartItems.length === 0" class="bg-white rounded-2xl shadow-lg p-12 text-center">
-          <span class="text-8xl text-gray-300 mb-6 block">🛒</span>
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Vaša korpa je prazna</h2>
-          <p class="text-gray-600 mb-8 text-lg">Dodajte proizvode u korpu da biste nastavili</p>
+        <div v-if="cartItems.length === 0" class="bg-white rounded-xl shadow-lg p-8 text-center">
+          <span class="text-4xl text-gray-300 mb-4 block">🛒</span>
+          <h2 class="text-xl lg:text-2xl font-bold text-gray-900 mb-2">Vaša korpa je prazna</h2>
+          <p class="text-gray-600 mb-4 text-sm lg:text-base">Dodajte proizvode u korpu da biste nastavili</p>
           <button
             @click="router.push('/')"
-            class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-8 py-3 rounded-lg transition"
+            class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-4 py-2 rounded-lg transition cursor-pointer text-sm"
           >
             Pogledaj proizvode
           </button>
@@ -108,10 +108,10 @@ const goToCheckout = () => {
             <div
               v-for="item in cartItems"
               :key="item.id"
-              class="bg-white rounded-xl shadow p-6 flex gap-6"
+              class="bg-white rounded-lg shadow p-3 flex gap-3"
             >
               <!-- Image -->
-              <div class="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+              <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                 <img
                   v-if="item.images && item.images.length > 0"
                   :src="getImageUrl(item.images[0].image)"
@@ -119,18 +119,18 @@ const goToCheckout = () => {
                   class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-                  <span class="text-4xl">📦</span>
+                  <span class="text-2xl">📦</span>
                 </div>
               </div>
 
               <!-- Info -->
               <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-gray-900 text-lg mb-1">{{ item.name }}</h3>
-                <p class="text-sm text-gray-600 mb-2">{{ item.category_name }}</p>
-                <p v-if="item.selectedVariant" class="text-sm text-[#1565c0] font-semibold">
+                <h3 class="font-bold text-gray-900 text-sm mb-0.5">{{ item.name }}</h3>
+                <p class="text-xs text-gray-600 mb-1">{{ item.category_name }}</p>
+                <p v-if="item.selectedVariant" class="text-xs text-[#1565c0] font-semibold">
                   Dimenzija: {{ item.selectedVariant.name }}
                 </p>
-                <p class="text-lg font-bold text-green-700 mt-2">{{ formatPrice(item.current_price) }}</p>
+                <p class="text-sm font-bold text-green-700 mt-1">{{ formatPrice(item.current_price) }}</p>
               </div>
 
               <!-- Quantity & Actions -->
@@ -140,14 +140,14 @@ const goToCheckout = () => {
                   <button
                     @click="updateQuantity(item, item.quantity - 1)"
                     :disabled="item.quantity <= 1"
-                    class="w-8 h-8 bg-white rounded hover:bg-[#1976d2] hover:text-white transition disabled:opacity-50"
+                    class="w-8 h-8 bg-white rounded text-gray-700 hover:bg-gray-200 hover:text-black font-bold transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed border border-gray-300 hover:border-gray-400"
                   >
                     -
                   </button>
                   <span class="w-12 text-center font-semibold">{{ item.quantity }}</span>
                   <button
                     @click="updateQuantity(item, item.quantity + 1)"
-                    class="w-8 h-8 bg-white rounded hover:bg-[#1976d2] hover:text-white transition"
+                    class="w-8 h-8 bg-white rounded text-gray-700 hover:bg-gray-200 hover:text-black font-bold transition cursor-pointer border border-gray-300 hover:border-gray-400"
                   >
                     +
                   </button>
@@ -155,7 +155,7 @@ const goToCheckout = () => {
 
                 <!-- Subtotal -->
                 <div class="text-right">
-                  <p class="text-xl font-bold text-gray-900">
+                  <p class="text-base font-bold text-gray-900">
                     {{ formatPrice(item.current_price * item.quantity) }}
                   </p>
                 </div>
@@ -163,7 +163,7 @@ const goToCheckout = () => {
                 <!-- Remove -->
                 <button
                   @click="removeItem(item)"
-                  class="text-red-600 hover:text-red-700 text-sm font-semibold"
+                  class="text-red-600 hover:text-red-700 text-sm font-semibold cursor-pointer"
                 >
                   Ukloni
                 </button>
@@ -173,7 +173,7 @@ const goToCheckout = () => {
             <!-- Clear Cart -->
             <button
               @click="clearCart"
-              class="text-red-600 hover:text-red-700 text-sm font-semibold"
+              class="text-red-600 hover:text-red-700 text-sm font-semibold cursor-pointer"
             >
               Isprazni korpu
             </button>
@@ -181,31 +181,31 @@ const goToCheckout = () => {
 
           <!-- Order Summary -->
           <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-              <h2 class="text-2xl font-bold text-gray-900 mb-6">Rezime</h2>
+            <div class="bg-white rounded-lg shadow-lg p-4 sticky top-20">
+              <h2 class="text-lg font-bold text-gray-900 mb-4">Rezime</h2>
 
-              <div class="space-y-3 mb-6">
-                <div class="flex justify-between text-gray-600">
+              <div class="space-y-2 mb-4">
+                <div class="flex justify-between text-sm text-gray-600">
                   <span>Proizvodi ({{ cartCount }})</span>
                   <span>{{ formatPrice(cartTotal) }}</span>
                 </div>
-                <div class="flex justify-between text-gray-600">
+                <div class="flex justify-between text-sm text-gray-600">
                   <span>Dostava</span>
                   <span class="text-gray-400">Dogovor telefonom</span>
                 </div>
               </div>
 
-              <div class="border-t pt-4 mb-6">
+              <div class="border-t pt-3 mb-4">
                 <div class="flex justify-between items-center">
-                  <span class="text-xl font-bold text-gray-900">Ukupno</span>
-                  <span class="text-2xl font-bold text-green-700">{{ formatPrice(cartTotal) }}</span>
+                  <span class="text-base font-bold text-gray-900">Ukupno</span>
+                  <span class="text-lg font-bold text-green-700">{{ formatPrice(cartTotal) }}</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Finalna cena se potvrđuje telefonom</p>
+                <p class="text-xs text-gray-500 mt-1">Finalna cena se potvrđuje telefonom</p>
               </div>
 
               <button
                 @click="goToCheckout"
-                class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-4 rounded-lg transition mb-3"
+                class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-2.5 rounded-lg transition mb-2 cursor-pointer text-sm"
               >
                 Nastavi ka poručivanju
               </button>

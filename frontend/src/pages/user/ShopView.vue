@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
@@ -125,10 +125,20 @@ const getSelectedVariant = (product) => {
   if (selectedVariants.value[product.id]) {
     return selectedVariants.value[product.id]
   }
-  // Otherwise, auto-select first variant if product has variants
+  // Otherwise, auto-select variant
   if (product.variants && product.variants.length > 0) {
-    selectedVariants.value[product.id] = product.variants[0]
-    return product.variants[0]
+    let variantToSelect = null
+    
+    // If filter "Samo na akciji" is active, try to find a variant on sale
+    if (showOnlyOnSale.value) {
+      variantToSelect = product.variants.find(v => v.on_sale) || product.variants[0]
+    } else {
+      // Otherwise, select first variant
+      variantToSelect = product.variants[0]
+    }
+    
+    selectedVariants.value[product.id] = variantToSelect
+    return variantToSelect
   }
   return null
 }
@@ -183,6 +193,29 @@ const addToCartFromCard = (product) => {
   setQuantity(product.id, 1)
 }
 
+// Watch for changes in showOnlyOnSale filter and reset selected variants
+watch(showOnlyOnSale, () => {
+  // Reset all selected variants so they will be re-selected with the new logic
+  selectedVariants.value = {}
+})
+
+// Watch for changes in category or search to reset variants
+watch([selectedCategory, searchQuery], () => {
+  // Reset all selected variants when filters change
+  selectedVariants.value = {}
+})
+
+// Watch for changes in filtered products and reset variants for products that are no longer visible
+watch(filteredProducts, () => {
+  // Remove selected variants for products that are no longer in the filtered list
+  const visibleProductIds = new Set(filteredProducts.value.map(p => p.id))
+  Object.keys(selectedVariants.value).forEach(productId => {
+    if (!visibleProductIds.has(parseInt(productId))) {
+      delete selectedVariants.value[productId]
+    }
+  })
+}, { deep: true })
+
 onMounted(async () => {
   await categoryStore.fetchCategories()
   await productStore.fetchProducts()
@@ -195,38 +228,40 @@ onMounted(async () => {
 
     <main class="flex-1">
 
-      <!-- Hero sekcija -->
-      <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white pt-8 pb-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center border-b-4 border-white/20">
-          <h1 class="text-6xl font-bold mb-6 text-white drop-shadow-2xl" style="text-shadow: 3px 3px 6px rgba(0,0,0,0.5), 0 0 20px rgba(0,0,0,0.3);">
-            Kovano gvožđe i bravarijski proizvodi
-          </h1>
-          <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Širok asortiman kvalitetnih proizvoda - profili, ograde, ukrasni elementi i mnogo više
-          </p>
-          <div class="flex gap-4 justify-center">
-            <a
-              href="#products"
-              class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer shadow-lg"
-            >
-              Pogledaj katalog
-            </a>
-            <router-link
-              to="/kontakt"
-              class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-8 py-3 rounded-lg transition cursor-pointer shadow-lg"
-            >
-              Kontaktiraj nas
-            </router-link>
+      <!-- Banner Carousel -->
+      <div class="relative bg-gray-900 overflow-hidden" style="height: 450px;">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white z-10">
+            <h1 class="text-3xl lg:text-5xl font-bold mb-4 text-white drop-shadow-lg leading-relaxed">
+              Kovano gvožđe i bravarijski proizvodi
+            </h1>
+            <p class="text-base lg:text-lg text-gray-300 mb-6 max-w-2xl mx-auto leading-relaxed">
+              Širok asortiman kvalitetnih proizvoda - profili, ograde, ukrasni elementi i mnogo više
+            </p>
+            <div class="flex gap-2 justify-center">
+              <a
+                href="#products"
+                class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer shadow text-xs lg:text-sm"
+              >
+                Pogledaj katalog
+              </a>
+              <router-link
+                to="/kontakt"
+                class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer shadow text-xs lg:text-sm"
+              >
+                Kontaktiraj nas
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Recommended Products with Carousel -->
-      <div v-if="featuredProducts.length > 0" class="bg-gradient-to-b from-gray-50 to-white py-24 border-y-4 border-gray-200">
+      <div v-if="featuredProducts.length > 0" class="bg-gradient-to-b from-gray-50 to-white py-10 border-y-2 border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-12">
-            <h2 class="text-5xl font-bold text-gray-900 mb-4">Preporučujemo</h2>
-            <p class="text-xl text-gray-600">Naši najpopularniji proizvodi</p>
+          <div class="text-center mb-6">
+            <h2 class="text-xl lg:text-2xl font-bold text-gray-900 mb-2">Preporučujemo</h2>
+            <p class="text-sm lg:text-base text-gray-600">Naši najpopularniji proizvodi</p>
           </div>
 
           <!-- Carousel Container -->
@@ -327,34 +362,34 @@ onMounted(async () => {
       </div>
 
       <!-- Products Section -->
-      <div id="products" class="py-20 bg-white">
+      <div id="products" class="py-8 bg-white">
         <div class="min-w-[90vw] max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
 
             <!-- Sidebar -->
             <aside class="lg:col-span-1">
-              <div class="bg-white rounded-2xl shadow-xl border-2 border-gray-100 p-6 lg:p-8 sticky top-24">
-                <h3 class="font-bold text-xl lg:text-2xl mb-6 lg:mb-8 text-gray-900 border-b-2 border-gray-200 pb-4">Filteri</h3>
+              <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sticky top-20">
+                <h3 class="font-bold text-base lg:text-lg mb-4 text-gray-900 border-b border-gray-200 pb-2">Filteri</h3>
 
                 <!-- Search -->
-                <div class="mb-6 lg:mb-8">
-                  <label class="block text-sm lg:text-base font-bold text-gray-700 mb-2">Pretraga</label>
+                <div class="mb-4">
+                  <label class="block text-xs lg:text-sm font-bold text-gray-700 mb-1">Pretraga</label>
                   <input
                     v-model="searchQuery"
                     type="text"
                     placeholder="Pretraži proizvode..."
-                    class="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] transition"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1976d2] focus:border-[#1976d2] transition"
                   />
                 </div>
 
                 <!-- Categories -->
-                <div class="mb-6 lg:mb-8">
-                  <h4 class="font-bold text-base lg:text-lg text-gray-800 mb-4">Kategorije</h4>
+                <div class="mb-4">
+                  <h4 class="font-bold text-sm lg:text-base text-gray-800 mb-2">Kategorije</h4>
 
                   <button
                     @click="selectedCategory = null"
                     :class="selectedCategory === null ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
-                    class="w-full text-left px-4 py-3 text-base rounded-xl transition mb-2 cursor-pointer font-semibold"
+                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition mb-1 cursor-pointer font-semibold"
                   >
                     Sve kategorije
                   </button>
@@ -364,21 +399,21 @@ onMounted(async () => {
                     :key="cat.id"
                     @click="selectedCategory = cat.id"
                     :class="selectedCategory === cat.id ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
-                    class="w-full text-left px-4 py-3 text-base rounded-xl transition mb-2 cursor-pointer font-semibold"
+                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition mb-1 cursor-pointer font-semibold"
                   >
                     {{ cat.name }}
                   </button>
                 </div>
 
                 <!-- On Sale Filter -->
-                <div class="pt-4 border-t-2 border-gray-200">
-                  <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 px-4 py-3 rounded-xl transition">
+                <div class="pt-3 border-t border-gray-200">
+                  <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-2 rounded-lg transition">
                     <input
                       v-model="showOnlyOnSale"
                       type="checkbox"
-                      class="w-5 h-5 text-[#1565c0] rounded focus:ring-[#1976d2] cursor-pointer"
+                      class="w-4 h-4 text-[#1565c0] rounded focus:ring-[#1976d2] cursor-pointer"
                     />
-                    <span class="text-base font-semibold text-gray-700 cursor-pointer">Samo na akciji</span>
+                    <span class="text-sm font-semibold text-gray-700 cursor-pointer">Samo na akciji</span>
                   </label>
                 </div>
               </div>
@@ -386,34 +421,34 @@ onMounted(async () => {
 
             <!-- Products Grid -->
             <div class="lg:col-span-4">
-              <div class="mb-8 lg:mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 lg:pb-6 border-b-2 border-gray-200">
-                <h2 class="text-2xl lg:text-4xl font-bold text-gray-900">
+              <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-gray-200">
+                <h2 class="text-lg lg:text-xl font-bold text-gray-900">
                   {{ selectedCategory ? categoryStore.categories.find(c => c.id === selectedCategory)?.name : 'Svi proizvodi' }}
                 </h2>
-                <p class="text-lg lg:text-xl font-bold text-gray-600 bg-gray-100 px-5 lg:px-6 py-3 lg:py-4 rounded-xl">{{ filteredProducts.length }} proizvoda</p>
+                <p class="text-sm lg:text-base font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg">{{ filteredProducts.length }} proizvoda</p>
               </div>
 
               <!-- Loading -->
-              <div v-if="productStore.loading" class="text-center py-20">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1565c0]"></div>
-                <p class="text-lg text-gray-600 mt-4">Učitavanje proizvoda...</p>
+              <div v-if="productStore.loading" class="text-center py-10">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1565c0]"></div>
+                <p class="text-sm text-gray-600 mt-2">Učitavanje proizvoda...</p>
               </div>
 
               <!-- Products Grid -->
               <div
                 v-else-if="filteredProducts.length > 0"
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 lg:gap-10"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6"
               >
                 <div
                   v-for="product in filteredProducts"
                   :key="product.id"
-                  class="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:shadow-2xl hover:border-[#1976d2] transition-all duration-300 group flex flex-col h-full"
+                  class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-[#1976d2] transition-all duration-300 group flex flex-col h-full"
                 >
                   <div
                     @click="viewProductDetail(product.id)"
                     class="cursor-pointer flex-1 flex flex-col"
                   >
-                    <div class="relative h-56 lg:h-64 bg-gray-100 overflow-hidden flex-shrink-0">
+                    <div class="relative h-40 lg:h-48 bg-gray-100 overflow-hidden flex-shrink-0">
                       <img
                         v-if="getProductImage(product)"
                         :src="getImageUrl(getProductImage(product).image)"
@@ -421,38 +456,40 @@ onMounted(async () => {
                         class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-                        <span class="text-5xl">📦</span>
+                        <span class="text-2xl">📦</span>
                       </div>
 
-                      <div v-if="product.on_sale" class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                      <div v-if="product.on_sale" class="absolute top-1 right-1 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow">
                         -{{ salePercent(product.price, product.sale_price) }}%
                       </div>
                     </div>
 
-                    <div class="p-5 lg:p-6 flex-1 flex flex-col">
-                      <p class="text-xs lg:text-sm text-[#1565c0] font-bold mb-2 uppercase tracking-wide">{{ product.category_name }}</p>
-                      <h3 class="font-bold text-gray-900 mb-2 text-lg lg:text-xl line-clamp-2">{{ product.name }}</h3>
-                      <p class="text-sm lg:text-base text-gray-600 mb-4 line-clamp-2 leading-relaxed">{{ product.description }}</p>
+                    <div class="p-3 flex-1 flex flex-col">
+                      <p class="text-xs text-[#1565c0] font-bold mb-1 uppercase tracking-wide">{{ product.category_name }}</p>
+                      <h3 class="font-bold text-gray-900 mb-1 text-sm line-clamp-2">{{ product.name }}</h3>
+                      <p class="text-xs text-gray-600 mb-2 line-clamp-2 leading-relaxed">{{ product.description }}</p>
 
                       <div class="mt-auto">
-                        <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center justify-between mb-2">
                           <div>
-                            <p v-if="isVariantOnSale(product)" class="text-sm text-gray-400 line-through mb-1">
+                            <p v-if="isVariantOnSale(product)" class="text-xs text-gray-400 line-through mb-0.5">
                               {{ formatPrice(getVariantOriginalPrice(product)) }}
                             </p>
-                            <p class="text-xl lg:text-2xl font-bold" :class="isVariantOnSale(product) ? 'text-red-600' : 'text-green-700'">
+                            <p class="text-base font-bold" :class="isVariantOnSale(product) ? 'text-red-600' : 'text-green-700'">
                               {{ formatPrice(getProductPrice(product)) }}
                             </p>
                           </div>
                         </div>
 
                         <!-- Variant Dropdown -->
-                        <div v-if="product.variants && product.variants.length > 0" class="mb-3" @click.stop>
-                          <label class="block text-sm font-bold text-gray-700 mb-2">Dimenzija:</label>
+                        <div v-if="product.variants && product.variants.length > 0" class="mb-2" @click.stop>
+                          <label class="block text-xs font-bold text-gray-700 mb-1">Dimenzija:</label>
                           <select
                             :value="getSelectedVariant(product)?.id"
                             @change="setSelectedVariant(product.id, product.variants.find(v => v.id == $event.target.value))"
-                            class="w-full border-2 border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] cursor-pointer font-semibold"
+                            class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm 
+                                   focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] cursor-pointer font-semibold
+                                   hover:border-gray-400 transition-all shadow-sm bg-white"
                           >
                             <option
                               v-for="variant in product.variants"
@@ -465,8 +502,8 @@ onMounted(async () => {
                         </div>
 
                         <!-- Quantity Selector -->
-                        <div class="flex items-center gap-3 mb-3" @click.stop>
-                          <span class="text-sm font-bold text-gray-700">Količina:</span>
+                        <div class="flex items-center gap-2 mb-2" @click.stop>
+                          <span class="text-xs font-bold text-gray-700">Količina:</span>
                           <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
                             <button
                               @click="setQuantity(product.id, getQuantity(product.id) - 1)"
@@ -500,8 +537,8 @@ onMounted(async () => {
               </div>
 
               <!-- Empty State -->
-              <div v-else class="text-center py-20">
-                <span class="text-6xl text-gray-300 mb-4 block">🔍</span>
+              <div v-else class="text-center py-10">
+                <span class="text-3xl text-gray-300 mb-3 block">🔍</span>
                 <p class="text-xl text-gray-600 mb-4">Nema proizvoda koji odgovaraju filterima</p>
                 <button
                   @click="selectedCategory = null; searchQuery = ''; showOnlyOnSale = false"

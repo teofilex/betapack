@@ -6,33 +6,33 @@
       @click.self="$emit('cancel')"
     >
       <div
-        class="bg-white rounded-3xl shadow-2xl w-full max-w-xl p-10 
+        class="bg-white rounded-lg shadow-xl w-full max-w-[380px] p-7 
                transform transition-all duration-200 modal-animation"
       >
         <!-- Title -->
-        <h2 class="text-3xl font-bold text-gray-900 text-center mb-6">
+        <h2 class="text-base font-bold text-gray-900 text-center mb-5">
           {{ title }}
         </h2>
 
         <!-- Message -->
-        <p class="text-gray-600 text-center mb-10 leading-relaxed text-lg">
+        <p class="text-gray-600 text-center mb-7 leading-relaxed text-xs">
           {{ message }}
         </p>
 
         <!-- Buttons -->
-        <div class="flex gap-4 justify-center">
+        <div class="flex gap-3 justify-center">
           <button
             @click="$emit('confirm')"
-            class="px-8 py-3 rounded-xl bg-[#1976d2] text-white font-semibold 
-                   shadow hover:bg-[#1565c0] active:scale-95 transition"
+            class="px-5 py-2.5 rounded-lg bg-[#1976d2] text-white font-semibold text-xs
+                   shadow hover:bg-[#1565c0] active:scale-95 transition cursor-pointer"
           >
             {{ confirmText }}
           </button>
 
           <button
             @click="$emit('cancel')"
-            class="px-8 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold
-                   shadow hover:bg-gray-300 active:scale-95 transition"
+            class="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-800 font-semibold text-xs
+                   shadow hover:bg-gray-300 active:scale-95 transition cursor-pointer"
           >
             {{ cancelText }}
           </button>

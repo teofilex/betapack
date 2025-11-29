@@ -26,8 +26,11 @@ const goToHomePage = () => {
   router.push('/')
 }
 
-onMounted(() => {
-  statsStore.refresh()
+onMounted(async () => {
+  // Prvo proveri i osveži token ako je potrebno
+  await authStore.initialize()
+  // Zatim osveži brojače
+  await statsStore.refresh()
 })
 </script>
 
@@ -35,37 +38,37 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-50 flex flex-col">
 
     <!-- Header -->
-    <header class="bg-white px-8 py-6 shadow-lg border-b border-gray-200 flex justify-between items-center sticky top-0 z-[100] backdrop-blur-sm bg-white/95">
-      <div class="flex items-center gap-4">
-        <div class="bg-[#1976d2] text-white rounded-xl px-4 py-2 shadow-lg">
-          <span class="text-2xl font-bold">⚙️</span>
+    <header class="bg-white px-4 py-3 shadow-md border-b border-gray-200 flex justify-between items-center sticky top-0 z-[100] backdrop-blur-sm bg-white/95">
+      <div class="flex items-center gap-1.5">
+        <div class="bg-[#1976d2] text-white rounded-lg px-2 py-1 shadow-md">
+          <span class="text-base font-bold">⚙️</span>
         </div>
         <div>
-          <h1 class="text-xl font-bold text-gray-900">Beta Pack</h1>
+          <h1 class="text-base font-bold text-gray-900">Beta Pack</h1>
           <p class="text-xs text-gray-500 font-medium">Admin Panel</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
         <button
           @click="goToHomePage"
-          class="px-4 py-2.5 border-2 border-[#1976d2] text-[#1976d2] hover:bg-[#1976d2] hover:text-white rounded-xl font-semibold transition-all duration-300 cursor-pointer flex items-center gap-2"
+          class="px-4 py-2 border border-[#1976d2] text-[#1976d2] hover:bg-[#1976d2] hover:text-white rounded-lg font-semibold transition-all duration-300 cursor-pointer flex items-center gap-1.5 text-xs"
         >
           <span>🏠</span>
-          <span class="hidden sm:inline">Glavna stranica</span>
+          <span class="hidden sm:inline">Glavna</span>
         </button>
-        <div class="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
-          <div class="w-10 h-10 bg-[#1976d2] rounded-full flex items-center justify-center text-white font-bold shadow-md">
+        <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+          <div class="w-8 h-8 bg-[#1976d2] rounded-full flex items-center justify-center text-white font-bold shadow-md text-sm">
             {{ authStore.user?.username?.charAt(0).toUpperCase() }}
           </div>
-          <span class="font-semibold text-gray-800">{{ authStore.user?.username }}</span>
+          <span class="font-semibold text-gray-800 text-xs">{{ authStore.user?.username }}</span>
         </div>
         <button
           @click="handleLogout"
-          class="px-6 py-2.5 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white rounded-xl font-semibold transition-all duration-300 cursor-pointer flex items-center gap-2"
+          class="px-4 py-2 border border-red-500 text-red-600 hover:bg-red-500 hover:text-white rounded-lg font-semibold transition-all duration-300 cursor-pointer flex items-center gap-1.5 text-xs"
         >
           <span>🚪</span>
-          <span>Logout</span>
+          <span class="hidden sm:inline">Logout</span>
         </button>
       </div>
     </header>
@@ -73,37 +76,37 @@ onMounted(() => {
     <div class="flex flex-1 overflow-hidden flex-col md:flex-row md:-mt-0">
 
       <!-- Sidebar -->
-      <aside class="w-full md:w-[300px] bg-white border-r-2 border-gray-200 overflow-y-auto md:fixed md:top-[88px] md:left-0 md:h-[calc(100vh-88px)] shadow-lg z-40">
-        <nav class="p-6 pt-8">
+      <aside class="w-full md:w-[240px] bg-white border-r border-gray-200 overflow-y-auto md:fixed md:top-[64px] md:left-0 md:h-[calc(100vh-64px)] shadow-lg z-40">
+        <nav class="p-3 pt-4">
 
-          <h3 class="text-xs uppercase text-gray-500 font-bold mb-4 ml-2 tracking-wider">
+          <h3 class="text-xs uppercase text-gray-500 font-bold mb-3 ml-1 tracking-wider">
             📋 Katalog
           </h3>
 
           <!-- Dinamička navigacija -->
-          <div class="space-y-2">
+          <div class="space-y-1.5">
             <button
               v-for="v in views"
               :key="v.id"
               @click="setView(v.id)"
               :class="activeView === v.id
-                ? 'bg-[#1976d2] text-white shadow-lg scale-[1.02]'
+                ? 'bg-[#1976d2] text-white shadow-md scale-[1.01]'
                 : 'bg-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
-              class="w-full flex items-center gap-3 px-5 py-4 rounded-xl cursor-pointer transition-all duration-300 font-semibold border-2"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-300 font-semibold text-sm border"
               :style="activeView === v.id ? { borderColor: 'transparent' } : { borderColor: '#e5e7eb' }"
             >
-              <span class="text-2xl">{{ v.icon }}</span>
-              <span class="flex-1 text-left">{{ v.label }}</span>
+              <span class="text-lg">{{ v.icon }}</span>
+              <span class="flex-1 text-left text-xs">{{ v.label }}</span>
 
               <span
-                class="px-3 py-1 rounded-full text-sm font-bold min-w-[32px] text-center"
+                class="px-2 py-0.5 rounded-full text-xs font-bold min-w-[24px] text-center"
                 :class="activeView === v.id ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-700'"
               >
                 {{
                   v.id === 'categories' ? statsStore.categories :
                   v.id === 'subcategories' ? statsStore.subcategories :
                   v.id === 'orders' ? statsStore.orders :
-
+                  v.id === 'contact' ? statsStore.contactMessages :
                   statsStore.products
                 }}
               </span>
@@ -111,31 +114,31 @@ onMounted(() => {
           </div>
 
           <!-- Statistika -->
-          <div class="mt-8 bg-[#1976d2] p-6 rounded-2xl text-white shadow-xl border-2 border-[#1976d2]/30">
-            <h4 class="text-sm font-bold uppercase mb-4 opacity-90 tracking-wider">📊 Statistika</h4>
-            <div class="space-y-4">
-              <div class="flex justify-between items-center bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">📦</span>
-                  <span class="text-sm font-semibold opacity-90">Proizvoda</span>
+          <div class="mt-4 bg-[#1976d2] p-3 rounded-lg text-white shadow-lg border border-[#1976d2]/30">
+            <h4 class="text-xs font-bold uppercase mb-3 opacity-90 tracking-wider">📊 Statistika</h4>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-base">📦</span>
+                  <span class="text-xs font-semibold opacity-90">Proizvoda</span>
                 </div>
-                <span class="text-2xl font-bold">{{ statsStore.products }}</span>
+                <span class="text-lg font-bold">{{ statsStore.products }}</span>
               </div>
 
-              <div class="flex justify-between items-center bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">📁</span>
-                  <span class="text-sm font-semibold opacity-90">Kategorija</span>
+              <div class="flex justify-between items-center bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-base">📁</span>
+                  <span class="text-xs font-semibold opacity-90">Kategorija</span>
                 </div>
-                <span class="text-2xl font-bold">{{ statsStore.categories }}</span>
+                <span class="text-lg font-bold">{{ statsStore.categories }}</span>
               </div>
 
-              <div class="flex justify-between items-center bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">📋</span>
-                  <span class="text-sm font-semibold opacity-90">Narudžbina</span>
+              <div class="flex justify-between items-center bg-white/10 rounded-lg p-2 backdrop-blur-sm">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-base">📋</span>
+                  <span class="text-xs font-semibold opacity-90">Narudžbina</span>
                 </div>
-                <span class="text-2xl font-bold">{{ statsStore.orders }}</span>
+                <span class="text-lg font-bold">{{ statsStore.orders }}</span>
               </div>
             </div>
           </div>
@@ -144,7 +147,7 @@ onMounted(() => {
       </aside>
         
       <!-- Main content -->
-      <main class="flex-1 overflow-y-auto max-w-[1600px] mx-auto md:ml-[300px]" :class="activeView === 'orders' ? 'p-8 pt-0' : 'p-8'">
+      <main class="flex-1 overflow-y-auto max-w-[1600px] mx-auto md:ml-[240px]" :class="activeView === 'orders' ? 'p-4 pt-0' : 'p-4'">
 
         <CategoryManager
           v-if="activeView === 'categories'"

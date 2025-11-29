@@ -49,33 +49,33 @@ const handleLogout = () => {
 <template>
   <header class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white sticky top-0 z-50 shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-20 lg:h-24">
+      <div class="flex justify-between items-center h-16 lg:h-18">
 
         <!-- Logo -->
         <div class="flex items-center gap-3 lg:gap-4 cursor-pointer" @click="navigateTo('/')">
-          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-14 lg:h-16 w-auto" />
-          <div class="text-xl lg:text-2xl font-bold text-white">
+          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 lg:h-12 w-auto" />
+          <div class="text-base lg:text-lg font-bold text-white">
             BETA PACK
           </div>
         </div>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center gap-6 lg:gap-8">
+        <nav class="hidden md:flex items-center gap-3 lg:gap-4">
           <button
             @click="navigateTo('/')"
-            class="text-gray-300 hover:text-white hover:bg-white/10 px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer"
+            class="text-gray-300 hover:text-white hover:bg-white/10 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg transition font-semibold text-sm lg:text-base cursor-pointer"
           >
             Prodavnica
           </button>
           <button
             @click="navigateTo('/o-nama')"
-            class="text-gray-300 hover:text-white hover:bg-white/10 px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer"
+            class="text-gray-300 hover:text-white hover:bg-white/10 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg transition font-semibold text-sm lg:text-base cursor-pointer"
           >
             O nama
           </button>
           <button
             @click="navigateTo('/kontakt')"
-            class="text-gray-300 hover:text-white hover:bg-white/10 px-4 lg:px-5 py-2 lg:py-2.5 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer"
+            class="text-gray-300 hover:text-white hover:bg-white/10 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg transition font-semibold text-sm lg:text-base cursor-pointer"
           >
             Kontakt
           </button>
@@ -87,9 +87,9 @@ const handleLogout = () => {
           <button
             v-if="isAdmin"
             @click="navigateTo('/admin')"
-            class="hidden md:flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 lg:px-5 py-2.5 lg:py-3 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer border-2 border-gray-600 hover:border-gray-500"
+            class="hidden md:flex items-center gap-1 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-lg transition font-semibold text-xs cursor-pointer border border-gray-600 hover:border-gray-500"
           >
-            <span class="text-xl lg:text-2xl">⚙️</span>
+            <span class="text-sm">⚙️</span>
             <span>Admin</span>
           </button>
 
@@ -97,9 +97,9 @@ const handleLogout = () => {
           <button
             v-if="authStore.isAuthenticated"
             @click="handleLogout"
-            class="hidden md:flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 lg:px-5 py-2.5 lg:py-3 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer"
+            class="hidden md:flex items-center gap-1 bg-red-600 hover:bg-red-700 px-2 py-1 rounded-lg transition font-semibold text-xs cursor-pointer"
           >
-            <span class="text-xl lg:text-2xl">🚪</span>
+            <span class="text-sm">🚪</span>
             <span>Logout</span>
           </button>
 
@@ -111,13 +111,13 @@ const handleLogout = () => {
           >
             <button
               @click="navigateTo('/cart')"
-              class="relative flex items-center gap-2 bg-[#1976d2] hover:bg-[#1565c0] px-5 lg:px-6 py-2.5 lg:py-3 rounded-lg transition font-semibold text-base lg:text-lg cursor-pointer"
+              class="relative flex items-center gap-1 bg-[#1976d2] hover:bg-[#1565c0] px-2 py-1 rounded-lg transition font-semibold text-xs cursor-pointer"
             >
-              <span class="text-xl lg:text-2xl">🛒</span>
+              <span class="text-lg">🛒</span>
               <span class="hidden sm:inline">Korpa</span>
               <span
                 v-if="cartItemCount > 0"
-                class="absolute -top-2 -right-2 bg-red-600 text-white text-xs lg:text-sm font-bold w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center"
+                class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center"
               >
                 {{ cartItemCount }}
               </span>

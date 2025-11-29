@@ -56,6 +56,59 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
+        async refreshToken() {
+            if (!this.refreshToken) {
+                return false
+            }
+
+            try {
+                const response = await axios.post(`${API_URL}/api/auth/refresh/`, {
+                    refresh: this.refreshToken
+                })
+
+                this.accessToken = response.data.access
+                localStorage.setItem('access', this.accessToken)
+
+                // Ako refresh token postoji u odgovoru, ažuriraj ga
+                if (response.data.refresh) {
+                    this.refreshToken = response.data.refresh
+                    localStorage.setItem('refresh', this.refreshToken)
+                }
+
+                return true
+            } catch (error) {
+                console.error('refresh token failed:', error)
+                // Ako refresh token nije validan, odloguj korisnika
+                this.logout()
+                return false
+            }
+        },
+
+        async initialize() {
+            // Ako korisnik nije ulogovan, ne radi ništa
+            if (!this.accessToken || !this.refreshToken) {
+                return false
+            }
+
+            // Proveri da li je access token validan tako što ćeš pokušati da dobiješ korisnika
+            try {
+                await this.fetchUser()
+                // Ako je uspešno, token je validan
+                return true
+            } catch (error) {
+                // Ako je token istekao, pokušaj da ga osvežiš
+                if (error.response?.status === 401) {
+                    const refreshed = await this.refreshToken()
+                    if (refreshed) {
+                        // Pokušaj ponovo da dobiješ korisnika sa novim tokenom
+                        await this.fetchUser()
+                        return true
+                    }
+                }
+                return false
+            }
+        },
+
         logout() {
             this.user = null
             this.accessToken = null

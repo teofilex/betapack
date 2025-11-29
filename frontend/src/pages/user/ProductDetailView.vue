@@ -183,37 +183,37 @@ onMounted(() => {
             </div>
 
             <!-- Product Info -->
-            <div class="flex flex-col min-h-[600px]">
+            <div class="flex flex-col min-h-[400px]">
               <!-- Category -->
-              <p class="text-sm text-[#1976d2] font-semibold mb-2">{{ product.category_name }}</p>
+              <p class="text-xs text-[#1976d2] font-semibold mb-1">{{ product.category_name }}</p>
 
               <!-- Title -->
-              <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ product.name }}</h1>
+              <h1 class="text-xl lg:text-2xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
 
               <!-- Price -->
-              <div class="mb-6">
-                <div v-if="isOnSale" class="flex items-center gap-3">
-                  <span class="text-2xl text-gray-400 line-through">
+              <div class="mb-4">
+                <div v-if="isOnSale" class="flex items-center gap-2">
+                  <span class="text-base text-gray-400 line-through">
                     {{ formatPrice(selectedVariant ? selectedVariant.price : product.price) }}
                   </span>
-                  <span class="text-4xl font-bold text-red-600">{{ formatPrice(finalPrice) }}</span>
+                  <span class="text-xl lg:text-2xl font-bold text-red-600">{{ formatPrice(finalPrice) }}</span>
                 </div>
                 <div v-else>
-                  <span class="text-4xl font-bold text-green-700">{{ formatPrice(finalPrice) }}</span>
+                  <span class="text-xl lg:text-2xl font-bold text-green-700">{{ formatPrice(finalPrice) }}</span>
                 </div>
-                <p class="text-sm text-gray-500 mt-2">Cena uključuje PDV</p>
+                <p class="text-xs text-gray-500 mt-1">Cena uključuje PDV</p>
               </div>
 
               <!-- Description -->
-              <div class="mb-6">
-                <h3 class="font-semibold text-gray-900 mb-2">Opis</h3>
-                <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
+              <div class="mb-4">
+                <h3 class="font-semibold text-sm text-gray-900 mb-1">Opis</h3>
+                <p class="text-sm text-gray-700 leading-relaxed">{{ product.description }}</p>
               </div>
 
               <!-- Variants -->
-              <div v-if="product.variants && product.variants.length > 0" class="mb-6">
-                <h3 class="font-semibold text-gray-900 mb-3">Izaberite dimenziju</h3>
-                <div class="grid grid-cols-2 gap-3">
+              <div v-if="product.variants && product.variants.length > 0" class="mb-4">
+                <h3 class="font-semibold text-sm text-gray-900 mb-2">Izaberite dimenziju</h3>
+                <div class="grid grid-cols-2 gap-2">
                   <button
                     v-for="variant in product.variants"
                     :key="variant.id"
@@ -223,7 +223,7 @@ onMounted(() => {
                         ? 'bg-[#1976d2] text-white ring-2 ring-[#1976d2]'
                         : 'bg-white text-gray-700 ring-1 ring-gray-300 hover:ring-[#1976d2]'
                     ]"
-                    class="px-4 py-3 rounded-lg font-medium transition text-sm cursor-pointer"
+                    class="px-3 py-2 rounded-lg font-medium transition text-xs cursor-pointer"
                   >
                     <div>{{ variant.name }}</div>
                   </button>
@@ -231,12 +231,12 @@ onMounted(() => {
               </div>
 
               <!-- Quantity -->
-              <div class="mb-6">
-                <h3 class="font-semibold text-gray-900 mb-3">Količina</h3>
-                <div class="flex items-center gap-3">
+              <div class="mb-3">
+                <h3 class="font-semibold text-sm text-gray-900 mb-2">Količina</h3>
+                <div class="flex items-center gap-2">
                   <button
                     @click="quantity = Math.max(1, quantity - 1)"
-                    class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer"
+                    class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer text-sm"
                   >
                     -
                   </button>
@@ -244,11 +244,11 @@ onMounted(() => {
                     v-model.number="quantity"
                     type="number"
                     min="1"
-                    class="w-20 text-center border border-gray-300 rounded-lg px-3 py-2 font-semibold"
+                    class="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 font-semibold text-sm"
                   />
                   <button
                     @click="quantity++"
-                    class="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer"
+                    class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer text-sm"
                   >
                     +
                   </button>
@@ -256,7 +256,7 @@ onMounted(() => {
               </div>
 
               <!-- Additional Info -->
-              <div class="mb-6 pb-6 border-b space-y-3 text-sm text-gray-600">
+              <div class="mb-4 pb-4 border-b space-y-2 text-xs text-gray-600">
                 <div class="flex items-center gap-2">
                   <span>✓</span>
                   <span>Besplatna konsultacija</span>
@@ -275,10 +275,10 @@ onMounted(() => {
               <div class="flex-1"></div>
 
               <!-- Add to Cart - Fixed at Bottom -->
-              <div class="space-y-3">
+              <div class="space-y-2">
                 <button
                   @click="addToCart"
-                  class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-4 rounded-lg transition text-lg shadow-md hover:shadow-xl cursor-pointer transform hover:scale-[1.02]"
+                  class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-2.5 rounded-lg transition text-sm shadow-md hover:shadow-lg cursor-pointer"
                 >
                   🛒 Dodaj u korpu
                 </button>
@@ -286,14 +286,14 @@ onMounted(() => {
                 <!-- Link to Cart/Checkout -->
                 <router-link
                   to="/cart"
-                  class="block w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-4 rounded-lg transition-all text-lg shadow-md hover:shadow-xl cursor-pointer transform hover:scale-[1.02] text-center"
+                  class="block w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2.5 rounded-lg transition-all text-sm shadow-md hover:shadow-lg cursor-pointer text-center"
                 >
                   🛍️ Idi na korpu i naruči
                 </router-link>
 
                 <button
                   @click="router.push('/kontakt')"
-                  class="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-4 rounded-lg border-2 border-gray-300 transition cursor-pointer"
+                  class="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-2.5 rounded-lg border border-gray-300 transition cursor-pointer text-sm"
                 >
                   📞 Kontaktirajte nas za ponudu
                 </button>

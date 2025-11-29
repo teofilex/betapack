@@ -238,10 +238,21 @@ DEFAULT_FROM_EMAIL = 'Bravarska Radnja <noreply@gvozdjara.rs>'
 
 ### CORS (backend/backend/settings.py):
 ```python
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vue dev server
-    "http://localhost:8080",
-]
+# Development - hardkodovani localhost domovi
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:5173",  # Vue dev server
+        "http://localhost:8080",
+    ]
+else:
+    # Production - čita iz environment varijable
+    # Format: CORS_ALLOWED_ORIGINS=https://domain1.com,https://domain2.com
+    # Ako nije postavljena, automatski generiše iz ALLOWED_HOSTS
+```
+
+**Za produkciju**, postavi environment varijablu:
+```bash
+CORS_ALLOWED_ORIGINS=https://tvoj-domen.com,https://www.tvoj-domen.com,https://betapack.vercel.app
 ```
 
 ---

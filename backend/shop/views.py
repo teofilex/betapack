@@ -319,20 +319,21 @@ def contact_message(request):
     from .serializers import ContactMessageSerializer
     from .models import ContactMessage
 
-    serializer = ContactMessageSerializer(data=request.data)
+    try:
+        serializer = ContactMessageSerializer(data=request.data)
 
-    if serializer.is_valid():
-        # Sačuvaj poruku u bazu
-        contact_msg = serializer.save()
+        if serializer.is_valid():
+            # Sačuvaj poruku u bazu
+            contact_msg = serializer.save()
 
-        # Pokušaj da pošalješ email
-        try:
-            recipient_email = settings.CONTACT_EMAIL_RECIPIENT
+            # Pokušaj da pošalješ email
+            try:
+                recipient_email = settings.CONTACT_EMAIL_RECIPIENT
 
-            # Sastavi email
-            subject = f'Nova kontakt poruka od {contact_msg.name}'
+                # Sastavi email
+                subject = f'Nova kontakt poruka od {contact_msg.name}'
 
-            message = f"""
+                message = f"""
 Nova kontakt poruka sa sajta:
 
 Ime: {contact_msg.name}
@@ -344,26 +345,35 @@ Poruka:
 
 ---
 Datum: {contact_msg.created_at.strftime('%d.%m.%Y %H:%M')}
-            """
+                """
 
-            # Pošalji email
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[recipient_email],
-                fail_silently=True,  # Ne prekidaj ako email ne uspe
-            )
-        except Exception as e:
-            # Loguj grešku ali ne prekidaj - poruka je već sačuvana
-            print(f"Email sending failed: {e}")
+                # Pošalji email
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[recipient_email],
+                    fail_silently=True,  # Ne prekidaj ako email ne uspe
+                )
+            except Exception as e:
+                # Loguj grešku ali ne prekidaj - poruka je već sačuvana
+                print(f"Email sending failed: {e}")
 
+            return Response({
+                'success': True,
+                'message': 'Poruka uspešno poslata!'
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Exception as e:
+        # Osiguraj da se uvek vraća pravilni response sa CORS headerima
+        print(f"Error in contact_message view: {e}")
         return Response({
-            'success': True,
-            'message': 'Poruka uspešno poslata!'
-        }, status=status.HTTP_201_CREATED)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            'success': False,
+            'message': 'Došlo je do greške prilikom slanja poruke. Molimo pokušajte ponovo.',
+            'error': str(e) if settings.DEBUG else None
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ContactMessage ViewSet

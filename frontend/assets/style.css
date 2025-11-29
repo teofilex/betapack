@@ -17,3 +17,59 @@ body {
     padding: 0;
     min-height: 100vh;
 }
+
+/* Select elements styling - responsive */
+select {
+    font-size: 0.75rem; /* text-xs by default */
+}
+
+select option {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* On larger screens, use larger font */
+@media (min-width: 640px) {
+    select {
+        font-size: 0.875rem; /* text-sm */
+    }
+    
+    select option {
+        font-size: 0.875rem;
+        padding: 0.625rem 1rem;
+    }
+}
+
+/* Mobile-specific select styling - make options smaller */
+@media (max-width: 639px) {
+    /* Make select itself compact */
+    select {
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+    
+    /* Make options very compact on mobile */
+    select option {
+        font-size: 0.7rem !important;
+        padding: 0.35rem 0.5rem !important;
+        line-height: 1.2 !important;
+        min-height: auto !important;
+        height: auto !important;
+    }
+    
+    /* Mobile select class for additional control */
+    .mobile-select {
+        font-size: 0.7rem;
+        max-height: 2.5rem;
+    }
+    
+    .mobile-select option {
+        font-size: 0.65rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+    
+    /* Ensure native select doesn't break layout */
+    select:focus {
+        outline: none;
+    }
+}
