@@ -239,7 +239,7 @@ onMounted(async () => {
 
         <!-- Text Overlay -->
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="text-center text-white px-4 max-w-4xl">
+          <div class="text-center text-white px-6 py-8 max-w-4xl bg-black bg-opacity-40 rounded-xl backdrop-blur-sm">
             <h1 class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">
               Kovano gvožđe i bravarijski proizvodi
             </h1>
