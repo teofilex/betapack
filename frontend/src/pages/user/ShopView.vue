@@ -232,23 +232,35 @@ onMounted(async () => {
       <div class="relative overflow-hidden" style="height: 450px;">
         <!-- Background Image -->
         <img
-          src="/Betapack-hero-image-edited.png"
+          src="/Betapack-hero-image-edited-2.png"
           alt="BetaPack - Kovano gvožđe i bravarijski proizvodi"
           class="absolute inset-0 w-full h-full object-cover"
         />
+
+        <!-- Text Overlay -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="text-center text-white px-4 max-w-4xl">
+            <h1 class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">
+              Kovano gvožđe i bravarijski proizvodi
+            </h1>
+            <p class="text-base lg:text-xl text-white mb-6" style="text-shadow: 2px 2px 6px rgba(0,0,0,0.7);">
+              Širok asortiman kvalitetnih proizvoda - profili, ograde, ukrasni elementi i mnogo više
+            </p>
+          </div>
+        </div>
 
         <!-- Buttons positioned at bottom -->
         <div class="absolute inset-0 flex items-end justify-center pb-12">
           <div class="flex gap-3 px-4">
             <a
               href="#products"
-              class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+              class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
             >
               Pogledaj katalog
             </a>
             <router-link
               to="/kontakt"
-              class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+              class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
             >
               Kontaktiraj nas
             </router-link>
