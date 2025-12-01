@@ -226,7 +226,7 @@ onMounted(async () => {
   <div class="min-h-screen flex flex-col bg-gray-50">
     <TheHeader />
 
-    <main class="flex-1">
+    <main class="flex-1 pt-20">
 
       <!-- Hero Image -->
       <div class="relative overflow-hidden" style="height: 450px;">
