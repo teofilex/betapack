@@ -17,9 +17,19 @@ const selectedVariant = ref(null)
 const selectedImageIndex = ref(0)
 const quantity = ref(1)
 
-// Reset quantity to 1 when variant changes
+// Reset quantity to 1 when variant changes, or load from cart if variant is in cart
 watch(selectedVariant, () => {
-  quantity.value = 1
+  if (product.value) {
+    const variantId = selectedVariant.value ? selectedVariant.value.id : null
+    const cartItem = cartStore.getCartItem(product.value.id, variantId)
+    if (cartItem) {
+      quantity.value = cartItem.quantity
+    } else {
+      quantity.value = 1
+    }
+  } else {
+    quantity.value = 1
+  }
 })
 
 const formatPrice = (price) => {
@@ -84,6 +94,18 @@ const fetchProduct = async () => {
     // Auto-select first variant if available
     if (product.value.variants && product.value.variants.length > 0) {
       selectedVariant.value = product.value.variants[0]
+      // Check if this variant is in cart and load quantity
+      const variantId = selectedVariant.value.id
+      const cartItem = cartStore.getCartItem(product.value.id, variantId)
+      if (cartItem) {
+        quantity.value = cartItem.quantity
+      }
+    } else {
+      // No variants, check if product is in cart
+      const cartItem = cartStore.getCartItem(product.value.id, null)
+      if (cartItem) {
+        quantity.value = cartItem.quantity
+      }
     }
   } catch (error) {
     console.error('Error fetching product:', error)
@@ -91,6 +113,39 @@ const fetchProduct = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Get cart item for current product
+const getCartItem = computed(() => {
+  if (!product.value) return null
+  const variantId = selectedVariant.value ? selectedVariant.value.id : null
+  return cartStore.getCartItem(product.value.id, variantId)
+})
+
+// Check if product is in cart
+const isInCart = computed(() => {
+  if (!product.value) return false
+  const variantId = selectedVariant.value ? selectedVariant.value.id : null
+  return cartStore.isInCart(product.value.id, variantId)
+})
+
+// Get quantity from cart
+const getCartQuantity = computed(() => {
+  const cartItem = getCartItem.value
+  return cartItem ? cartItem.quantity : 0
+})
+
+// Update quantity in cart
+const updateCartQuantity = (newQuantity) => {
+  if (newQuantity < 1) return
+  if (!product.value) return
+  
+  const variantId = selectedVariant.value ? selectedVariant.value.id : null
+  const cartId = variantId 
+    ? `${product.value.id}-${variantId}`
+    : product.value.id
+  
+  cartStore.updateQuantity(cartId, newQuantity)
 }
 
 const addToCart = () => {
@@ -233,10 +288,10 @@ onMounted(() => {
               <!-- Quantity -->
               <div class="mb-3">
                 <h3 class="font-semibold text-sm text-gray-900 mb-2">Količina</h3>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                   <button
                     @click="quantity = Math.max(1, quantity - 1)"
-                    class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer text-sm"
+                    class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                   >
                     -
                   </button>
@@ -244,11 +299,11 @@ onMounted(() => {
                     v-model.number="quantity"
                     type="number"
                     min="1"
-                    class="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 font-semibold text-sm"
+                    class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                   />
                   <button
                     @click="quantity++"
-                    class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition cursor-pointer text-sm"
+                    class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                   >
                     +
                   </button>
@@ -274,9 +329,40 @@ onMounted(() => {
               <!-- Spacer to push buttons to bottom -->
               <div class="flex-1"></div>
 
-              <!-- Add to Cart - Fixed at Bottom -->
+              <!-- Add to Cart / Update Quantity - Fixed at Bottom -->
               <div class="space-y-2">
+                <!-- If product is in cart, show quantity controls -->
+                <div v-if="isInCart" class="space-y-2">
+                  <div class="mb-2">
+                    <h3 class="font-semibold text-sm text-gray-900">Izmeni količinu</h3>
+                  </div>
+                  <div class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                    <button
+                      @click="updateCartQuantity(getCartQuantity - 1)"
+                      :disabled="getCartQuantity <= 1"
+                      class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      -
+                    </button>
+                    <input
+                      :value="getCartQuantity"
+                      @input="updateCartQuantity(parseInt($event.target.value) || 1)"
+                      @blur="updateCartQuantity(Math.max(1, parseInt($event.target.value) || 1))"
+                      type="number"
+                      min="1"
+                      class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                    />
+                    <button
+                      @click="updateCartQuantity(getCartQuantity + 1)"
+                      class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <!-- If product is not in cart, show add button -->
                 <button
+                  v-else
                   @click="addToCart"
                   class="w-full bg-[#1976d2] hover:bg-[#1565c0] text-white font-bold py-2.5 rounded-lg transition text-sm shadow-md hover:shadow-lg cursor-pointer"
                 >

@@ -71,7 +71,7 @@ const contactInfo = {
           <div class="space-y-1.5 text-xs">
             <div class="flex justify-between">
               <span>Ponedeljak - Petak:</span>
-              <span class="font-semibold">08:00 - 17:00</span>
+              <span class="font-semibold">08:00 - 16:00</span>
             </div>
             <div class="flex justify-between">
               <span>Subota:</span>

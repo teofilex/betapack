@@ -26,7 +26,7 @@ const features = [
 ]
 
 const products = [
-  'Kovano gvožđe - ograde, kapije, gelenderi',
+  'Kovano gvožđe',
   'Kvadratni i pravougaoni profili raznih dimenzija',
   'Grifovani profili i kutije',
   'Dekorativni elementi - cvetovi, listovi, kovanice',
@@ -64,9 +64,8 @@ const products = [
                 <strong>Beta Pack d.o.o.</strong> je kompanija sa dugogodišnjim iskustvom u oblasti obrade kovanog gvožđa i proizvodnje bravarskih proizvoda.
                 Od našeg osnivanja posvećeni smo pružanju vrhunskog kvaliteta i pouzdane usluge našim klijentima.
               </p>
-              <p>
-                Specijalizovani smo za proizvodnju širokog spektra bravarskih proizvoda - od ograda, kapija i gelendra,
-                do raznovrsnih profila, dekorativnih elemenata i ukrasnih motiva od kovanog gvožđa.
+              <p>             
+                 Specijalizovani smo za proizvodnju širokog spektra bravarskih proizvoda. Naši materijali koriste se za izradu kvalitetnih ograda, kapija, gelendera, profila i dekorativnih elemenata od kovanog gvožđa.
               </p>
               <p>
                 Naš tim stručnjaka koristi moderne tehnologije i tradicionalne tehnike obrade metala kako bi

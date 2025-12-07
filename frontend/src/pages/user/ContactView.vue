@@ -11,7 +11,7 @@ const contactInfo = {
   phone1: '065/330 02 42',
   phone2: '063/8757 725',
   email: 'office@betapack.co.rs',
-  coordinates: { lat: 44.913252, lng: 20.2595729 }
+  coordinates: { lat: 44.914361, lng: 20.258167 }
 }
 
 const form = ref({
@@ -174,7 +174,7 @@ const sendMessage = async () => {
               </div>
 
               <p class="text-xs text-gray-600 -mt-2">
-                * Molimo unesite bar email ili telefon
+                * Molimo vas da unesete najmanje jedan kontakt – email ili broj telefona.
               </p>
 
               <div>

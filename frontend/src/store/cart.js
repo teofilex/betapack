@@ -50,6 +50,15 @@ export const useCartStore = defineStore('cart', {
             }
             // If no variant specified, check if ANY variant of this product is in cart
             return state.items.some(i => i.id === productId)
+        },
+
+        getCartItem: (state) => (productId, variantId = null) => {
+            if (variantId) {
+                const cartId = `${productId}-${variantId}`
+                return state.items.find(i => i.cartId === cartId)
+            }
+            // If no variant specified, return first item with this product id
+            return state.items.find(i => i.id === productId)
         }
     },
 

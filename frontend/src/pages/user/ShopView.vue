@@ -177,6 +177,31 @@ const getVariantOriginalPrice = (product) => {
   return parseFloat(product.price)
 }
 
+// Get cart item for a product
+const getCartItem = (product) => {
+  const variant = getSelectedVariant(product)
+  const variantId = variant ? variant.id : null
+  return cartStore.getCartItem(product.id, variantId)
+}
+
+// Get quantity from cart for a product
+const getCartQuantity = (product) => {
+  const cartItem = getCartItem(product)
+  return cartItem ? cartItem.quantity : 0
+}
+
+// Update quantity in cart
+const updateCartQuantity = (product, newQuantity) => {
+  if (newQuantity < 1) return
+  
+  const variant = getSelectedVariant(product)
+  const cartId = variant 
+    ? `${product.id}-${variant.id}`
+    : product.id
+  
+  cartStore.updateQuantity(cartId, newQuantity)
+}
+
 // Add product to cart directly from card
 const addToCartFromCard = (product) => {
   const quantity = getQuantity(product.id)
@@ -537,12 +562,42 @@ onMounted(async () => {
                   </div>
 
                   <div class="px-5 lg:px-6 pb-5 lg:pb-6 flex-shrink-0">
+                    <!-- If product is in cart, show quantity controls -->
+                    <div v-if="cartStore.isInCart(product.id, getSelectedVariant(product)?.id)" class="space-y-2">
+                      <div class="flex items-center gap-2 mb-2" @click.stop>
+                        <span class="text-xs font-bold text-gray-700">Izmeni količinu:</span>
+                      </div>
+                      <div class="flex items-center justify-between w-full px-4 bg-gray-100 rounded-xl py-1">
+                        <button
+                          @click.stop="updateCartQuantity(product, getCartQuantity(product) - 1)"
+                          :disabled="getCartQuantity(product) <= 1"
+                          class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        >
+                          -
+                        </button>
+                        <input
+                          :value="getCartQuantity(product)"
+                          @input="updateCartQuantity(product, parseInt($event.target.value) || 1)"
+                          @blur="updateCartQuantity(product, Math.max(1, parseInt($event.target.value) || 1))"
+                          type="number"
+                          min="1"
+                          class="w-10 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-1 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                        />
+                        <button
+                          @click.stop="updateCartQuantity(product, getCartQuantity(product) + 1)"
+                          class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm flex items-center justify-center"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <!-- If product is not in cart, show add button -->
                     <button
+                      v-else
                       @click.stop="addToCartFromCard(product)"
-                      :disabled="cartStore.isInCart(product.id, getSelectedVariant(product)?.id)"
-                      class="w-full bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1] text-white font-bold py-3 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg hover:shadow-xl text-sm lg:text-base"
+                      class="w-full bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1] text-white font-bold py-3 rounded-xl transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl text-sm lg:text-base"
                     >
-                      {{ cartStore.isInCart(product.id, getSelectedVariant(product)?.id) ? '✓ Već u korpi' : '+ Dodaj u korpu' }}
+                      + Dodaj u korpu
                     </button>
                   </div>
                 </div>
