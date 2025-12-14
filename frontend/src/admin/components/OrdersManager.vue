@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useOrderStore } from '../store/orders'
+import { useAuthStore } from '@/store/auth'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 
 const emit = defineEmits(['update-count'])
@@ -167,7 +168,6 @@ onUnmounted(() => {
 
 // SSE funkcija za real-time notifikacije
 const startSSE = () => {
-  const { useAuthStore } = require('@/store/auth')
   const authStore = useAuthStore()
   
   if (!authStore.accessToken) {
@@ -498,9 +498,13 @@ const startSSE = () => {
                 </a>
               </div>
 
-              <div v-if="orderStore.selected.delivery_address">
+              <div v-if="orderStore.selected.address">
                 <p class="text-xs text-gray-500 uppercase font-medium mb-1 px-1">Adresa</p>
-                <p class="text-sm text-gray-900 px-1">{{ orderStore.selected.delivery_address }}</p>
+                <p class="text-sm text-gray-900 px-1">{{ orderStore.selected.address }}</p>
+              </div>
+              <div v-if="orderStore.selected.city">
+                <p class="text-xs text-gray-500 uppercase font-medium mb-1 px-1">Grad</p>
+                <p class="text-sm text-gray-900 px-1">{{ orderStore.selected.city }}</p>
               </div>
             </div>
           </div>
@@ -524,6 +528,9 @@ const startSSE = () => {
                     <p class="text-xs text-gray-500 px-1">
                       Količina:
                       <span class="font-semibold text-gray-700">{{ item.quantity }}</span> kom
+                      <span v-if="item.sold_by_length && item.effective_length_per_unit" class="text-gray-600">
+                        - {{ (parseFloat(item.quantity) * parseFloat(item.effective_length_per_unit)).toFixed(2) }} metara
+                      </span>
                     </p>
 
                     <p class="text-xs text-gray-500 mt-1 px-1">{{ formatPrice(item.unit_price) }} / kom</p>

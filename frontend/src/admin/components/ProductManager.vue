@@ -76,7 +76,9 @@ const form = ref({
   sale_price: '',
   featured: false,
   in_stock: true,
-  stock_quantity: 0
+  stock_quantity: 0,
+  sold_by_length: false,
+  length_per_unit: 6.0
 })
 
 // Stock management
@@ -97,7 +99,8 @@ const variantForm = ref({
   sale_price: null,
   sku: '',
   in_stock: true,
-  stock_quantity: 0
+  stock_quantity: 0,
+  length_per_unit: null
 })
 
 // Filtered subcategories
@@ -158,7 +161,9 @@ const openAddModal = () => {
     sale_price: '',
     featured: false,
     in_stock: true,
-    stock_quantity: 0
+    stock_quantity: 0,
+    sold_by_length: false,
+    length_per_unit: 6.0
   }
 
   // Reset first variant form
@@ -169,7 +174,8 @@ const openAddModal = () => {
     sale_price: null,
     sku: '',
     in_stock: true,
-    stock_quantity: 0
+    stock_quantity: 0,
+    length_per_unit: null
   }
 
   productImages.value = []
@@ -185,7 +191,9 @@ const openEditModal = async (product) => {
   form.value = {
     ...product,
     in_stock: product.in_stock !== undefined ? product.in_stock : true,
-    stock_quantity: product.stock_quantity || 0
+    stock_quantity: product.stock_quantity || 0,
+    sold_by_length: product.sold_by_length || false,
+    length_per_unit: product.length_per_unit || 6.0
   }
 
   // Fetch variants for this product
@@ -307,7 +315,8 @@ const openVariantForm = (variant = null) => {
       sale_price: null,
       sku: '',
       in_stock: true,
-      stock_quantity: 0
+      stock_quantity: 0,
+      length_per_unit: null
     }
   }
   showVariantForm.value = true
@@ -412,7 +421,8 @@ const saveProduct = async () => {
       sale_price: null,
       featured: form.value.featured || false,
       in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
-      stock_quantity: form.value.stock_quantity || 0
+      stock_quantity: form.value.stock_quantity || 0,
+      sold_by_length: form.value.sold_by_length || false
     }
 
     let productId
@@ -942,6 +952,15 @@ onMounted(async () => {
           <span class="text-gray-800 text-xs font-medium cursor-pointer">Preporučeni proizvod</span>
         </label>
 
+        <!-- Sold by Length -->
+        <div class="mt-2 bg-blue-50 p-3 rounded-lg">
+          <label class="flex items-center gap-2 cursor-pointer px-1">
+            <input v-model="form.sold_by_length" type="checkbox" class="cursor-pointer" />
+            <span class="text-gray-800 text-xs font-medium cursor-pointer">Custom dužina proizvoda (prodaja po metraži)</span>
+          </label>
+          <p class="text-[10px] text-gray-600 mt-1 px-1">Proizvod se prodaje po metraži. Dozvoljene su decimalne vrednosti (0.5, 1, 1.5, itd.). Dužinu unesite u varijantama ispod.</p>
+        </div>
+
         <!-- Stock Management -->
         <div class="border-t pt-4 mt-4">
           <label class="flex items-center gap-2 mb-3 cursor-pointer px-1">
@@ -1052,6 +1071,23 @@ onMounted(async () => {
               <label for="first-variant-in-stock" class="text-gray-800 text-xs font-medium cursor-pointer px-1">
                 Na stanju
               </label>
+            </div>
+
+            <!-- Length per unit (only if product is sold by length) -->
+            <div v-if="form.sold_by_length" class="bg-blue-50 p-2 rounded-lg border border-blue-200 mt-2">
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Dužina 1 komada (u metrima) - Opciono</label>
+              <input
+                v-model.number="variantForm.length_per_unit"
+                type="number"
+                step="0.1"
+                min="0.1"
+                placeholder="npr. 4.0 ili 6.0"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
+                       focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+              />
+              <p class="text-[10px] text-gray-600 mt-0.5 px-1">
+                Unesite dužinu 1 komada za ovu varijantu (npr. 4.0 za 4m, 6.0 za 6m). Ako ostavite prazno, koristiće se default vrednost od 6m.
+              </p>
             </div>
           </div>
         </div>
@@ -1369,6 +1405,24 @@ onMounted(async () => {
             class="cursor-pointer"
           />
           <label for="variant-in-stock-form" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Na stanju</label>
+        </div>
+
+        <!-- Length per unit (only if product is sold by length) -->
+        <div v-if="form.sold_by_length" class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Dužina 1 komada (u metrima) - Opciono</label>
+          <input
+            v-model.number="variantForm.length_per_unit"
+            type="number"
+            step="0.1"
+            min="0.1"
+            placeholder="npr. 4.0 ili 6.0"
+            class="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-sm
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
+          <p class="text-xs text-gray-600 mt-1 px-1">
+            Unesite dužinu 1 komada za ovu varijantu (npr. 4.0 za 4m, 6.0 za 6m). 
+            Ako ostavite prazno, koristiće se default vrednost od 6m.
+          </p>
         </div>
 
         <div class="flex justify-end gap-2 pt-1">

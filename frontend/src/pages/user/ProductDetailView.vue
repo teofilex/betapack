@@ -16,6 +16,7 @@ const loading = ref(true)
 const selectedVariant = ref(null)
 const selectedImageIndex = ref(0)
 const quantity = ref(1)
+const quantityError = ref(null)
 
 // Reset quantity to 1 when variant changes, or load from cart if variant is in cart
 watch(selectedVariant, () => {
@@ -99,12 +100,16 @@ const fetchProduct = async () => {
       const cartItem = cartStore.getCartItem(product.value.id, variantId)
       if (cartItem) {
         quantity.value = cartItem.quantity
+      } else {
+        quantity.value = 1
       }
     } else {
       // No variants, check if product is in cart
       const cartItem = cartStore.getCartItem(product.value.id, null)
       if (cartItem) {
         quantity.value = cartItem.quantity
+      } else {
+        quantity.value = 1
       }
     }
   } catch (error) {
@@ -137,8 +142,24 @@ const getCartQuantity = computed(() => {
 
 // Update quantity in cart
 const updateCartQuantity = (newQuantity) => {
-  if (newQuantity < 1) return
   if (!product.value) return
+  const minQuantity = product.value.sold_by_length ? 0.5 : 1
+  if (newQuantity < minQuantity) return
+  
+  // Validate for sold_by_length products
+  if (product.value.sold_by_length && !isValidLengthQuantity(newQuantity)) {
+    quantityError.value = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+    // Round to nearest valid value (whole or whole + 0.5)
+    const whole = Math.floor(newQuantity)
+    const decimal = newQuantity % 1
+    newQuantity = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+    // Clear error after a short delay
+    setTimeout(() => {
+      quantityError.value = null
+    }, 3000)
+  } else {
+    quantityError.value = null
+  }
   
   const variantId = selectedVariant.value ? selectedVariant.value.id : null
   const cartId = variantId 
@@ -149,14 +170,29 @@ const updateCartQuantity = (newQuantity) => {
 }
 
 const addToCart = () => {
+  // Validate for sold_by_length products
+  if (product.value.sold_by_length && !isValidLengthQuantity(quantity.value)) {
+    quantityError.value = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+    // Round to nearest valid value (whole or whole + 0.5)
+    const whole = Math.floor(quantity.value)
+    const decimal = quantity.value % 1
+    quantity.value = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+    // Clear error after a short delay
+    setTimeout(() => {
+      quantityError.value = null
+    }, 3000)
+    return
+  }
+  
+  quantityError.value = null
   const cartItem = {
     ...product.value,
     selectedVariant: selectedVariant.value
   }
   cartStore.add(cartItem, quantity.value)
 
-  // Reset quantity to 1 after adding
-  quantity.value = 1
+  // Reset quantity after adding
+  quantity.value = product.value.sold_by_length ? 0.5 : 1
   // Don't redirect - stay on page so user can add more variants or change quantity
 }
 
@@ -166,6 +202,46 @@ const selectImage = (index) => {
 
 const goBack = () => {
   router.push('/')
+}
+
+// Validate quantity for sold_by_length products (must be whole number or whole + 0.5)
+const isValidLengthQuantity = (qty) => {
+  if (qty <= 0) return false
+  // Check if it's a whole number or whole + 0.5
+  const decimalPart = qty % 1
+  return decimalPart === 0 || decimalPart === 0.5
+}
+
+// Validate and update quantity
+const validateAndUpdateQuantity = (newQuantity) => {
+  if (product.value?.sold_by_length && !isValidLengthQuantity(newQuantity)) {
+    quantityError.value = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+    // Round to nearest valid value (whole or whole + 0.5)
+    const whole = Math.floor(newQuantity)
+    const decimal = newQuantity % 1
+    quantity.value = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+    // Clear error after a short delay
+    setTimeout(() => {
+      quantityError.value = null
+    }, 3000)
+  } else {
+    quantityError.value = null
+    quantity.value = newQuantity
+  }
+}
+
+// Get length_per_unit from variant or product
+const getVariantLength = () => {
+  if (selectedVariant.value) {
+    // Use effective_length_per_unit if available (from backend), otherwise length_per_unit, otherwise product's length
+    if (selectedVariant.value.effective_length_per_unit) {
+      return parseFloat(selectedVariant.value.effective_length_per_unit)
+    }
+    if (selectedVariant.value.length_per_unit) {
+      return parseFloat(selectedVariant.value.length_per_unit)
+    }
+  }
+  return product.value?.length_per_unit ? parseFloat(product.value.length_per_unit) : null
 }
 
 onMounted(() => {
@@ -290,24 +366,35 @@ onMounted(() => {
                 <h3 class="font-semibold text-sm text-gray-900 mb-2">Količina</h3>
                 <div class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                   <button
-                    @click="quantity = Math.max(1, quantity - 1)"
+                    @click="validateAndUpdateQuantity(Math.max(product.sold_by_length ? 0.5 : 1, quantity - (product.sold_by_length ? 0.5 : 1)))"
                     class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                   >
                     -
                   </button>
                   <input
-                    v-model.number="quantity"
+                    :value="quantity"
+                    @input="validateAndUpdateQuantity(parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
                     type="number"
-                    min="1"
-                    class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                    :min="product.sold_by_length ? 0.5 : 1"
+                    :step="product.sold_by_length ? 0.5 : 1"
+                    class="w-32 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                   />
                   <button
-                    @click="quantity++"
+                    @click="validateAndUpdateQuantity(quantity + (product.sold_by_length ? 0.5 : 1))"
                     class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                   >
                     +
                   </button>
                 </div>
+                <p v-if="product.sold_by_length" class="text-xs text-blue-600 font-semibold italic mt-2">
+                  ⚠️ Proizvod se prodaje po metraži (1 komad = {{ getVariantLength() || product.length_per_unit || 6 }}m). Možete kupiti ceo proizvod ili na pola (npr. 1, 1.5, 2, 2.5).
+                </p>
+                <p v-if="quantityError" class="text-xs text-red-600 font-semibold italic mt-1">
+                  ❌ {{ quantityError }}
+                </p>
+                <p v-if="product.sold_by_length && quantity" class="text-xs text-green-600 font-semibold mt-1">
+                  📏 Izabrano je {{ (quantity * (getVariantLength() || product.length_per_unit || 6)).toFixed(2) }} metara
+                </p>
               </div>
 
               <!-- Additional Info -->
@@ -338,27 +425,34 @@ onMounted(() => {
                   </div>
                   <div class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                     <button
-                      @click="updateCartQuantity(getCartQuantity - 1)"
-                      :disabled="getCartQuantity <= 1"
+                      @click="updateCartQuantity(getCartQuantity - (product.sold_by_length ? 0.5 : 1))"
+                      :disabled="getCartQuantity <= (product.sold_by_length ? 0.5 : 1)"
                       class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       -
                     </button>
                     <input
                       :value="getCartQuantity"
-                      @input="updateCartQuantity(parseInt($event.target.value) || 1)"
-                      @blur="updateCartQuantity(Math.max(1, parseInt($event.target.value) || 1))"
+                      @input="updateCartQuantity(parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
+                      @blur="updateCartQuantity(Math.max(product.sold_by_length ? 0.5 : 1, parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1)))"
                       type="number"
-                      min="1"
-                      class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                      :min="product.sold_by_length ? 0.5 : 1"
+                      :step="product.sold_by_length ? 0.5 : 1"
+                      class="w-32 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                     />
                     <button
-                      @click="updateCartQuantity(getCartQuantity + 1)"
+                      @click="updateCartQuantity(getCartQuantity + (product.sold_by_length ? 0.5 : 1))"
                       class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                     >
                       +
                     </button>
                   </div>
+                  <p v-if="product.sold_by_length" class="text-xs text-blue-600 font-semibold italic">
+                    📏 Izabrano je {{ (getCartQuantity * (getVariantLength() || product.length_per_unit || 6)).toFixed(2) }} metara
+                  </p>
+                  <p v-if="quantityError" class="text-xs text-red-600 font-semibold italic mt-1">
+                    ❌ {{ quantityError }}
+                  </p>
                 </div>
                 <!-- If product is not in cart, show add button -->
                 <button

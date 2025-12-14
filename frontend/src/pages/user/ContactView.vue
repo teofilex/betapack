@@ -124,9 +124,9 @@ const sendMessage = async () => {
 
         <!-- Page Header -->
         <div class="text-center mb-5">
-          <h1 class="text-xl lg:text-2xl font-bold text-gray-900 mb-1.5">Kontaktirajte nas</h1>
+          <h1 class="text-xl lg:text-2xl font-bold text-gray-900 mb-1.5">KONTAKTIRAJTE NAS</h1>
           <p class="text-xs lg:text-sm text-gray-600">
-            Imamo pitanje ili potrebu za ponudom? Slobodno nas kontaktirajte!
+            Za sva pitanja i ponude, slobodno nas pozovite!
           </p>
         </div>
 

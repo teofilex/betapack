@@ -25,10 +25,13 @@ const orderId = route.params.orderId
           </div>
 
           <!-- Title -->
-          <h1 class="text-xl lg:text-2xl font-bold text-gray-900 mb-3">
-            Narudžbina uspešno poslata!
+          <h1
+ class="text-xl lg:text-2xl font-bold text-gray-900 mb-3">
+            Uspešno ste poručili robu! 
           </h1>
-
+<p class="text-sm lg:text-base text-gray-600 mb-4">
+           Uskoro ćemo vas kontaktirati da potvrdimo porudžbinu.
+          </p>
           <!-- Order Number -->
           <p class="text-sm lg:text-base text-gray-600 mb-4">
             Broj narudžbine: <span class="font-semibold text-[#1565c0]">#{{ orderId }}</span>
@@ -51,7 +54,7 @@ const orderId = route.params.orderId
               </li>
               <li class="flex items-start gap-1.5">
                 <span class="text-green-600 mt-0.5">✓</span>
-                <span>Dogovoriće se finalna cena i uslovi isporuke</span>
+                <span>Potvrđujemo porudžbinu i uslove isporuke</span>
               </li>
               <li class="flex items-start gap-1.5">
                 <span class="text-green-600 mt-0.5">✓</span>
@@ -103,7 +106,7 @@ const orderId = route.params.orderId
 
           <!-- Thank you -->
           <p class="text-sm text-gray-600 mt-4">
-            Hvala vam što ste izabrali našu bravariju! 🔨
+            Hvala vam što ste izabrali našu bravariju!
           </p>
 
         </div>

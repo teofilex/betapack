@@ -69,7 +69,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Informacije o kupcu', {
-            'fields': ('customer_name', 'customer_phone', 'customer_email', 'delivery_address')
+            'fields': ('customer_name', 'customer_phone', 'customer_email', 'address', 'city')
         }),
         ('Status narudžbine', {
             'fields': ('status', 'notes', 'admin_notes')

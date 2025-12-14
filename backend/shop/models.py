@@ -69,6 +69,23 @@ class Product(models.Model):
     in_stock = models.BooleanField(default=True)
     stock_quantity = models.IntegerField(default=0, help_text="Količina na lageru (0 = neograničeno)")
 
+    # Dodato: Prodaja po metraži
+    sold_by_length = models.BooleanField(default=False, help_text="Proizvod se prodaje po metraži")
+    length_per_unit = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=6.0, 
+        blank=True,
+        null=False,
+        help_text="Dužina 1 komada u metrima (npr. 6.0 za 6m)"
+    )
+    
+    def save(self, *args, **kwargs):
+        """Override save da osigura da length_per_unit uvek ima vrednost"""
+        if self.length_per_unit is None or self.length_per_unit == 0:
+            self.length_per_unit = 6.0
+        super().save(*args, **kwargs)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -137,6 +154,15 @@ class ProductVariant(models.Model):
     in_stock = models.BooleanField(default=True)
     stock_quantity = models.IntegerField(default=0)
 
+    # Dužina 1 komada za proizvode po metraži (opciono - ako nije postavljeno, koristi se product.length_per_unit)
+    length_per_unit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Dužina 1 komada u metrima za ovu varijantu (npr. 4.0 za 4m). Ako nije postavljeno, koristi se dužina iz proizvoda."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -157,6 +183,16 @@ class ProductVariant(models.Model):
     def final_price(self):
         """Alias za current_price (za kompatibilnost)"""
         return self.current_price
+    
+    @property
+    def effective_length_per_unit(self):
+        """Vraća length_per_unit varijante ili proizvoda ako varijanta nema svoju"""
+        if self.length_per_unit is not None:
+            return self.length_per_unit
+        # Fallback na product.length_per_unit
+        if hasattr(self, 'product') and self.product:
+            return self.product.length_per_unit if hasattr(self.product, 'length_per_unit') else 6.0
+        return 6.0
 
 
 def get_image_storage():
@@ -237,10 +273,14 @@ class Order(models.Model):
     )
     customer_email = models.EmailField(blank=True, null=True, help_text="Opciono")
 
-    # Adresa dostave (obavezno)
-    delivery_address = models.TextField(
-        default='',
-        help_text="Adresa dostave je obavezna"
+    # Adresa dostave (obavezno) - samo Republika Srbija
+    address = models.CharField(
+        max_length=200,
+        help_text="Ulica i broj (obavezno)"
+    )
+    city = models.CharField(
+        max_length=100,
+        help_text="Grad (obavezno, samo Republika Srbija)"
     )
 
     # Status i napomene
@@ -291,7 +331,7 @@ class OrderItem(models.Model):
         help_text="Odabrana varijanta/dimenzija"
     )
 
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1, help_text="Količina (može biti decimalna za proizvode po metraži)")
 
     # Snapshot cene u momentu narudžbine
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)

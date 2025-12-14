@@ -26,7 +26,8 @@ const form = ref({
   sale_price: null,
   sku: '',
   in_stock: true,
-  stock_quantity: 0
+  stock_quantity: 0,
+  length_per_unit: null
 })
 
 const fetchVariants = async () => {
@@ -55,7 +56,8 @@ const openForm = (variant = null) => {
       sale_price: null,
       sku: '',
       in_stock: true,
-      stock_quantity: 0
+      stock_quantity: 0,
+      length_per_unit: null
     }
   }
   showForm.value = true
@@ -196,6 +198,7 @@ watch(() => props.productId, (newId) => {
                   {{ variant.price }} RSD
                 </span>
               </span>
+              <span v-if="variant.length_per_unit"><strong>Dužina:</strong> {{ variant.length_per_unit }}m</span>
             </div>
             <p class="text-xs mt-1.5 font-medium" :class="variant.in_stock ? 'text-green-600' : 'text-red-600'">
               {{ variant.in_stock ? `✅ Na stanju: ${variant.stock_quantity}` : '❌ Nije na stanju' }}
@@ -313,6 +316,24 @@ watch(() => props.productId, (newId) => {
             class="cursor-pointer"
           />
           <label for="variant-in-stock" class="text-gray-800 text-[10px] font-medium cursor-pointer px-1">Na stanju</label>
+        </div>
+
+        <!-- Length per unit (only if product is sold by length) -->
+        <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <label class="block text-[10px] font-medium mb-2 text-gray-800 px-1">Dužina 1 komada (u metrima) - Opciono</label>
+          <input
+            v-model.number="form.length_per_unit"
+            type="number"
+            step="0.1"
+            min="0.1"
+            placeholder="npr. 4.0 ili 6.0"
+            class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
+                   focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
+          />
+          <p class="text-[10px] text-gray-600 mt-1 px-1">
+            Unesite dužinu 1 komada za ovu varijantu (npr. 4.0 za 4m, 6.0 za 6m). 
+            Ako ostavite prazno, koristiće se dužina iz proizvoda.
+          </p>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">

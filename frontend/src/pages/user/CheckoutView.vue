@@ -14,7 +14,8 @@ const form = ref({
   customer_name: '',
   customer_phone: '',
   customer_email: '',
-  delivery_address: '',
+  address: '',
+  city: '',
   notes: ''
 })
 
@@ -66,9 +67,22 @@ const validateField = (fieldName) => {
       }
       break
 
-    case 'delivery_address':
-      if (!form.value.delivery_address.trim()) {
-        errors.value.delivery_address = 'Adresa dostave je obavezna'
+    case 'address':
+      if (!form.value.address.trim()) {
+        errors.value.address = 'Adresa je obavezna'
+      }
+      break
+
+    case 'city':
+      if (!form.value.city.trim()) {
+        errors.value.city = 'Grad je obavezan'
+      } else {
+        // Validacija da je grad u Republici Srbiji
+        const city = form.value.city.trim()
+        const invalidCities = ['Zagreb', 'Ljubljana', 'Sarajevo', 'Podgorica', 'Skopje', 'Tirana', 'Sofia', 'Bucharest', 'Budapest']
+        if (invalidCities.includes(city)) {
+          errors.value.city = 'Dostava je moguća samo na teritoriji Republike Srbije'
+        }
       }
       break
   }
@@ -94,8 +108,19 @@ const validateForm = () => {
     }
   }
 
-  if (!form.value.delivery_address.trim()) {
-    errors.value.delivery_address = 'Adresa dostave je obavezna'
+  if (!form.value.address.trim()) {
+    errors.value.address = 'Adresa je obavezna'
+  }
+
+  if (!form.value.city.trim()) {
+    errors.value.city = 'Grad je obavezan'
+  } else {
+    // Validacija da je grad u Republici Srbiji
+    const city = form.value.city.trim()
+    const invalidCities = ['Zagreb', 'Ljubljana', 'Sarajevo', 'Podgorica', 'Skopje', 'Tirana', 'Sofia', 'Bucharest', 'Budapest']
+    if (invalidCities.includes(city)) {
+      errors.value.city = 'Dostava je moguća samo na teritoriji Republike Srbije'
+    }
   }
 
   return Object.keys(errors.value).length === 0
@@ -117,7 +142,8 @@ const submitOrder = async () => {
       customer_name: form.value.customer_name.trim(),
       customer_phone: form.value.customer_phone.replace(/[\s\-\/]/g, ''),
       customer_email: form.value.customer_email?.trim() || null,
-      delivery_address: form.value.delivery_address.trim(),
+      address: form.value.address.trim(),
+      city: form.value.city.trim(),
       notes: form.value.notes?.trim() || null,
       items: cartItems.value.map(item => ({
         product_id: item.id,
@@ -166,10 +192,15 @@ const submitOrder = async () => {
           ? backendErrors.customer_email[0]
           : backendErrors.customer_email
       }
-      if (backendErrors.delivery_address) {
-        errors.value.delivery_address = Array.isArray(backendErrors.delivery_address)
-          ? backendErrors.delivery_address[0]
-          : backendErrors.delivery_address
+      if (backendErrors.address) {
+        errors.value.address = Array.isArray(backendErrors.address)
+          ? backendErrors.address[0]
+          : backendErrors.address
+      }
+      if (backendErrors.city) {
+        errors.value.city = Array.isArray(backendErrors.city)
+          ? backendErrors.city[0]
+          : backendErrors.city
       }
 
       // If there are field-specific errors, show them
@@ -275,18 +306,36 @@ const submitOrder = async () => {
                 <!-- Address -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Adresa dostave <span class="text-red-600">*</span>
+                    Adresa <span class="text-red-600">*</span>
                   </label>
-                  <textarea
-                    v-model="form.delivery_address"
-                    @blur="validateField('delivery_address')"
+                  <input
+                    v-model="form.address"
+                    @blur="validateField('address')"
                     required
-                    rows="2"
-                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent resize-none transition-colors"
-                    :class="errors.delivery_address ? 'border-red-500 bg-red-50' : 'border-gray-300'"
-                    placeholder="Ulica i broj, Grad"
-                  ></textarea>
-                  <p v-if="errors.delivery_address" class="text-red-600 text-sm mt-1 font-medium">{{ errors.delivery_address }}</p>
+                    type="text"
+                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent transition-colors"
+                    :class="errors.address ? 'border-red-500 bg-red-50' : 'border-gray-300'"
+                    placeholder="Ulica i broj"
+                  />
+                  <p v-if="errors.address" class="text-red-600 text-sm mt-1 font-medium">{{ errors.address }}</p>
+                </div>
+
+                <!-- City -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Grad <span class="text-red-600">*</span>
+                  </label>
+                  <input
+                    v-model="form.city"
+                    @blur="validateField('city')"
+                    required
+                    type="text"
+                    class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-[#1976d2] focus:border-transparent transition-colors"
+                    :class="errors.city ? 'border-red-500 bg-red-50' : 'border-gray-300'"
+                    placeholder="Beograd"
+                  />
+                  <p v-if="errors.city" class="text-red-600 text-sm mt-1 font-medium">{{ errors.city }}</p>
+                  <p v-else class="text-gray-500 text-sm mt-1">Dostava samo na teritoriji Republike Srbije</p>
                 </div>
 
                 <!-- Notes -->
@@ -311,9 +360,8 @@ const submitOrder = async () => {
                   <ul class="text-xs text-blue-800 space-y-0.5">
                     <li>1. Popunite formu sa vašim podacima</li>
                     <li>2. Kliknite "Pošalji narudžbinu"</li>
-                    <li>3. Primićete SMS potvrdu na vaš telefon</li>
-                    <li>4. Kontaktiraćemo vas telefonom za dodatne detalje</li>
-                    <li>5. Finalna cena i uslovi dostave se dogovaraju telefonski</li>
+                    <li>3. Kontaktiraćemo vas telefonom za dodatne detalje</li>
+                    <li>4. Potvrda porudžbine i uslovi dostave se dogovaraju telefonski</li>
                   </ul>
                 </div>
 
@@ -363,7 +411,7 @@ const submitOrder = async () => {
                   <span class="text-gray-900">Ukupno:</span>
                   <span class="text-green-700">{{ formatPrice(cartTotal) }}</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Finalna cena će biti potvrđena telefonom</p>
+                <p class="text-xs text-gray-500 mt-1">Uskoro ćemo vas kontaktirati da potvrdimo porudžbinu i uslove dostave.</p>
               </div>
 
               <!-- Submit Button -->

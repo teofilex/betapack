@@ -22,7 +22,8 @@ export const useCartStore = defineStore('cart', {
 
     getters: {
         itemCount: (state) => {
-            return state.items.reduce((sum, i) => sum + i.quantity, 0)
+            // Vraća broj stavki (items), ne ukupnu količinu
+            return state.items.length
         },
 
         total: (state) => {
@@ -89,10 +90,23 @@ export const useCartStore = defineStore('cart', {
                 itemPrice = parseFloat(product.current_price) || 0
             }
 
+            // Get length_per_unit from variant if available, otherwise from product
+            let lengthPerUnit = 6.0
+            if (product.selectedVariant && product.selectedVariant.effective_length_per_unit) {
+                lengthPerUnit = parseFloat(product.selectedVariant.effective_length_per_unit)
+            } else if (product.selectedVariant && product.selectedVariant.length_per_unit) {
+                lengthPerUnit = parseFloat(product.selectedVariant.length_per_unit)
+            } else if (product.length_per_unit) {
+                lengthPerUnit = parseFloat(product.length_per_unit)
+            }
+
             if (found) {
                 found.quantity += quantity
                 // Update price in case it changed
                 found.current_price = itemPrice
+                // Update sold_by_length and length_per_unit in case it changed
+                found.sold_by_length = product.sold_by_length || false
+                found.length_per_unit = lengthPerUnit
             } else {
                 this.items.push({
                     cartId: cartId,
@@ -102,6 +116,8 @@ export const useCartStore = defineStore('cart', {
                     images: product.images || [],
                     category_name: product.category_name,
                     selectedVariant: product.selectedVariant || null,
+                    sold_by_length: product.sold_by_length || false,
+                    length_per_unit: lengthPerUnit,
                     quantity: quantity
                 })
             }
@@ -111,9 +127,12 @@ export const useCartStore = defineStore('cart', {
 
         updateQuantity(itemId, newQuantity) {
             const item = this.items.find(i => i.cartId === itemId || i.id === itemId)
-            if (item && newQuantity >= 1) {
-                item.quantity = newQuantity
-                this.save()
+            if (item) {
+                const minQuantity = item.sold_by_length ? 0.5 : 1
+                if (newQuantity >= minQuantity) {
+                    item.quantity = newQuantity
+                    this.save()
+                }
             }
         },
 

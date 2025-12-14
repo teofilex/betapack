@@ -201,8 +201,8 @@ Stavke:
             if order.notes:
                 message += f"\nNapomena kupca: {order.notes}"
 
-            if order.delivery_address:
-                message += f"\nAdresa dostave: {order.delivery_address}"
+            if order.address and order.city:
+                message += f"\nAdresa dostave: {order.address}, {order.city}"
 
             message += f"\n\n---\nProveri admin panel za više detalja."
 

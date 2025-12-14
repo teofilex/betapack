@@ -8,6 +8,7 @@ import CheckoutView from "@/pages/user/CheckoutView.vue";
 import OrderSuccessView from "@/pages/user/OrderSuccessView.vue";
 import ContactView from "@/pages/user/ContactView.vue";
 import AboutView from "@/pages/user/AboutView.vue";
+import NotFoundView from "@/pages/user/NotFoundView.vue";
 import { useAuthStore } from "@/store/auth";
 
 const router = createRouter({
@@ -61,6 +62,11 @@ const router = createRouter({
             name: 'admin-panel',
             component: AdminView,
             meta: { requiresAuth: true }
+        },
+        {
+            path: '/:pathMatch(.*)*',
+            name: 'not-found',
+            component: NotFoundView
         }
     ],
     history: createWebHistory(import.meta.env.BASE_URL),

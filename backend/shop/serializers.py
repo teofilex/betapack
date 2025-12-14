@@ -55,13 +55,19 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     current_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     final_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
+    effective_length_per_unit = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
     class Meta:
         model = ProductVariant
         fields = [
             'id', 'product', 'name', 'price', 'on_sale', 'sale_price',
             'current_price', 'final_price', 'sku',
-            'in_stock', 'stock_quantity', 'created_at'
+            'in_stock', 'stock_quantity', 'length_per_unit', 'effective_length_per_unit',
+            'created_at'
         ]
+        extra_kwargs = {
+            'length_per_unit': {'required': False, 'allow_null': True}
+        }
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -79,9 +85,45 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'price', 'on_sale', 'sale_price',
             'category', 'category_name', 'subcategory', 'subcategory_name',
             'current_price', 'min_price', 'has_sale_variants',
-            'featured', 'in_stock', 'stock_quantity',
+            'featured', 'in_stock', 'stock_quantity', 'sold_by_length', 'length_per_unit',
             'variants', 'images', 'created_at', 'updated_at'
         ]
+        extra_kwargs = {
+            'length_per_unit': {'required': False}
+        }
+    
+    def validate_length_per_unit(self, value):
+        """Validacija za length_per_unit"""
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Dužina mora biti veća od 0")
+        return value
+    
+    def create(self, validated_data):
+        """Override create da osigura da length_per_unit ima default vrednost"""
+        if 'length_per_unit' not in validated_data or validated_data.get('length_per_unit') is None:
+            validated_data['length_per_unit'] = 6.0
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        """Override update da osigura da length_per_unit ima default vrednost"""
+        if 'length_per_unit' not in validated_data or validated_data.get('length_per_unit') is None:
+            # Ako instance već ima length_per_unit, zadrži ga, inače koristi default
+            if hasattr(instance, 'length_per_unit') and instance.length_per_unit is not None:
+                validated_data['length_per_unit'] = instance.length_per_unit
+            else:
+                validated_data['length_per_unit'] = 6.0
+        return super().update(instance, validated_data)
+    
+    def to_representation(self, instance):
+        """Override to_representation da osigura da length_per_unit uvek ima vrednost"""
+        data = super().to_representation(instance)
+        # Osiguraj da length_per_unit uvek ima vrednost
+        if 'length_per_unit' not in data or data['length_per_unit'] is None:
+            data['length_per_unit'] = str(6.0)
+        # Konvertuj Decimal u string za JSON serializaciju
+        if 'length_per_unit' in data and isinstance(data['length_per_unit'], (int, float)):
+            data['length_per_unit'] = str(float(data['length_per_unit']))
+        return data
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -89,12 +131,28 @@ class OrderItemSerializer(serializers.ModelSerializer):
     variant_name = serializers.CharField(source='variant.name', read_only=True, allow_null=True)
     unit_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    sold_by_length = serializers.SerializerMethodField()
+    effective_length_per_unit = serializers.SerializerMethodField()
+
+    def get_sold_by_length(self, obj):
+        """Vraća da li je proizvod prodavan po metraži"""
+        if obj.product:
+            return obj.product.sold_by_length
+        return False
+
+    def get_effective_length_per_unit(self, obj):
+        """Vraća efektivnu dužinu po jedinici (iz varijante ili proizvoda)"""
+        if obj.variant and obj.variant.effective_length_per_unit:
+            return obj.variant.effective_length_per_unit
+        if obj.product and obj.product.length_per_unit:
+            return obj.product.length_per_unit
+        return None
 
     class Meta:
         model = OrderItem
         fields = [
             'id', 'order', 'product', 'product_name', 'variant', 'variant_name',
-            'quantity', 'unit_price', 'total_price'
+            'quantity', 'unit_price', 'total_price', 'sold_by_length', 'effective_length_per_unit'
         ]
 
 
@@ -105,7 +163,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'customer_name', 'customer_phone', 'customer_email',
-            'delivery_address', 'notes', 'status', 'total_amount',
+            'address', 'city', 'notes', 'status', 'total_amount',
             'items', 'created_at', 'updated_at'
         ]
 
@@ -117,28 +175,60 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         required=True
     )
 
+    # Lista gradova u Republici Srbiji
+    SERBIAN_CITIES = [
+        'Beograd', 'Novi Sad', 'Niš', 'Kragujevac', 'Subotica', 'Zrenjanin', 'Pančevo',
+        'Čačak', 'Novi Pazar', 'Kraljevo', 'Smederevo', 'Leskovac', 'Valjevo', 'Kruševac',
+        'Vranje', 'Šabac', 'Užice', 'Sombor', 'Požarevac', 'Pirot', 'Zaječar', 'Kikinda',
+        'Sremska Mitrovica', 'Jagodina', 'Vršac', 'Bor', 'Prokuplje', 'Loznica', 'Smederevska Palanka',
+        'Inđija', 'Vrbas', 'Ruma', 'Bačka Palanka', 'Stara Pazova', 'Kovin', 'Aranđelovac',
+        'Obrenovac', 'Lazarevac', 'Mladenovac', 'Batajnica', 'Surčin', 'Barajevo', 'Grocka',
+        'Palilula', 'Zvezdara', 'Voždovac', 'Savski Venac', 'Stari Grad', 'Vračar', 'Novi Beograd',
+        'Zemun', 'Surčin', 'Čukarica', 'Rakovica', 'Sopot', 'Gradska opština', 'Opština'
+    ]
+
     class Meta:
         model = Order
         fields = [
             'customer_name', 'customer_phone', 'customer_email',
-            'delivery_address', 'notes', 'items'
+            'address', 'city', 'notes', 'items'
         ]
         extra_kwargs = {
             'customer_name': {'required': True},
             'customer_phone': {'required': True},
             'customer_email': {'allow_null': True, 'allow_blank': True, 'required': False},
-            'delivery_address': {'allow_null': True, 'allow_blank': True, 'required': False},
+            'address': {'required': True},
+            'city': {'required': True},
             'notes': {'allow_null': True, 'allow_blank': True, 'required': False},
         }
+    
+    def validate_city(self, value):
+        """Validacija da je grad u Republici Srbiji"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Grad je obavezan")
+        
+        city_normalized = value.strip().title()
+        
+        # Proveri da li je grad u listi (case-insensitive)
+        if city_normalized not in [c.title() for c in self.SERBIAN_CITIES]:
+            # Dozvoli i druge gradove ako su validni (može biti manji grad)
+            # Ali proveri da nije očigledno van Srbije
+            invalid_cities = ['Zagreb', 'Ljubljana', 'Sarajevo', 'Podgorica', 'Skopje', 'Tirana', 'Sofia', 'Bucharest', 'Budapest']
+            if city_normalized in invalid_cities:
+                raise serializers.ValidationError("Dostava je moguća samo na teritoriji Republike Srbije")
+        
+        return city_normalized
     
     def validate(self, data):
         # Konvertuj prazne stringove u None za opciona polja
         if 'customer_email' in data and data['customer_email'] == '':
             data['customer_email'] = None
-        if 'delivery_address' in data and data['delivery_address'] == '':
-            data['delivery_address'] = None
         if 'notes' in data and data['notes'] == '':
             data['notes'] = None
+        if 'address' in data:
+            data['address'] = data['address'].strip()
+        if 'city' in data:
+            data['city'] = data['city'].strip()
         return data
     
     def create(self, validated_data):
@@ -151,7 +241,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             product_id = item_data.get('product') or item_data.get('product_id')
             variant_id = item_data.get('variant') or item_data.get('variant_id')
-            quantity = item_data.get('quantity', 1)
+            # Convert quantity to Decimal to support decimal quantities for products sold by length
+            from decimal import Decimal
+            quantity = Decimal(str(item_data.get('quantity', 1)))
             
             # Get product and variant
             product = None

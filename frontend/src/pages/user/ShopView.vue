@@ -22,6 +22,9 @@ const selectedCategory = ref(null)
 const searchQuery = ref('')
 const showOnlyOnSale = ref(false)
 
+// Error message for invalid quantity
+const quantityError = ref({})
+
 const formatPrice = (price) => {
   return new Intl.NumberFormat('sr-RS', {
     style: 'currency',
@@ -108,14 +111,42 @@ const productQuantities = ref({})
 // Selected variants per product (key = product.id, value = variant or null)
 const selectedVariants = ref({})
 
-// Get quantity for a product (default 1)
+// Get quantity for a product (default 1 or 0.5 for sold_by_length)
 const getQuantity = (productId) => {
-  return productQuantities.value[productId] || 1
+  if (productQuantities.value[productId] !== undefined) {
+    return productQuantities.value[productId]
+  }
+  // Always return 1 for initial display (not 0.5)
+  return 1
+}
+
+// Validate quantity for sold_by_length products (must be whole number or whole + 0.5)
+const isValidLengthQuantity = (quantity) => {
+  if (quantity <= 0) return false
+  // Check if it's a whole number or whole + 0.5
+  const decimalPart = quantity % 1
+  return decimalPart === 0 || decimalPart === 0.5
 }
 
 // Set quantity for a product
 const setQuantity = (productId, quantity) => {
-  if (quantity < 1) quantity = 1
+  const product = productStore.products.find(p => p.id === productId)
+  const minQuantity = product?.sold_by_length ? 0.5 : 1
+  if (quantity < minQuantity) quantity = minQuantity
+  
+  // Validate for sold_by_length products
+  if (product?.sold_by_length && !isValidLengthQuantity(quantity)) {
+    quantityError.value[productId] = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+    // Round to nearest valid value (whole or whole + 0.5)
+    const whole = Math.floor(quantity)
+    const decimal = quantity % 1
+    quantity = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+  } else {
+    quantityError.value[productId] = null
+  }
+  
+  // Ensure quantity is always at least 1 for display (but can be 0.5 for sold_by_length)
+  if (!product?.sold_by_length && quantity < 1) quantity = 1
   productQuantities.value[productId] = quantity
 }
 
@@ -177,6 +208,21 @@ const getVariantOriginalPrice = (product) => {
   return parseFloat(product.price)
 }
 
+// Get length_per_unit from variant or product
+const getVariantLength = (product) => {
+  const variant = getSelectedVariant(product)
+  if (variant) {
+    // Use effective_length_per_unit if available (from backend), otherwise length_per_unit, otherwise product's length
+    if (variant.effective_length_per_unit) {
+      return parseFloat(variant.effective_length_per_unit)
+    }
+    if (variant.length_per_unit) {
+      return parseFloat(variant.length_per_unit)
+    }
+  }
+  return product.length_per_unit ? parseFloat(product.length_per_unit) : null
+}
+
 // Get cart item for a product
 const getCartItem = (product) => {
   const variant = getSelectedVariant(product)
@@ -192,7 +238,23 @@ const getCartQuantity = (product) => {
 
 // Update quantity in cart
 const updateCartQuantity = (product, newQuantity) => {
-  if (newQuantity < 1) return
+  const minQuantity = product.sold_by_length ? 0.5 : 1
+  if (newQuantity < minQuantity) return
+  
+  // Validate for sold_by_length products
+  if (product.sold_by_length && !isValidLengthQuantity(newQuantity)) {
+    quantityError.value[product.id] = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+    // Round to nearest valid value (whole or whole + 0.5)
+    const whole = Math.floor(newQuantity)
+    const decimal = newQuantity % 1
+    newQuantity = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+    // Clear error after a short delay
+    setTimeout(() => {
+      quantityError.value[product.id] = null
+    }, 3000)
+  } else {
+    quantityError.value[product.id] = null
+  }
   
   const variant = getSelectedVariant(product)
   const cartId = variant 
@@ -205,6 +267,23 @@ const updateCartQuantity = (product, newQuantity) => {
 // Add product to cart directly from card
 const addToCartFromCard = (product) => {
   const quantity = getQuantity(product.id)
+  
+  // Validate for sold_by_length products
+  if (product.sold_by_length && !isValidLengthQuantity(quantity)) {
+    quantityError.value[product.id] = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+    // Round to nearest valid value (whole or whole + 0.5)
+    const whole = Math.floor(quantity)
+    const decimal = quantity % 1
+    const validQuantity = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+    setQuantity(product.id, validQuantity)
+    // Clear error after a short delay
+    setTimeout(() => {
+      quantityError.value[product.id] = null
+    }, 3000)
+    return
+  }
+  
+  quantityError.value[product.id] = null
   const variant = getSelectedVariant(product)
 
   const productToAdd = {
@@ -216,6 +295,16 @@ const addToCartFromCard = (product) => {
   // Don't redirect - stay on shop page so user can add more variants
   // Reset quantity to 1 after adding
   setQuantity(product.id, 1)
+}
+
+// Remove product from cart
+const removeFromCart = (product) => {
+  const variant = getSelectedVariant(product)
+  const cartId = variant 
+    ? `${product.id}-${variant.id}`
+    : product.id
+  
+  cartStore.remove(cartId)
 }
 
 // Watch for changes in showOnlyOnSale filter and reset selected variants
@@ -266,10 +355,10 @@ onMounted(async () => {
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="text-center text-white px-6 py-8 max-w-4xl rounded-xl" style="background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);">
             <h1 class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.9);">
-              Kovano gvožđe i bravarijski proizvodi
+              Kovano gvožđe i bravarski proizvodi
             </h1>
             <p class="text-base lg:text-xl text-white" style="text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
-              Širok asortiman kvalitetnih proizvoda - profili, ograde, ukrasni elementi i mnogo više
+              Širok asortiman kvalitetnih proizvoda - profili, cevi, čelik u traci, ukrasni elementi i dodatna oprema za bravariju
             </p>
           </div>
         </div>
@@ -538,24 +627,39 @@ onMounted(async () => {
                           </select>
                         </div>
 
-                        <!-- Quantity Selector -->
-                        <div class="flex items-center gap-2 mb-2" @click.stop>
-                          <span class="text-xs font-bold text-gray-700">Količina:</span>
-                          <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
-                            <button
-                              @click="setQuantity(product.id, getQuantity(product.id) - 1)"
-                              class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
-                            >
-                              -
-                            </button>
-                            <span class="w-10 text-center text-base font-bold text-gray-900">{{ getQuantity(product.id) }}</span>
-                            <button
-                              @click="setQuantity(product.id, getQuantity(product.id) + 1)"
-                              class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
-                            >
-                              +
-                            </button>
+                        <!-- Quantity Selector (only show if product is NOT in cart) -->
+                        <div v-if="!cartStore.isInCart(product.id, getSelectedVariant(product)?.id)" class="mb-2" @click.stop>
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold text-gray-700">Količina:</span>
+                            <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
+                              <button
+                                @click="setQuantity(product.id, getQuantity(product.id) - (product.sold_by_length ? 0.5 : 1))"
+                                class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
+                              >
+                                -
+                              </button>
+                              <input
+                                v-model.number="productQuantities[product.id]"
+                                @input="setQuantity(product.id, parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
+                                type="number"
+                                :min="product.sold_by_length ? 0.5 : 1"
+                                :step="product.sold_by_length ? 0.5 : 1"
+                                class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                              />
+                              <button
+                                @click="setQuantity(product.id, getQuantity(product.id) + (product.sold_by_length ? 0.5 : 1))"
+                                class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
+                              >
+                                +
+                              </button>
+                            </div>
                           </div>
+                          <p v-if="product.sold_by_length" class="text-[10px] text-blue-600 font-semibold italic">
+                            ⚠️ Proizvod se prodaje po metraži (1 komad = {{ getVariantLength(product) || product.length_per_unit || 6 }}m). Možete kupiti ceo proizvod ili na pola (npr. 1, 1.5, 2, 2.5).
+                          </p>
+                          <p v-if="quantityError[product.id]" class="text-[10px] text-red-600 font-semibold italic mt-1">
+                            ❌ {{ quantityError[product.id] }}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -569,27 +673,41 @@ onMounted(async () => {
                       </div>
                       <div class="flex items-center justify-between w-full px-4 bg-gray-100 rounded-xl py-1">
                         <button
-                          @click.stop="updateCartQuantity(product, getCartQuantity(product) - 1)"
-                          :disabled="getCartQuantity(product) <= 1"
+                          @click.stop="updateCartQuantity(product, getCartQuantity(product) - (product.sold_by_length ? 0.5 : 1))"
+                          :disabled="getCartQuantity(product) <= (product.sold_by_length ? 0.5 : 1)"
                           class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         >
                           -
                         </button>
                         <input
                           :value="getCartQuantity(product)"
-                          @input="updateCartQuantity(product, parseInt($event.target.value) || 1)"
-                          @blur="updateCartQuantity(product, Math.max(1, parseInt($event.target.value) || 1))"
+                          @input="updateCartQuantity(product, parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
+                          @blur="updateCartQuantity(product, Math.max(product.sold_by_length ? 0.5 : 1, parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1)))"
                           type="number"
-                          min="1"
-                          class="w-10 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-1 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                          :min="product.sold_by_length ? 0.5 : 1"
+                          :step="product.sold_by_length ? 0.5 : 1"
+                          class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                         />
                         <button
-                          @click.stop="updateCartQuantity(product, getCartQuantity(product) + 1)"
+                          @click.stop="updateCartQuantity(product, getCartQuantity(product) + (product.sold_by_length ? 0.5 : 1))"
                           class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm flex items-center justify-center"
                         >
                           +
                         </button>
                       </div>
+                      <p v-if="product.sold_by_length" class="text-[10px] text-blue-600 font-semibold italic text-center">
+                        📏 Izabrano je {{ (getCartQuantity(product) * (getVariantLength(product) || product.length_per_unit || 6)).toFixed(2) }} metara
+                      </p>
+                      <p v-if="quantityError[product.id]" class="text-[10px] text-red-600 font-semibold italic text-center mt-1">
+                        ❌ {{ quantityError[product.id] }}
+                      </p>
+                      <!-- Remove from cart button -->
+                      <button
+                        @click.stop="removeFromCart(product)"
+                        class="w-full text-red-600 hover:text-red-700 text-xs font-semibold cursor-pointer text-center mt-1"
+                      >
+                        Ukloni
+                      </button>
                     </div>
                     <!-- If product is not in cart, show add button -->
                     <button
