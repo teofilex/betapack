@@ -1,11 +1,20 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import { getImageUrl } from '@/composables/useImageUrl'
+
+// SEO Meta Tags
+useHead({
+  title: 'Korpa - BetaPack',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' } // Cart pages should not be indexed
+  ]
+})
 
 const showConfirm = ref(false)
 const confirmMessage = ref("")

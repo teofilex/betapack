@@ -1,6 +1,17 @@
 <script setup>
+import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
+
+// SEO Meta Tags
+useHead({
+  title: 'O Nama - BetaPack | 25 Godina Iskustva u Bravariji',
+  meta: [
+    { name: 'description', content: 'BetaPack - 25 godina iskustva u proizvodnji i prodaji bravarskih materijala. Kvalitet, preciznost, brzina i povoljne cene. Vaš pouzdan partner za kovano gvožđe.' },
+    { property: 'og:title', content: 'O Nama - BetaPack' },
+    { property: 'og:description', content: '25 godina iskustva u bravariji. Kvalitet, preciznost i povoljne cene.' }
+  ]
+})
 
 const features = [
   {

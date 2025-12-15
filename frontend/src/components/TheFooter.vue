@@ -23,8 +23,8 @@ const contactInfo = {
             <h3 class="text-base font-bold text-white">BETA PACK</h3>
           </div>
           <p class="text-xs leading-relaxed">
-            Proizvodnja i prodaja bravarskih proizvoda: ograde, kapije, gelenderi, kovano gvožđe.
-            Vaš pouzdan partner za kvalitetne metalne proizvode.
+            Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda.
+            Vaš pouzdan partner za kvalitetne materijale.
           </p>
           <p class="text-xs mt-2 text-gray-400">
             25 godina sa vama
@@ -85,7 +85,7 @@ const contactInfo = {
 
           <div class="mt-4">
             <a
-              href="https://www.google.com/maps?q=44.913252,20.2595729"
+              href="https://www.google.com/maps?q=44.914361,20.258167"
               target="_blank"
               class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition text-xs cursor-pointer"
             >

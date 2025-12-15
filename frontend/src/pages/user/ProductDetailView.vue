@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
@@ -17,6 +18,41 @@ const selectedVariant = ref(null)
 const selectedImageIndex = ref(0)
 const quantity = ref(1)
 const quantityError = ref(null)
+
+// Dynamic SEO Meta Tags based on product
+const productTitle = computed(() =>
+  product.value ? `${product.value.name} - ${product.value.category_name || 'Proizvodi'} | BetaPack` : 'Proizvod | BetaPack'
+)
+const productDescription = computed(() =>
+  product.value ? product.value.description || `Kvalitetan proizvod od kovanog gvožđa - ${product.value.name}` : 'BetaPack proizvod'
+)
+const productImage = computed(() =>
+  product.value && product.value.images && product.value.images.length > 0
+    ? getImageUrl(product.value.images[0].image)
+    : 'https://betapack.vercel.app/betapack-logo.png'
+)
+const productPrice = computed(() =>
+  product.value ? product.value.current_price : 0
+)
+
+useHead({
+  title: productTitle,
+  meta: [
+    { name: 'description', content: productDescription },
+    // Open Graph
+    { property: 'og:title', content: productTitle },
+    { property: 'og:description', content: productDescription },
+    { property: 'og:image', content: productImage },
+    { property: 'og:type', content: 'product' },
+    { property: 'product:price:amount', content: productPrice },
+    { property: 'product:price:currency', content: 'RSD' },
+    // Twitter Card
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: productTitle },
+    { name: 'twitter:description', content: productDescription },
+    { name: 'twitter:image', content: productImage }
+  ]
+})
 
 // Reset quantity to 1 when variant changes, or load from cart if variant is in cart
 watch(selectedVariant, () => {

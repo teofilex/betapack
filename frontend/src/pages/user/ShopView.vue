@@ -1,12 +1,43 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useProductStore } from '@/store/products'
 import { useCategoryStore } from '@/store/categories'
 import { useCartStore } from '@/store/cart'
 import { getImageUrl } from '@/composables/useImageUrl'
+
+// SEO Meta Tags
+useHead({
+  title: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali | Profili, Ograde, Ukrasni Elementi',
+  meta: [
+    {
+      name: 'description',
+      content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera. Širok asortiman kvalitetnih profila i ukrasnih elemenata. Besplatna dostava za porudžbine preko 10.000 RSD.'
+    },
+    {
+      name: 'keywords',
+      content: 'kovano gvožđe, bravarija, bravarijski materijali, profili, ograde, ukrasni elementi, metalni proizvodi, gelenđeri, kapije'
+    },
+    // Open Graph (Facebook, LinkedIn)
+    { property: 'og:title', content: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali' },
+    { property: 'og:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera.' },
+    { property: 'og:image', content: 'https://betapack.vercel.app/Betapack-hero-image-edited-2.png' },
+    { property: 'og:url', content: 'https://betapack.vercel.app' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:locale', content: 'sr_RS' },
+    // Twitter Card
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'BetaPack - Kovano Gvožđe' },
+    { name: 'twitter:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa' },
+    { name: 'twitter:image', content: 'https://betapack.vercel.app/Betapack-hero-image-edited-2.png' }
+  ],
+  link: [
+    { rel: 'canonical', href: 'https://betapack.vercel.app' }
+  ]
+})
 
 const router = useRouter()
 const productStore = useProductStore()

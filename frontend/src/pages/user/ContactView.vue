@@ -1,8 +1,19 @@
 <script setup>
 import { ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import { api } from '@/services/api'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
+
+// SEO Meta Tags
+useHead({
+  title: 'Kontakt - BetaPack | Kovano Gvožđe',
+  meta: [
+    { name: 'description', content: 'Kontaktirajte BetaPack za sve informacije o bravarskim materijalima. Adresa: Pukovnika Milenka Pavlovića 159 A, Zemun-Batajnica. Telefon: 065/330 02 42.' },
+    { property: 'og:title', content: 'Kontakt - BetaPack' },
+    { property: 'og:description', content: 'Kontaktirajte nas za sve informacije o bravarskim materijalima' }
+  ]
+})
 
 const contactInfo = {
   name: 'Beta Pack d.o.o.',
