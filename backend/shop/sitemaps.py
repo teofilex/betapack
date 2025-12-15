@@ -11,7 +11,8 @@ class ProductSitemap(Sitemap):
         return Product.objects.filter(in_stock=True)
 
     def lastmod(self, obj):
-        return obj.created_at
+        # Koristi updated_at da Google zna kada je proizvod poslednji put izmenjen (cena, opis, itd)
+        return obj.updated_at
 
     def location(self, obj):
         return f'/product/{obj.id}'
