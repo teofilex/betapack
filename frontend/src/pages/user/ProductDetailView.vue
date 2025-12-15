@@ -35,6 +35,75 @@ const productPrice = computed(() =>
   product.value ? product.value.current_price : 0
 )
 
+// Schema.org JSON-LD for Product
+const productSchema = computed(() => {
+  if (!product.value) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.value.name,
+    description: product.value.description || `Kvalitetan proizvod od kovanog gvožđa - ${product.value.name}`,
+    image: product.value.images && product.value.images.length > 0
+      ? product.value.images.map(img => getImageUrl(img.image))
+      : ['https://betapack.vercel.app/betapack-logo.png'],
+    brand: {
+      '@type': 'Brand',
+      name: 'BetaPack'
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `https://betapack.vercel.app/product/${product.value.id}`,
+      priceCurrency: 'RSD',
+      price: product.value.current_price,
+      availability: product.value.in_stock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'BetaPack'
+      }
+    },
+    category: product.value.category_name || 'Bravarijski materijali'
+  }
+})
+
+// Schema.org JSON-LD for BreadcrumbList
+const breadcrumbSchema = computed(() => {
+  if (!product.value) return null
+
+  const items = [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Početna',
+      item: 'https://betapack.vercel.app'
+    }
+  ]
+
+  if (product.value.category_name) {
+    items.push({
+      '@type': 'ListItem',
+      position: 2,
+      name: product.value.category_name,
+      item: `https://betapack.vercel.app/?category=${product.value.category}`
+    })
+  }
+
+  items.push({
+    '@type': 'ListItem',
+    position: product.value.category_name ? 3 : 2,
+    name: product.value.name,
+    item: `https://betapack.vercel.app/product/${product.value.id}`
+  })
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items
+  }
+})
+
 useHead({
   title: productTitle,
   meta: [
@@ -51,6 +120,16 @@ useHead({
     { name: 'twitter:title', content: productTitle },
     { name: 'twitter:description', content: productDescription },
     { name: 'twitter:image', content: productImage }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(productSchema)
+    },
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(breadcrumbSchema)
+    }
   ]
 })
 

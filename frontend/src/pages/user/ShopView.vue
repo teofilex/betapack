@@ -9,6 +9,40 @@ import { useCategoryStore } from '@/store/categories'
 import { useCartStore } from '@/store/cart'
 import { getImageUrl } from '@/composables/useImageUrl'
 
+// Schema.org JSON-LD for Organization
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'BetaPack',
+  description: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda.',
+  url: 'https://betapack.vercel.app',
+  logo: 'https://betapack.vercel.app/betapack-logo.png',
+  image: 'https://betapack.vercel.app/Betapack-hero-image-optimized.jpg',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+381-65-330-02-42',
+    contactType: 'Customer Service',
+    areaServed: 'RS',
+    availableLanguage: ['Serbian']
+  },
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Pukovnika Milenka Pavlovića 159 A',
+    addressLocality: 'Beograd',
+    addressRegion: 'Zemun-Batajnica',
+    postalCode: '11080',
+    addressCountry: 'RS'
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 44.914361,
+    longitude: 20.258167
+  },
+  sameAs: [
+    'https://betapack.vercel.app'
+  ]
+}
+
 // SEO Meta Tags
 useHead({
   title: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali | Profili, Ograde, Ukrasni Elementi',
@@ -36,6 +70,12 @@ useHead({
   ],
   link: [
     { rel: 'canonical', href: 'https://betapack.vercel.app' }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(organizationSchema)
+    }
   ]
 })
 
