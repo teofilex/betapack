@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 
 const mobileMenuOpen = ref(false)
 const showCartPreview = ref(false)
+let cartHoverTimeout = null
 
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartItems = computed(() => cartStore.items)
@@ -23,6 +24,18 @@ const formatPrice = (price) => {
     currency: 'RSD',
     minimumFractionDigits: 0
   }).format(price)
+}
+
+const showCartWithDelay = () => {
+  clearTimeout(cartHoverTimeout)
+  cartHoverTimeout = setTimeout(() => {
+    showCartPreview.value = true
+  }, 300) // 300ms delay
+}
+
+const hideCart = () => {
+  clearTimeout(cartHoverTimeout)
+  showCartPreview.value = false
 }
 
 const navigateTo = (route) => {
@@ -106,8 +119,8 @@ const handleLogout = () => {
           <!-- Cart with hover preview -->
           <div
             class="relative"
-            @mouseenter="showCartPreview = true"
-            @mouseleave="showCartPreview = false"
+            @mouseenter="showCartWithDelay"
+            @mouseleave="hideCart"
           >
             <button
               @click="navigateTo('/cart')"
@@ -127,8 +140,8 @@ const handleLogout = () => {
             <div
               v-if="showCartPreview && cartItems.length > 0"
               class="absolute right-0 top-full pt-1 w-96 bg-transparent z-[100]"
-              @mouseenter="showCartPreview = true"
-              @mouseleave="showCartPreview = false"
+              @mouseenter="showCartWithDelay"
+              @mouseleave="hideCart"
             >
               <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-h-[600px] overflow-hidden flex flex-col">
                 <!-- Header -->
@@ -210,8 +223,8 @@ const handleLogout = () => {
             <div
               v-if="showCartPreview && cartItems.length === 0"
               class="absolute right-0 top-full pt-1 w-80 bg-transparent z-[100]"
-              @mouseenter="showCartPreview = true"
-              @mouseleave="showCartPreview = false"
+              @mouseenter="showCartWithDelay"
+              @mouseleave="hideCart"
             >
               <div class="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 text-center">
                 <span class="text-5xl text-gray-300 mb-3 block">🛒</span>

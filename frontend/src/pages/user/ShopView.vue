@@ -670,7 +670,7 @@ onMounted(async () => {
                                 -
                               </button>
                               <input
-                                v-model.number="productQuantities[product.id]"
+                                :value="getQuantity(product.id)"
                                 @input="setQuantity(product.id, parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
                                 type="number"
                                 :min="product.sold_by_length ? 0.5 : 1"
