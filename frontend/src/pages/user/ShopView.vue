@@ -24,7 +24,7 @@ useHead({
     // Open Graph (Facebook, LinkedIn)
     { property: 'og:title', content: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali' },
     { property: 'og:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera.' },
-    { property: 'og:image', content: 'https://betapack.vercel.app/Betapack-hero-image-edited-2.png' },
+    { property: 'og:image', content: 'https://betapack.vercel.app/Betapack-hero-image-optimized.jpg' },
     { property: 'og:url', content: 'https://betapack.vercel.app' },
     { property: 'og:type', content: 'website' },
     { property: 'og:locale', content: 'sr_RS' },
@@ -32,7 +32,7 @@ useHead({
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: 'BetaPack - Kovano Gvožđe' },
     { name: 'twitter:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa' },
-    { name: 'twitter:image', content: 'https://betapack.vercel.app/Betapack-hero-image-edited-2.png' }
+    { name: 'twitter:image', content: 'https://betapack.vercel.app/Betapack-hero-image-optimized.jpg' }
   ],
   link: [
     { rel: 'canonical', href: 'https://betapack.vercel.app' }
@@ -377,7 +377,7 @@ onMounted(async () => {
       <div class="relative overflow-hidden" style="height: 450px;">
         <!-- Background Image -->
         <img
-          src="/Betapack-hero-image-edited-2.png"
+          src="/Betapack-hero-image-optimized.jpg"
           alt="BetaPack - Kovano gvožđe i bravarijski proizvodi"
           class="absolute inset-0 w-full h-full object-cover"
         />
