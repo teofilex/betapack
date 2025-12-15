@@ -11,7 +11,6 @@ const authStore = useAuthStore()
 
 const mobileMenuOpen = ref(false)
 const showCartPreview = ref(false)
-let cartHoverTimeout = null
 
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartItems = computed(() => cartStore.items)
@@ -24,18 +23,6 @@ const formatPrice = (price) => {
     currency: 'RSD',
     minimumFractionDigits: 0
   }).format(price)
-}
-
-const showCartWithDelay = () => {
-  clearTimeout(cartHoverTimeout)
-  cartHoverTimeout = setTimeout(() => {
-    showCartPreview.value = true
-  }, 300) // 300ms delay
-}
-
-const hideCart = () => {
-  clearTimeout(cartHoverTimeout)
-  showCartPreview.value = false
 }
 
 const navigateTo = (route) => {
@@ -119,8 +106,8 @@ const handleLogout = () => {
           <!-- Cart with hover preview -->
           <div
             class="relative"
-            @mouseenter="showCartWithDelay"
-            @mouseleave="hideCart"
+            @mouseenter="showCartPreview = true"
+            @mouseleave="showCartPreview = false"
           >
             <button
               @click="navigateTo('/cart')"
@@ -137,12 +124,13 @@ const handleLogout = () => {
             </button>
 
             <!-- Cart Preview Dropdown -->
-            <div
-              v-if="showCartPreview && cartItems.length > 0"
-              class="absolute right-0 top-full pt-1 w-96 bg-transparent z-[100]"
-              @mouseenter="showCartWithDelay"
-              @mouseleave="hideCart"
-            >
+            <Transition name="fade-slide">
+              <div
+                v-if="showCartPreview && cartItems.length > 0"
+                class="absolute right-0 top-full pt-1 w-96 bg-transparent z-[100]"
+                @mouseenter="showCartPreview = true"
+                @mouseleave="showCartPreview = false"
+              >
               <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-h-[600px] overflow-hidden flex flex-col">
                 <!-- Header -->
                 <div class="p-4 border-b bg-gray-50">
@@ -218,19 +206,22 @@ const handleLogout = () => {
                 </div>
               </div>
             </div>
+            </Transition>
 
             <!-- Empty Cart Preview -->
-            <div
-              v-if="showCartPreview && cartItems.length === 0"
-              class="absolute right-0 top-full pt-1 w-80 bg-transparent z-[100]"
-              @mouseenter="showCartWithDelay"
-              @mouseleave="hideCart"
-            >
+            <Transition name="fade-slide">
+              <div
+                v-if="showCartPreview && cartItems.length === 0"
+                class="absolute right-0 top-full pt-1 w-80 bg-transparent z-[100]"
+                @mouseenter="showCartPreview = true"
+                @mouseleave="showCartPreview = false"
+              >
               <div class="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 text-center">
                 <span class="text-5xl text-gray-300 mb-3 block">🛒</span>
                 <p class="text-gray-600 font-medium">Korpa je prazna</p>
               </div>
             </div>
+            </Transition>
           </div>
 
           <!-- Mobile menu button -->
@@ -308,3 +299,23 @@ const handleLogout = () => {
     </div>
   </header>
 </template>
+
+<style scoped>
+.fade-slide-enter-active {
+  transition: all 0.2s ease-out;
+}
+
+.fade-slide-leave-active {
+  transition: all 0.15s ease-in;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
