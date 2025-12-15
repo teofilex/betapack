@@ -8,10 +8,10 @@ import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css';
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
-import { createUnhead } from '@unhead/vue'
+import { createHead } from '@unhead/vue/client'
 
 const app = createApp(App)
-const head = createUnhead()
+const head = createHead()
 
 app.use(head)
 app.use(PrimeVue, {
