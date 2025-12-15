@@ -8,13 +8,12 @@ import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css';
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
-import { createHead } from 'unhead'
-import { UnheadPlugin } from '@unhead/vue'
+import { createUnhead } from '@unhead/vue'
 
 const app = createApp(App)
-const head = createHead()
+const head = createUnhead()
 
-app.use(UnheadPlugin, head)
+app.use(head)
 app.use(PrimeVue, {
     theme: {
         preset: Aura
