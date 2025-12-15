@@ -71,10 +71,24 @@ const router = createRouter({
     ],
     history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
+        // Ako korisnik koristi back/forward dugme, vrati na prethodnu poziciju
         if (savedPosition) {
             return savedPosition
-        } else {
-            return { top: 0 }
+        }
+
+        // Ako je hash (anchor link), scroll na taj element
+        if (to.hash) {
+            return {
+                el: to.hash,
+                behavior: 'smooth',
+            }
+        }
+
+        // Za sve ostale slučajeve, scroll na vrh stranice
+        // behavior: 'smooth' daje smooth scroll, behavior: 'auto' je instant
+        return {
+            top: 0,
+            behavior: 'auto'  // Instant scroll na mobilnom radi bolje
         }
     }
 })
