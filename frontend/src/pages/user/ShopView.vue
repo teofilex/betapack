@@ -422,13 +422,13 @@ onMounted(async () => {
           class="absolute inset-0 w-full h-full object-cover"
         />
 
-        <!-- Text Overlay -->
+        <!-- Text Overlay with Fade-in Animation -->
         <div class="absolute inset-0 flex items-center justify-center">
-          <div class="text-center text-white px-6 py-8 max-w-4xl rounded-xl" style="background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);">
-            <h1 class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.9);">
+          <div class="text-center text-white px-6 py-8 max-w-4xl rounded-xl animate-fade-in-up" style="background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);">
+            <h1 class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.9); animation-delay: 0.2s;">
               Kovano gvožđe i bravarski proizvodi
             </h1>
-            <p class="text-base lg:text-xl text-white" style="text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <p class="text-base lg:text-xl text-white" style="text-shadow: 2px 2px 6px rgba(0,0,0,0.9); animation-delay: 0.4s;">
               Širok asortiman kvalitetnih proizvoda - profili, cevi, čelik u traci, ukrasni elementi i dodatna oprema za bravariju
             </p>
           </div>
@@ -449,6 +449,49 @@ onMounted(async () => {
             >
               Kontaktiraj nas
             </router-link>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trust Badges Section -->
+      <div class="bg-white py-12 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <!-- Badge 1 -->
+            <div class="flex flex-col items-center text-center group">
+              <div class="w-16 h-16 mb-3 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
+                <span class="text-3xl">🚚</span>
+              </div>
+              <h3 class="font-bold text-sm md:text-base text-gray-900 mb-1">Dostava</h3>
+              <p class="text-xs md:text-sm text-gray-600">Širom Republike Srbije</p>
+            </div>
+
+            <!-- Badge 2 -->
+            <div class="flex flex-col items-center text-center group">
+              <div class="w-16 h-16 mb-3 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+                <span class="text-3xl">✅</span>
+              </div>
+              <h3 class="font-bold text-sm md:text-base text-gray-900 mb-1">Garancija kvaliteta</h3>
+              <p class="text-xs md:text-sm text-gray-600">Sertifikovani materijali</p>
+            </div>
+
+            <!-- Badge 3 -->
+            <div class="flex flex-col items-center text-center group">
+              <div class="w-16 h-16 mb-3 rounded-full bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300">
+                <span class="text-3xl">📞</span>
+              </div>
+              <h3 class="font-bold text-sm md:text-base text-gray-900 mb-1">Podrška</h3>
+              <p class="text-xs md:text-sm text-gray-600">065/330 02 42</p>
+            </div>
+
+            <!-- Badge 4 -->
+            <div class="flex flex-col items-center text-center group">
+              <div class="w-16 h-16 mb-3 rounded-full bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors duration-300">
+                <span class="text-3xl">🏆</span>
+              </div>
+              <h3 class="font-bold text-sm md:text-base text-gray-900 mb-1">25 godina iskustva</h3>
+              <p class="text-xs md:text-sm text-gray-600">Pouzdan partner</p>
+            </div>
           </div>
         </div>
       </div>
@@ -639,25 +682,37 @@ onMounted(async () => {
                 <div
                   v-for="product in filteredProducts"
                   :key="product.id"
-                  class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:border-[#1976d2] transition-all duration-300 group flex flex-col h-full"
+                  class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-2xl hover:border-[#1976d2] hover:-translate-y-2 transition-all duration-300 group flex flex-col h-full"
                 >
                   <div
                     @click="viewProductDetail(product.id)"
                     class="cursor-pointer flex-1 flex flex-col"
                   >
                     <div class="relative h-40 lg:h-48 bg-gray-100 overflow-hidden flex-shrink-0">
+                      <!-- Dark overlay on hover -->
+                      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-10 pointer-events-none"></div>
+
                       <img
                         v-if="getProductImage(product)"
                         :src="getImageUrl(getProductImage(product).image)"
                         :alt="product.name"
-                        class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+                        class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                         <span class="text-2xl">📦</span>
                       </div>
 
-                      <div v-if="product.on_sale" class="absolute top-1 right-1 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow">
-                        -{{ salePercent(product.price, product.sale_price) }}%
+                      <!-- Sale Badge - improved -->
+                      <div v-if="product.on_sale || isVariantOnSale(product)" class="absolute top-2 right-2 z-20">
+                        <div class="bg-gradient-to-br from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1 animate-pulse">
+                          <span>🔥</span>
+                          <span>-{{ salePercent(product.price, product.sale_price) }}%</span>
+                        </div>
+                      </div>
+
+                      <!-- Stock indicator -->
+                      <div v-if="!product.in_stock" class="absolute top-2 left-2 bg-gray-800/90 text-white px-3 py-1 rounded-full text-xs font-semibold z-20">
+                        Rasprodato
                       </div>
                     </div>
 
@@ -814,3 +869,35 @@ onMounted(async () => {
     <TheFooter />
   </div>
 </template>
+
+<style scoped>
+/* Fade-in animation for hero text */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/* Pulse animation for sale badges */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+</style>

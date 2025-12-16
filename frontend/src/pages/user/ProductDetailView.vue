@@ -124,11 +124,11 @@ useHead({
   script: [
     {
       type: 'application/ld+json',
-      children: JSON.stringify(productSchema)
+      children: () => JSON.stringify(productSchema.value)
     },
     {
       type: 'application/ld+json',
-      children: JSON.stringify(breadcrumbSchema)
+      children: () => JSON.stringify(breadcrumbSchema.value)
     }
   ]
 })

@@ -10,7 +10,6 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const mobileMenuOpen = ref(false)
-const showCartPreview = ref(false)
 
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartItems = computed(() => cartStore.items)
@@ -104,11 +103,7 @@ const handleLogout = () => {
           </button>
 
           <!-- Cart with hover preview -->
-          <div
-            class="relative"
-            @mouseenter="showCartPreview = true"
-            @mouseleave="showCartPreview = false"
-          >
+          <div class="relative group">
             <button
               @click="navigateTo('/cart')"
               class="relative flex items-center gap-1 bg-[#1976d2] hover:bg-[#1565c0] px-2 py-1 rounded-lg transition font-semibold text-xs cursor-pointer"
@@ -124,13 +119,10 @@ const handleLogout = () => {
             </button>
 
             <!-- Cart Preview Dropdown -->
-            <Transition name="fade-slide">
-              <div
-                v-if="showCartPreview && cartItems.length > 0"
-                class="absolute right-0 top-full pt-1 w-96 bg-transparent z-[100]"
-                @mouseenter="showCartPreview = true"
-                @mouseleave="showCartPreview = false"
-              >
+            <div
+              v-if="cartItems.length > 0"
+              class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 absolute right-0 top-full pt-2 w-96 z-[100]"
+            >
               <div class="bg-white rounded-xl shadow-2xl border border-gray-200 max-h-[600px] overflow-hidden flex flex-col">
                 <!-- Header -->
                 <div class="p-4 border-b bg-gray-50">
@@ -169,14 +161,14 @@ const handleLogout = () => {
                       <div class="flex items-center gap-2 mt-2">
                         <button
                           @click.stop="updateQuantity(item, item.quantity - 1)"
-                          class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-semibold cursor-pointer"
+                          class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-semibold text-gray-900 cursor-pointer"
                         >
                           -
                         </button>
                         <span class="text-sm font-semibold text-gray-900 w-6 text-center">{{ item.quantity }}</span>
                         <button
                           @click.stop="updateQuantity(item, item.quantity + 1)"
-                          class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-semibold cursor-pointer"
+                          class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-semibold text-gray-900 cursor-pointer"
                         >
                           +
                         </button>
@@ -206,22 +198,17 @@ const handleLogout = () => {
                 </div>
               </div>
             </div>
-            </Transition>
 
             <!-- Empty Cart Preview -->
-            <Transition name="fade-slide">
-              <div
-                v-if="showCartPreview && cartItems.length === 0"
-                class="absolute right-0 top-full pt-1 w-80 bg-transparent z-[100]"
-                @mouseenter="showCartPreview = true"
-                @mouseleave="showCartPreview = false"
-              >
+            <div
+              v-if="cartItems.length === 0"
+              class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 absolute right-0 top-full pt-2 w-80 z-[100]"
+            >
               <div class="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 text-center">
                 <span class="text-5xl text-gray-300 mb-3 block">🛒</span>
                 <p class="text-gray-600 font-medium">Korpa je prazna</p>
               </div>
             </div>
-            </Transition>
           </div>
 
           <!-- Mobile menu button -->
