@@ -12,6 +12,7 @@ from .views import (
     ContactMessageViewSet,
     contact_message
 )
+from .views_scraping import CompetitorSiteViewSet, ScrapedProductViewSet
 
 router = DefaultRouter()
 router.register('categories', CategoryViewSet, basename='category')
@@ -21,6 +22,8 @@ router.register('product-variants', ProductVariantViewSet, basename='product-var
 router.register('product-images', ProductImageViewSet, basename='product-image')
 router.register('orders', OrderViewSet, basename='order')
 router.register('contact-messages', ContactMessageViewSet, basename='contact-message')
+router.register('competitor-sites', CompetitorSiteViewSet, basename='competitor-site')
+router.register('scraped-products', ScrapedProductViewSet, basename='scraped-product')
 
 urlpatterns = [
     path('auth/user/', current_user, name='current_user'),

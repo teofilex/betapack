@@ -387,3 +387,7 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.created_at.strftime('%d.%m.%Y %H:%M')}"
+
+
+# Import scraping models
+from .models_scraping import CompetitorSite, ScrapedProduct, PriceHistory, ScrapeLog

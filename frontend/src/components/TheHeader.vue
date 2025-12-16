@@ -10,6 +10,7 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const mobileMenuOpen = ref(false)
+const showCartPreview = ref(false)
 
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartItems = computed(() => cartStore.items)

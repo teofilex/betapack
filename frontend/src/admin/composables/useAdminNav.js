@@ -11,7 +11,8 @@ export function useAdminNav() {
         { id: 'categories', label: 'Kategorije', icon: '📁' },
         { id: 'products', label: 'Proizvodi', icon: '📦' },
         { id: 'orders', label: 'Narudžbine', icon: '🛒' },
-        { id: 'contact', label: 'Kontakt poruke', icon: '✉️' }
+        { id: 'contact', label: 'Kontakt poruke', icon: '✉️' },
+        { id: 'competitors', label: 'Konkurencija', icon: '🔍' }
     ]
 
     return { activeView, setView, views }

@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Category, Subcategory, Product, ProductVariant,
-    ProductImage, Order, OrderItem, ContactMessage
+    ProductImage, Order, OrderItem, ContactMessage,
+    CompetitorSite, ScrapedProduct, PriceHistory, ScrapeLog
 )
 
 
@@ -108,3 +109,43 @@ class ContactMessageAdmin(admin.ModelAdmin):
             'fields': ('created_at',)
         }),
     )
+
+
+# Scraping Admin
+
+@admin.register(CompetitorSite)
+class CompetitorSiteAdmin(admin.ModelAdmin):
+    list_display = ['name', 'url', 'is_active', 'last_scraped_at', 'last_scrape_status']
+    list_filter = ['is_active', 'last_scrape_status']
+    search_fields = ['name', 'url']
+    readonly_fields = ['last_scraped_at', 'last_scrape_status', 'last_error_message', 'created_at', 'updated_at']
+
+
+@admin.register(ScrapedProduct)
+class ScrapedProductAdmin(admin.ModelAdmin):
+    list_display = ['name', 'site', 'category', 'current_price', 'on_sale', 'discount_percentage', 'in_stock', 'last_seen_at']
+    list_filter = ['site', 'category', 'on_sale', 'in_stock']
+    search_fields = ['name', 'external_id', 'description']
+    readonly_fields = ['first_seen_at', 'last_seen_at']
+
+
+class PriceHistoryInline(admin.TabularInline):
+    model = PriceHistory
+    extra = 0
+    readonly_fields = ['price', 'on_sale', 'sale_price', 'in_stock', 'recorded_at']
+    can_delete = False
+
+
+@admin.register(PriceHistory)
+class PriceHistoryAdmin(admin.ModelAdmin):
+    list_display = ['product', 'price', 'on_sale', 'in_stock', 'recorded_at']
+    list_filter = ['on_sale', 'in_stock', 'recorded_at']
+    search_fields = ['product__name']
+    readonly_fields = ['recorded_at']
+
+
+@admin.register(ScrapeLog)
+class ScrapeLogAdmin(admin.ModelAdmin):
+    list_display = ['site', 'status', 'products_found', 'products_new', 'products_updated', 'started_at', 'duration_seconds']
+    list_filter = ['status', 'site']
+    readonly_fields = ['started_at', 'completed_at', 'duration_seconds']

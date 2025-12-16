@@ -79,7 +79,7 @@ const contactInfo = {
             </div>
             <div class="flex justify-between">
               <span>Nedelja:</span>
-              <span class="text-red-400">Zatvoreno</span>
+              <span class="text-red-400">Ne radi</span>
             </div>
           </div>
 

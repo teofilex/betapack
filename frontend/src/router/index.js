@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { nextTick } from "vue";
 import Login from "../admin/pages/Login.vue";
 import AdminView from "../admin/pages/AdminView.vue";
 import ShopView from "@/pages/user/ShopView.vue";
@@ -84,12 +85,14 @@ const router = createRouter({
             }
         }
 
-        // Za sve ostale slučajeve, scroll na vrh stranice
-        // behavior: 'smooth' daje smooth scroll, behavior: 'auto' je instant
-        return {
-            top: 0,
-            behavior: 'auto'  // Instant scroll na mobilnom radi bolje
-        }
+        // Za sve ostale slučajeve, forsiraj scroll na vrh
+        // Koristi window.scrollTo kao fallback za maksimalnu kompatibilnost
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                window.scrollTo(0, 0)
+                resolve({ top: 0, left: 0 })
+            }, 100) // 100ms delay garantuje da se DOM učitao
+        })
     }
 })
 

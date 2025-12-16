@@ -7,6 +7,7 @@ import CategoryManager from '../components/CategoryManager.vue'
 import ProductManager from '../components/ProductManager.vue'
 import OrdersManager from '../components/OrdersManager.vue'
 import ContactMessagesManager from '../components/ContactMessagesManager.vue'
+import CompetitorMonitor from '../components/CompetitorMonitor.vue'
 
 import { useAdminNav } from '../composables/useAdminNav'
 import { useAdminStatsStore } from '../store/adminStats'
@@ -99,6 +100,7 @@ onMounted(async () => {
               <span class="flex-1 text-left text-xs">{{ v.label }}</span>
 
               <span
+                v-if="v.id !== 'competitors'"
                 class="px-2 py-0.5 rounded-full text-xs font-bold min-w-[24px] text-center"
                 :class="activeView === v.id ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-700'"
               >
@@ -167,6 +169,10 @@ onMounted(async () => {
         <ContactMessagesManager
           v-if="activeView === 'contact'"
           @update-count="statsStore.refresh"
+        />
+
+        <CompetitorMonitor
+          v-if="activeView === 'competitors'"
         />
 
       </main>

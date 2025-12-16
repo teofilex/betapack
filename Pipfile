@@ -17,6 +17,10 @@ psycopg2-binary = "*"
 dj-database-url = "*"
 django-cloudinary-storage = "*"
 cloudinary = "*"
+beautifulsoup4 = "*"
+requests = "*"
+lxml = "*"
+django-filter = "*"
 
 [dev-packages]
 
