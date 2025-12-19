@@ -1,8 +1,5 @@
 import { defineStore } from "pinia";
-import axios from "axios";
-
-// Production API URL
-const API_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://127.0.0.1:8000'
+import { api } from "@/services/api";
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -19,7 +16,7 @@ export const useAuthStore = defineStore('auth', {
     actions: {
         async login(username, password) {
             try {
-                const response = await axios.post(`${API_URL}/api/auth/login/`, {
+                const response = await api.post('/auth/login/', {
                     username, password
                 })
 
@@ -44,7 +41,7 @@ export const useAuthStore = defineStore('auth', {
 
         async fetchUser() {
             try {
-                const response = await axios.get(`${API_URL}/api/auth/user/`, {
+                const response = await api.get('/auth/user/', {
                     headers: {
                         Authorization: `Bearer ${this.accessToken}`,
                     },
@@ -63,7 +60,7 @@ export const useAuthStore = defineStore('auth', {
             }
 
             try {
-                const response = await axios.post(`${API_URL}/api/auth/refresh/`, {
+                const response = await api.post('/auth/refresh/', {
                     refresh: this.refreshToken
                 })
 
