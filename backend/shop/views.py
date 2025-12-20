@@ -171,8 +171,8 @@ class OrderViewSet(viewsets.ModelViewSet):
             logger = logging.getLogger(__name__)
             logger.error(f"Error updating stock quantities: {str(e)}", exc_info=True)
 
-        # Pošalji email notifikaciju vlasniku (privremeno isključeno dok se ne podesi SMTP)
-        # self.send_order_notification(order)
+        # Pošalji email notifikaciju vlasniku
+        self.send_order_notification(order)
 
         return Response(
             OrderSerializer(order).data,
