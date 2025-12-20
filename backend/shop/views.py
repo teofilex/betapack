@@ -209,13 +209,15 @@ Stavke:
             # Email za vlasnike iz settings
             recipient_list = settings.OWNER_EMAILS
 
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                recipient_list,
-                fail_silently=True,
-            )
+            # Pošalji email preko Resend-a svakom primaocu
+            from shop.email_utils import send_email_via_resend
+            for recipient in recipient_list:
+                send_email_via_resend(
+                    subject=subject,
+                    message=message,
+                    recipient_email=recipient,
+                    from_email=settings.DEFAULT_FROM_EMAIL
+                )
 
             order.email_sent = True
             order.save(update_fields=['email_sent'])
@@ -347,13 +349,13 @@ Poruka:
 Datum: {contact_msg.created_at.strftime('%d.%m.%Y %H:%M')}
                 """
 
-                # Pošalji email
-                send_mail(
+                # Pošalji email preko Resend-a
+                from shop.email_utils import send_email_via_resend
+                send_email_via_resend(
                     subject=subject,
                     message=message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[recipient_email],
-                    fail_silently=True,  # Ne prekidaj ako email ne uspe
+                    recipient_email=recipient_email,
+                    from_email=settings.DEFAULT_FROM_EMAIL
                 )
             except Exception as e:
                 # Loguj grešku ali ne prekidaj - poruka je već sačuvana

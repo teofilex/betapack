@@ -21,6 +21,7 @@ beautifulsoup4 = "*"
 requests = "*"
 lxml = "*"
 django-filter = "*"
+resend = "*"
 
 [dev-packages]
 
