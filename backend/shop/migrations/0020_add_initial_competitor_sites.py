@@ -23,19 +23,19 @@ def add_competitor_sites(apps, schema_editor):
         {
             'name': 'Velog',
             'url': 'https://velog.rs',
-            'is_active': True,
+            'is_active': False,  # Deaktiviran
             'scrape_interval_hours': 24,
         },
         {
             'name': 'JeepCommerce',
             'url': 'https://jeepcommerce.rs',
-            'is_active': True,
+            'is_active': False,  # Deaktiviran
             'scrape_interval_hours': 24,
         },
         {
             'name': 'IronWorks',
             'url': 'https://ironworks.rs',
-            'is_active': True,
+            'is_active': False,  # Deaktiviran
             'scrape_interval_hours': 24,
         },
     ]
