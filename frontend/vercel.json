@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://api.betapack.co.rs/sitemap.xml",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

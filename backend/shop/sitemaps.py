@@ -15,7 +15,9 @@ class ProductSitemap(Sitemap):
         return obj.updated_at
 
     def location(self, obj):
-        return f'/product/{obj.id}'
+        # Koristi slug ako postoji, inače ID (backward compatibility)
+        identifier = obj.slug if obj.slug else obj.id
+        return f'/proizvod/{identifier}'
 
 
 class CategorySitemap(Sitemap):
@@ -27,7 +29,8 @@ class CategorySitemap(Sitemap):
         return Category.objects.all()
 
     def location(self, obj):
-        return f'/category/{obj.id}'
+        # Za sada koristi query parameter (kasnije može slug)
+        return f'/?category={obj.id}'
 
 
 class StaticViewSitemap(Sitemap):
@@ -41,4 +44,8 @@ class StaticViewSitemap(Sitemap):
     def location(self, item):
         if item == 'home':
             return '/'
+        elif item == 'about':
+            return '/o-nama'
+        elif item == 'contact':
+            return '/kontakt'
         return f'/{item}'
