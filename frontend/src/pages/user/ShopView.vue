@@ -735,7 +735,7 @@ onMounted(async () => {
                   class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-2xl hover:border-[#1976d2] hover:-translate-y-2 transition-all duration-300 group flex flex-col h-full"
                 >
                   <div
-                    @click="viewProductDetail(product.id)"
+                    @click="viewProductDetail(product)"
                     class="cursor-pointer flex-1 flex flex-col"
                   >
                     <div class="relative h-40 lg:h-48 bg-gray-100 overflow-hidden flex-shrink-0">
