@@ -20,3 +20,29 @@ api.interceptors.request.use(
         return Promise.reject(error)
     }
 )
+
+// Add response interceptor to handle expired tokens
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Ako je 401 i razlog je expired token, obriši iz localStorage i retry bez tokena
+        if (error.response?.status === 401 &&
+            error.response?.data?.code === 'token_not_valid') {
+
+            // Obriši expired token
+            localStorage.removeItem('access')
+            localStorage.removeItem('refresh')
+
+            // Retry request bez Authorization header-a (za javne endpoint-e)
+            const config = error.config
+            delete config.headers.Authorization
+
+            // Retry samo jednom (izbegni infinite loop)
+            if (!config._retry) {
+                config._retry = true
+                return api.request(config)
+            }
+        }
+        return Promise.reject(error)
+    }
+)
