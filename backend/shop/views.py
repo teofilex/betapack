@@ -56,7 +56,7 @@ class SubcategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.prefetch_related('images', 'variants').select_related('category', 'subcategory')
     serializer_class = ProductSerializer
-    lookup_field = 'slug'  # Koristi slug umesto ID za URL lookup
+    # Ne koristimo lookup_field jer želimo custom logiku u get_object() koja podržava i slug i ID
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -72,7 +72,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         """
         Omogućava query po slug-u ili ID-u za backward compatibility
         """
-        lookup_value = self.kwargs.get(self.lookup_field)
+        # DRF default lookup_field je 'pk', što mapira na URL parametar 'pk'
+        lookup_value = self.kwargs.get('pk')
 
         # Pokušaj prvo sa slug-om
         try:
