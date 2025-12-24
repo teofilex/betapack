@@ -19,6 +19,14 @@ class ProductSitemap(Sitemap):
         identifier = obj.slug if obj.slug else obj.id
         return f'/proizvod/{identifier}'
 
+    def get_urls(self, page=1, site=None, protocol=None):
+        # Override da koristimo frontend domen umesto backend domena
+        urls = super().get_urls(page=page, site=site, protocol=protocol)
+        for url_info in urls:
+            # Zameni api.betapack.co.rs sa betapack.co.rs
+            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'betapack.co.rs')
+        return urls
+
 
 class CategorySitemap(Sitemap):
     changefreq = "weekly"
@@ -31,6 +39,13 @@ class CategorySitemap(Sitemap):
     def location(self, obj):
         # Za sada koristi query parameter (kasnije može slug)
         return f'/?category={obj.id}'
+
+    def get_urls(self, page=1, site=None, protocol=None):
+        # Override da koristimo frontend domen umesto backend domena
+        urls = super().get_urls(page=page, site=site, protocol=protocol)
+        for url_info in urls:
+            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'betapack.co.rs')
+        return urls
 
 
 class StaticViewSitemap(Sitemap):
@@ -49,3 +64,10 @@ class StaticViewSitemap(Sitemap):
         elif item == 'contact':
             return '/kontakt'
         return f'/{item}'
+
+    def get_urls(self, page=1, site=None, protocol=None):
+        # Override da koristimo frontend domen umesto backend domena
+        urls = super().get_urls(page=page, site=site, protocol=protocol)
+        for url_info in urls:
+            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'betapack.co.rs')
+        return urls
