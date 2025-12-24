@@ -72,7 +72,7 @@ const productSchema = computed(() => {
         url: 'https://betapack.co.rs'
       }
     },
-    category: product.value.category_name || 'Bravarijski materijali',
+    category: product.value.category_name || 'Bravarski materijali',
     material: 'Gvožđe'
   }
 })

@@ -82,7 +82,7 @@ const webSiteSchema = {
 
 // SEO Meta Tags
 useHead({
-  title: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali | Profili, Ograde, Ukrasni Elementi',
+  title: 'BetaPack - Kovano Gvožđe i Bravarski Materijali | Profili, Ograde, Ukrasni Elementi',
   meta: [
     {
       name: 'description',
@@ -90,16 +90,16 @@ useHead({
     },
     {
       name: 'keywords',
-      content: 'kovano gvožđe, bravarija, bravarijski materijali, profili, ograde, ukrasni elementi, metalni proizvodi, gelenđeri, kapije'
+      content: 'kovano gvožđe, bravarija, bravarski materijali, profili, ograde, ukrasni elementi, metalni proizvodi, gelenđeri, kapije'
     },
     // Open Graph (Facebook, LinkedIn)
     { property: 'og:site_name', content: 'BetaPack' },
-    { property: 'og:title', content: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali' },
+    { property: 'og:title', content: 'BetaPack - Kovano Gvožđe i Bravarski Materijali' },
     { property: 'og:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera.' },
     { property: 'og:image', content: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg' },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
-    { property: 'og:image:alt', content: 'BetaPack - Kovano gvožđe i bravarijski proizvodi' },
+    { property: 'og:image:alt', content: 'BetaPack - Kovano gvožđe i bravarski proizvodi' },
     { property: 'og:url', content: 'https://betapack.co.rs' },
     { property: 'og:type', content: 'website' },
     { property: 'og:locale', content: 'sr_RS' },
@@ -108,7 +108,7 @@ useHead({
     { name: 'twitter:title', content: 'BetaPack - Kovano Gvožđe' },
     { name: 'twitter:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa' },
     { name: 'twitter:image', content: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg' },
-    { name: 'twitter:image:alt', content: 'BetaPack - Kovano gvožđe i bravarijski proizvodi' }
+    { name: 'twitter:image:alt', content: 'BetaPack - Kovano gvožđe i bravarski proizvodi' }
   ],
   link: [
     { rel: 'canonical', href: 'https://betapack.co.rs' }
@@ -466,7 +466,7 @@ onMounted(async () => {
         <!-- Background Image -->
         <img
           src="/Betapack-hero-image-optimized.jpg"
-          alt="BetaPack - Kovano gvožđe i bravarijski proizvodi"
+          alt="BetaPack - Kovano gvožđe i bravarski proizvodi"
           fetchpriority="high"
           class="absolute inset-0 w-full h-full object-cover"
         />
