@@ -76,15 +76,19 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         # Pokušaj prvo sa slug-om
         try:
-            return self.queryset.get(slug=lookup_value)
+            obj = self.queryset.get(slug=lookup_value)
         except Product.DoesNotExist:
             # Ako nije pronađeno po slug-u, pokušaj sa ID-om (backward compatibility)
             try:
-                return self.queryset.get(id=int(lookup_value))
+                obj = self.queryset.get(id=int(lookup_value))
             except (Product.DoesNotExist, ValueError):
                 # Ako ni ID ne radi, podigni 404
                 from django.http import Http404
                 raise Http404
+
+        # VAŽNO: Proveri object-level permissions
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def destroy(self, request, *args, **kwargs):
         # Dozvoli brisanje proizvoda bez provere narudžbina
