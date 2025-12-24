@@ -56,6 +56,7 @@ class SubcategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.prefetch_related('images', 'variants').select_related('category', 'subcategory')
     serializer_class = ProductSerializer
+    lookup_field = 'slug'  # Koristi slug umesto ID za URL lookup
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -67,6 +68,23 @@ class ProductViewSet(viewsets.ModelViewSet):
         context['request'] = self.request
         return context
 
+    def get_object(self):
+        """
+        Omogućava query po slug-u ili ID-u za backward compatibility
+        """
+        lookup_value = self.kwargs.get(self.lookup_field)
+
+        # Pokušaj prvo sa slug-om
+        try:
+            return self.queryset.get(slug=lookup_value)
+        except Product.DoesNotExist:
+            # Ako nije pronađeno po slug-u, pokušaj sa ID-om (backward compatibility)
+            try:
+                return self.queryset.get(id=int(lookup_value))
+            except (Product.DoesNotExist, ValueError):
+                # Ako ni ID ne radi, podigni 404
+                from django.http import Http404
+                raise Http404
 
     def destroy(self, request, *args, **kwargs):
         # Dozvoli brisanje proizvoda bez provere narudžbina

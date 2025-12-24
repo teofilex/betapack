@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from django.conf import settings
+from django.utils.text import slugify
+import re
 
 
 class Category(models.Model):
@@ -37,6 +39,7 @@ class Subcategory(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=250, unique=True, blank=True, help_text="SEO-friendly URL (auto-generiše se iz naziva)")
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -80,10 +83,44 @@ class Product(models.Model):
         help_text="Dužina 1 komada u metrima (npr. 6.0 za 6m)"
     )
     
+    def _generate_slug(self, base_slug):
+        """Generiše jedinstveni slug sa Latiničnim karakterima"""
+        # Transliteracija ćiriličnih karaktera u latinične
+        cyrillic_map = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'ђ': 'dj', 'е': 'e', 'ж': 'z',
+            'з': 'z', 'и': 'i', 'ј': 'j', 'к': 'k', 'л': 'l', 'љ': 'lj', 'м': 'm', 'н': 'n',
+            'њ': 'nj', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'ћ': 'c', 'у': 'u',
+            'ф': 'f', 'х': 'h', 'ц': 'c', 'ч': 'c', 'џ': 'dz', 'ш': 's',
+            'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Ђ': 'Dj', 'Е': 'E', 'Ж': 'Z',
+            'З': 'Z', 'И': 'I', 'Ј': 'J', 'К': 'K', 'Л': 'L', 'Љ': 'Lj', 'М': 'M', 'Н': 'N',
+            'Њ': 'Nj', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'Ћ': 'C', 'У': 'U',
+            'Ф': 'F', 'Х': 'H', 'Ц': 'C', 'Ч': 'C', 'Џ': 'Dz', 'Ш': 'S'
+        }
+
+        # Transliteriši ćirilicu u latinicu
+        transliterated = ''.join(cyrillic_map.get(char, char) for char in base_slug)
+
+        # Slugify transliterisani tekst
+        slug = slugify(transliterated)
+
+        # Proveri jedinstvenost slug-a
+        unique_slug = slug
+        num = 1
+        while Product.objects.filter(slug=unique_slug).exclude(pk=self.pk).exists():
+            unique_slug = f'{slug}-{num}'
+            num += 1
+
+        return unique_slug
+
     def save(self, *args, **kwargs):
-        """Override save da osigura da length_per_unit uvek ima vrednost"""
+        """Override save da osigura da length_per_unit uvek ima vrednost i generiše slug"""
         if self.length_per_unit is None or self.length_per_unit == 0:
             self.length_per_unit = 6.0
+
+        # Automatski generiši slug ako ne postoji
+        if not self.slug:
+            self.slug = self._generate_slug(self.name)
+
         super().save(*args, **kwargs)
 
     created_at = models.DateTimeField(auto_now_add=True)

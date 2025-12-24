@@ -1,11 +1,23 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
+
+// SEO Meta Tags - noindex for checkout page
+useHead({
+  title: 'Finalizacija narudžbine - BetaPack',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ],
+  link: [
+    { rel: 'canonical', href: 'https://betapack.co.rs/checkout' }
+  ]
+})
 
 const router = useRouter()
 const cartStore = useCartStore()

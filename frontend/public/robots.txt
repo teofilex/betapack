@@ -1,0 +1,13 @@
+# Robots.txt za BetaPack
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-success/
+
+# Sitemap
+Sitemap: https://betapack.co.rs/sitemap.xml
+
+# Crawl delay (opcionalno)
+# Crawl-delay: 1

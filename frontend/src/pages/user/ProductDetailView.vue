@@ -46,25 +46,34 @@ const productSchema = computed(() => {
     description: product.value.description || `Kvalitetan proizvod od kovanog gvožđa - ${product.value.name}`,
     image: product.value.images && product.value.images.length > 0
       ? product.value.images.map(img => getImageUrl(img.image))
-      : ['https://betapack.vercel.app/betapack-logo.png'],
+      : ['https://betapack.co.rs/betapack-logo.png'],
+    sku: product.value.id ? `BP-${product.value.id}` : undefined,
     brand: {
       '@type': 'Brand',
       name: 'BetaPack'
     },
+    manufacturer: {
+      '@type': 'Organization',
+      name: 'BetaPack'
+    },
     offers: {
       '@type': 'Offer',
-      url: `https://betapack.vercel.app/product/${product.value.id}`,
+      url: `https://betapack.co.rs/proizvod/${product.value.slug || product.value.id}`,
       priceCurrency: 'RSD',
       price: product.value.current_price,
+      priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       availability: product.value.in_stock
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
       seller: {
         '@type': 'Organization',
-        name: 'BetaPack'
+        name: 'BetaPack',
+        url: 'https://betapack.co.rs'
       }
     },
-    category: product.value.category_name || 'Bravarijski materijali'
+    category: product.value.category_name || 'Bravarijski materijali',
+    material: 'Gvožđe'
   }
 })
 
@@ -77,7 +86,7 @@ const breadcrumbSchema = computed(() => {
       '@type': 'ListItem',
       position: 1,
       name: 'Početna',
-      item: 'https://betapack.vercel.app'
+      item: 'https://betapack.co.rs'
     }
   ]
 
@@ -86,7 +95,7 @@ const breadcrumbSchema = computed(() => {
       '@type': 'ListItem',
       position: 2,
       name: product.value.category_name,
-      item: `https://betapack.vercel.app/?category=${product.value.category}`
+      item: `https://betapack.co.rs/?category=${product.value.category}`
     })
   }
 
@@ -94,7 +103,7 @@ const breadcrumbSchema = computed(() => {
     '@type': 'ListItem',
     position: product.value.category_name ? 3 : 2,
     name: product.value.name,
-    item: `https://betapack.vercel.app/product/${product.value.id}`
+    item: `https://betapack.co.rs/proizvod/${product.value.slug || product.value.id}`
   })
 
   return {
@@ -104,22 +113,35 @@ const breadcrumbSchema = computed(() => {
   }
 })
 
+// Canonical URL
+const canonicalUrl = computed(() =>
+  product.value ? `https://betapack.co.rs/proizvod/${product.value.slug || product.value.id}` : 'https://betapack.co.rs'
+)
+
 useHead({
   title: productTitle,
   meta: [
     { name: 'description', content: productDescription },
     // Open Graph
+    { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: productTitle },
     { property: 'og:description', content: productDescription },
     { property: 'og:image', content: productImage },
+    { property: 'og:image:alt', content: productTitle },
+    { property: 'og:url', content: canonicalUrl },
     { property: 'og:type', content: 'product' },
+    { property: 'og:locale', content: 'sr_RS' },
     { property: 'product:price:amount', content: productPrice },
     { property: 'product:price:currency', content: 'RSD' },
     // Twitter Card
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: productTitle },
     { name: 'twitter:description', content: productDescription },
-    { name: 'twitter:image', content: productImage }
+    { name: 'twitter:image', content: productImage },
+    { name: 'twitter:image:alt', content: productTitle }
+  ],
+  link: [
+    { rel: 'canonical', href: canonicalUrl }
   ],
   script: [
     {
@@ -204,7 +226,7 @@ const images = computed(() => {
 const fetchProduct = async () => {
   loading.value = true
   try {
-    const response = await api.get(`/products/${route.params.id}/`)
+    const response = await api.get(`/products/${route.params.slugOrId}/`)
     product.value = response.data
 
     // Auto-select first variant if available
@@ -397,7 +419,7 @@ onMounted(() => {
                 <img
                   v-if="images.length > 0"
                   :src="getImageUrl(images[selectedImageIndex].image)"
-                  :alt="product.name"
+                  :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
                   class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
@@ -421,7 +443,8 @@ onMounted(() => {
                 >
                   <img
                     :src="getImageUrl(img.image)"
-                    :alt="product.name"
+                    :alt="`${product.name} - Slika ${index + 1} - BetaPack`"
+                    loading="lazy"
                     class="w-full h-full object-contain"
                   />
                 </button>

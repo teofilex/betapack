@@ -9,21 +9,27 @@ import { useCategoryStore } from '@/store/categories'
 import { useCartStore } from '@/store/cart'
 import { getImageUrl } from '@/composables/useImageUrl'
 
-// Schema.org JSON-LD for Organization
-const organizationSchema = {
+// Schema.org JSON-LD for LocalBusiness
+const localBusinessSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
+  '@type': 'LocalBusiness',
   name: 'BetaPack',
   description: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda.',
-  url: 'https://betapack.vercel.app',
-  logo: 'https://betapack.vercel.app/betapack-logo.png',
-  image: 'https://betapack.vercel.app/Betapack-hero-image-optimized.jpg',
+  url: 'https://betapack.co.rs',
+  logo: 'https://betapack.co.rs/betapack-logo.png',
+  image: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg',
+  telephone: '+381-65-330-02-42',
+  email: 'office@betapack.co.rs',
+  priceRange: '$$',
+  paymentAccepted: ['Cash', 'Credit Card', 'Bank Transfer'],
+  currenciesAccepted: 'RSD',
   contactPoint: {
     '@type': 'ContactPoint',
     telephone: '+381-65-330-02-42',
     contactType: 'Customer Service',
     areaServed: 'RS',
-    availableLanguage: ['Serbian']
+    availableLanguage: ['Serbian'],
+    email: 'office@betapack.co.rs'
   },
   address: {
     '@type': 'PostalAddress',
@@ -38,9 +44,40 @@ const organizationSchema = {
     latitude: 44.914361,
     longitude: 20.258167
   },
+  openingHoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+      opens: '08:00',
+      closes: '17:00'
+    },
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: 'Saturday',
+      opens: '08:00',
+      closes: '14:00'
+    }
+  ],
   sameAs: [
+    'https://betapack.co.rs',
     'https://betapack.vercel.app'
   ]
+}
+
+// Schema.org JSON-LD for WebSite (enables Google Search Box)
+const webSiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'BetaPack',
+  url: 'https://betapack.co.rs',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://betapack.co.rs/?search={search_term_string}'
+    },
+    'query-input': 'required name=search_term_string'
+  }
 }
 
 // SEO Meta Tags
@@ -56,25 +93,34 @@ useHead({
       content: 'kovano gvožđe, bravarija, bravarijski materijali, profili, ograde, ukrasni elementi, metalni proizvodi, gelenđeri, kapije'
     },
     // Open Graph (Facebook, LinkedIn)
+    { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: 'BetaPack - Kovano Gvožđe i Bravarijski Materijali' },
     { property: 'og:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera.' },
-    { property: 'og:image', content: 'https://betapack.vercel.app/Betapack-hero-image-optimized.jpg' },
-    { property: 'og:url', content: 'https://betapack.vercel.app' },
+    { property: 'og:image', content: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg' },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { property: 'og:image:alt', content: 'BetaPack - Kovano gvožđe i bravarijski proizvodi' },
+    { property: 'og:url', content: 'https://betapack.co.rs' },
     { property: 'og:type', content: 'website' },
     { property: 'og:locale', content: 'sr_RS' },
     // Twitter Card
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: 'BetaPack - Kovano Gvožđe' },
     { name: 'twitter:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa' },
-    { name: 'twitter:image', content: 'https://betapack.vercel.app/Betapack-hero-image-optimized.jpg' }
+    { name: 'twitter:image', content: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg' },
+    { name: 'twitter:image:alt', content: 'BetaPack - Kovano gvožđe i bravarijski proizvodi' }
   ],
   link: [
-    { rel: 'canonical', href: 'https://betapack.vercel.app' }
+    { rel: 'canonical', href: 'https://betapack.co.rs' }
   ],
   script: [
     {
       type: 'application/ld+json',
-      children: JSON.stringify(organizationSchema)
+      children: JSON.stringify(localBusinessSchema)
+    },
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(webSiteSchema)
     }
   ]
 })
@@ -172,8 +218,10 @@ const prevSlide = () => {
   }
 }
 
-const viewProductDetail = (productId) => {
-  router.push(`/proizvod/${productId}`)
+const viewProductDetail = (product) => {
+  // Koristi slug ako postoji, inače ID (backward compatibility)
+  const identifier = product.slug || product.id || product
+  router.push(`/proizvod/${identifier}`)
 }
 
 // Product quantities (key = product.id, value = quantity)
@@ -419,6 +467,7 @@ onMounted(async () => {
         <img
           src="/Betapack-hero-image-optimized.jpg"
           alt="BetaPack - Kovano gvožđe i bravarijski proizvodi"
+          fetchpriority="high"
           class="absolute inset-0 w-full h-full object-cover"
         />
 
@@ -523,14 +572,15 @@ onMounted(async () => {
                     <div
                       v-for="product in slide"
                       :key="product.id"
-                      @click="viewProductDetail(product.id)"
+                      @click="viewProductDetail(product)"
                       class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer group"
                     >
                       <div class="relative h-48 bg-gray-100 overflow-hidden">
                         <img
                           v-if="getProductImage(product)"
                           :src="getImageUrl(getProductImage(product).image)"
-                          :alt="product.name"
+                          :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
+                          loading="lazy"
                           class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                         />
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
@@ -695,7 +745,8 @@ onMounted(async () => {
                       <img
                         v-if="getProductImage(product)"
                         :src="getImageUrl(getProductImage(product).image)"
-                        :alt="product.name"
+                        :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
+                        loading="lazy"
                         class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">

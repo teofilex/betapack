@@ -1,5 +1,6 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 
@@ -7,6 +8,14 @@ const route = useRoute()
 const router = useRouter()
 
 const orderId = route.params.orderId
+
+// SEO Meta Tags - noindex for order success page
+useHead({
+  title: 'Porudžbina uspešno kreirana - BetaPack',
+  meta: [
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
+})
 </script>
 
 <template>

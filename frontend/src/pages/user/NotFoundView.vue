@@ -2,12 +2,22 @@
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 
 const router = useRouter()
 
 const goHome = () => {
   router.push('/')
 }
+
+// SEO Meta Tags for 404 page
+useHead({
+  title: 'Stranica nije pronađena - 404 | BetaPack',
+  meta: [
+    { name: 'description', content: 'Stranica koju tražite ne postoji ili je uklonjena. Vratite se na početnu stranicu BetaPack-a i pronađite kvalitetne bravarijske materijale.' },
+    { name: 'robots', content: 'noindex, nofollow' }
+  ]
+})
 </script>
 
 <template>
