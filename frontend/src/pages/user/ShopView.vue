@@ -757,7 +757,7 @@ onMounted(async () => {
                       <div v-if="product.on_sale || isVariantOnSale(product)" class="absolute top-2 right-2 z-20">
                         <div class="bg-gradient-to-br from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1 animate-pulse">
                           <span>🔥</span>
-                          <span>-{{ salePercent(product.price, product.sale_price) }}%</span>
+                          <span>-{{ salePercent(getVariantOriginalPrice(product), getProductPrice(product)) }}%</span>
                         </div>
                       </div>
 
