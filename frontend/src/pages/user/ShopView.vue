@@ -146,7 +146,8 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('sr-RS', {
     style: 'currency',
     currency: 'RSD',
-    minimumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(price)
 }
 
