@@ -6,14 +6,25 @@ from shop.models import Category, Subcategory, Product, ProductVariant, ProductI
 class Command(BaseCommand):
     help = 'Import proizvoda iz tabele - briše sve postojeće podatke i kreira nove'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--no-input',
+            action='store_true',
+            help='Preskače potvrdu pre brisanja podataka',
+        )
+
     def handle(self, *args, **options):
         self.stdout.write(self.style.WARNING('⚠️  UPOZORENJE: Ova komanda će obrisati SVE postojeće podatke iz baze!'))
         self.stdout.write(self.style.WARNING('Proizvodi, varijante, slike, narudžbine - SVE će biti obrisano.'))
 
-        confirm = input('Da li želite da nastavite? (da/ne): ')
-        if confirm.lower() not in ['da', 'yes', 'y']:
-            self.stdout.write(self.style.ERROR('❌ Import otkazan.'))
-            return
+        # Preskači potvrdu ako je --no-input flag postavljen
+        if not options.get('no_input'):
+            confirm = input('Da li želite da nastavite? (da/ne): ')
+            if confirm.lower() not in ['da', 'yes', 'y']:
+                self.stdout.write(self.style.ERROR('❌ Import otkazan.'))
+                return
+        else:
+            self.stdout.write(self.style.SUCCESS('🚀 --no-input flag postavljen, preskačem potvrdu...'))
 
         # Brisanje svih podataka
         self.stdout.write(self.style.WARNING('🗑️  Brisanje postojećih podataka...'))
