@@ -200,15 +200,36 @@ class ProductVariant(models.Model):
         help_text="Dužina 1 komada u metrima za ovu varijantu (npr. 4.0 za 4m). Ako nije postavljeno, koristi se dužina iz proizvoda."
     )
 
+    # Numerička vrednost za sortiranje (ekstraktovana iz name-a)
+    dimension_value = models.IntegerField(
+        default=0,
+        help_text="Numerička vrednost za sortiranje (npr. 20 za '20x20', 100 za '100x100')"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['dimension_value', 'name']
         unique_together = ['product', 'name']
 
     def __str__(self):
         return f"{self.product.name} - {self.name}"
+
+    def _extract_dimension_value(self):
+        """Ekstraktuje numeričku vrednost iz imena varijante za sortiranje"""
+        import re
+        # Traži prvi broj u imenu (npr. "20x20" -> 20, "100x100" -> 100, "180×135×18mm" -> 180)
+        match = re.search(r'(\d+)', self.name)
+        if match:
+            return int(match.group(1))
+        return 0
+
+    def save(self, *args, **kwargs):
+        """Override save da automatski postavi dimension_value iz name-a"""
+        if not self.dimension_value or self.dimension_value == 0:
+            self.dimension_value = self._extract_dimension_value()
+        super().save(*args, **kwargs)
 
     @property
     def current_price(self):
