@@ -416,7 +416,7 @@ onMounted(() => {
             <!-- Gallery -->
             <div>
               <!-- Main Image -->
-              <div class="relative bg-gray-100 rounded-xl overflow-hidden mb-4 aspect-square">
+              <div class="relative bg-white rounded-xl overflow-hidden mb-4 aspect-square border border-gray-200">
                 <img
                   v-if="images.length > 0"
                   :src="getImageUrl(images[selectedImageIndex].image)"
@@ -440,7 +440,7 @@ onMounted(() => {
                   :key="img.id"
                   @click="selectImage(index)"
                   :class="selectedImageIndex === index ? 'ring-2 ring-[#1976d2]' : 'ring-1 ring-gray-200'"
-                  class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer bg-gray-100"
+                  class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer bg-white"
                 >
                   <img
                     :src="getImageUrl(img.image)"

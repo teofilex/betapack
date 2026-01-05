@@ -739,7 +739,7 @@ onMounted(async () => {
                     @click="viewProductDetail(product)"
                     class="cursor-pointer flex-1 flex flex-col"
                   >
-                    <div class="relative h-40 lg:h-48 bg-gray-100 overflow-hidden flex-shrink-0">
+                    <div class="relative h-56 lg:h-64 bg-white overflow-hidden flex-shrink-0">
                       <!-- Dark overlay on hover -->
                       <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-10 pointer-events-none"></div>
 
@@ -748,7 +748,7 @@ onMounted(async () => {
                         :src="getImageUrl(getProductImage(product).image)"
                         :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
                         loading="lazy"
-                        class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                        class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                         <span class="text-2xl">📦</span>
