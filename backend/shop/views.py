@@ -22,12 +22,12 @@ from .serializers import (
 # Custom throttle classes za specifične endpoint-e
 class ContactThrottle(AnonRateThrottle):
     """Rate limiting za kontakt formu - 3 poruke po satu"""
-    rate = 'contact'
+    scope = 'contact'
 
 
 class OrderThrottle(AnonRateThrottle):
     """Rate limiting za kreiranje porudžbina - 10 porudžbina po satu"""
-    rate = 'orders'
+    scope = 'orders'
 
 
 # User info endpoint
