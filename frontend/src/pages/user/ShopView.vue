@@ -278,20 +278,32 @@ const getSelectedVariant = (product) => {
   }
   // Otherwise, auto-select variant
   if (product.variants && product.variants.length > 0) {
-    let variantToSelect = null
-    
-    // If filter "Samo na akciji" is active, try to find a variant on sale
-    if (showOnlyOnSale.value) {
-      variantToSelect = product.variants.find(v => v.on_sale) || product.variants[0]
-    } else {
-      // Otherwise, select first variant
-      variantToSelect = product.variants[0]
-    }
-    
+    // Get sorted variants (sale variants first)
+    const sortedVariants = getSortedVariants(product)
+    const variantToSelect = sortedVariants[0]  // Select first from sorted list
+
     selectedVariants.value[product.id] = variantToSelect
     return variantToSelect
   }
   return null
+}
+
+// Sort variants - sale variants first, then by dimension
+const getSortedVariants = (product) => {
+  if (!product.variants || product.variants.length === 0) return []
+
+  const extractDimension = (name) => {
+    const match = name.match(/(\d+)/)
+    return match ? parseInt(match[1]) : 0
+  }
+
+  return [...product.variants].sort((a, b) => {
+    // Akcijske varijante prvo
+    if (a.on_sale && !b.on_sale) return -1
+    if (!a.on_sale && b.on_sale) return 1
+    // Zatim po dimenziji
+    return extractDimension(a.name) - extractDimension(b.name)
+  })
 }
 
 // Set selected variant for a product
@@ -599,7 +611,10 @@ onMounted(async () => {
 
                         <div class="flex items-center justify-between mt-3">
                           <div>
-                            <p v-if="product.on_sale || (product.has_sale_variants)" class="text-base text-gray-400 line-through mb-1">
+                            <p v-if="product.has_sale_variants && product.original_min_price" class="text-base text-gray-400 line-through mb-1">
+                              {{ formatPrice(product.original_min_price) }}
+                            </p>
+                            <p v-else-if="product.on_sale" class="text-base text-gray-400 line-through mb-1">
                               {{ formatPrice(product.price) }}
                             </p>
                             <p class="text-xl font-bold" :class="(product.on_sale || product.has_sale_variants) ? 'text-red-600' : 'text-green-700'">
@@ -790,13 +805,13 @@ onMounted(async () => {
                           <label class="block text-xs font-bold text-gray-700 mb-1">Dimenzija:</label>
                           <select
                             :value="getSelectedVariant(product)?.id"
-                            @change="setSelectedVariant(product.id, product.variants.find(v => v.id == $event.target.value))"
-                            class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm 
+                            @change="setSelectedVariant(product.id, getSortedVariants(product).find(v => v.id == $event.target.value))"
+                            class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm
                                    focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] cursor-pointer font-semibold
                                    hover:border-gray-400 transition-all shadow-sm bg-white"
                           >
                             <option
-                              v-for="variant in product.variants"
+                              v-for="variant in getSortedVariants(product)"
                               :key="variant.id"
                               :value="variant.id"
                             >

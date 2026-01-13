@@ -75,6 +75,7 @@ class ProductSerializer(serializers.ModelSerializer):
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     current_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     min_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    original_min_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     has_sale_variants = serializers.BooleanField(read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
@@ -84,7 +85,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'description', 'price', 'on_sale', 'sale_price',
             'category', 'category_name', 'subcategory', 'subcategory_name',
-            'current_price', 'min_price', 'has_sale_variants',
+            'current_price', 'min_price', 'original_min_price', 'has_sale_variants',
             'featured', 'in_stock', 'stock_quantity', 'sold_by_length', 'length_per_unit',
             'order', 'variants', 'images', 'created_at', 'updated_at'
         ]

@@ -158,6 +158,17 @@ class Product(models.Model):
         return self.current_price
 
     @property
+    def original_min_price(self):
+        """Originalna cena najjeftinije akcijske varijante (za prikaz precrtane cene)"""
+        if self.variants.exists():
+            sale_variants = self.variants.filter(on_sale=True)
+            if sale_variants.exists():
+                # Pronađi akcijsku varijantu sa najnižom sale_price
+                cheapest_sale = min(sale_variants, key=lambda v: v.current_price)
+                return cheapest_sale.price  # Vrati ORIGINALNU cenu te varijante
+        return None  # Nema akcijske varijante
+
+    @property
     def has_sale_variants(self):
         """Da li bar jedna varijanta ima akciju"""
         return self.variants.filter(on_sale=True).exists()
