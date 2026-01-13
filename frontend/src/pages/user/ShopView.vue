@@ -278,9 +278,9 @@ const getSelectedVariant = (product) => {
   }
   // Otherwise, auto-select variant
   if (product.variants && product.variants.length > 0) {
-    // Get sorted variants (sale variants first)
-    const sortedVariants = getSortedVariants(product)
-    const variantToSelect = sortedVariants[0]  // Select first from sorted list
+    // Try to find and select a sale variant first
+    const saleVariant = product.variants.find(v => v.on_sale)
+    const variantToSelect = saleVariant || product.variants[0]
 
     selectedVariants.value[product.id] = variantToSelect
     return variantToSelect
@@ -288,8 +288,8 @@ const getSelectedVariant = (product) => {
   return null
 }
 
-// Sort variants - sale variants first, then by dimension
-const getSortedVariants = (product) => {
+// Sort variants by dimension only (for dropdown display)
+const getSortedVariantsByDimension = (product) => {
   if (!product.variants || product.variants.length === 0) return []
 
   const extractDimension = (name) => {
@@ -298,10 +298,6 @@ const getSortedVariants = (product) => {
   }
 
   return [...product.variants].sort((a, b) => {
-    // Akcijske varijante prvo
-    if (a.on_sale && !b.on_sale) return -1
-    if (!a.on_sale && b.on_sale) return 1
-    // Zatim po dimenziji
     return extractDimension(a.name) - extractDimension(b.name)
   })
 }
@@ -805,13 +801,13 @@ onMounted(async () => {
                           <label class="block text-xs font-bold text-gray-700 mb-1">Dimenzija:</label>
                           <select
                             :value="getSelectedVariant(product)?.id"
-                            @change="setSelectedVariant(product.id, getSortedVariants(product).find(v => v.id == $event.target.value))"
+                            @change="setSelectedVariant(product.id, product.variants.find(v => v.id == $event.target.value))"
                             class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm
                                    focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] cursor-pointer font-semibold
                                    hover:border-gray-400 transition-all shadow-sm bg-white"
                           >
                             <option
-                              v-for="variant in getSortedVariants(product)"
+                              v-for="variant in getSortedVariantsByDimension(product)"
                               :key="variant.id"
                               :value="variant.id"
                             >
