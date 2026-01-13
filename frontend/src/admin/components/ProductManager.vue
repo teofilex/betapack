@@ -65,59 +65,6 @@ watch(filterCategory, () => {
   filterSubcategory.value = ''
 })
 
-// Watch for on_sale changes and ask about featured status
-watch(() => form.value.on_sale, (newVal, oldVal) => {
-  // Skip if this is initial load or reset
-  if (oldVal === undefined) return
-
-  if (newVal && !oldVal) {
-    // Proizvod je stavljen na akciju
-    if (!form.value.featured) {
-      openConfirm(
-        'Proizvod je označen kao "Na akciji". Da li želite da dodate ovaj proizvod u preporučene?',
-        () => { form.value.featured = true }
-      )
-    }
-  } else if (!newVal && oldVal) {
-    // Proizvod je sklonjen sa akcije
-    if (form.value.featured) {
-      openConfirm(
-        'Proizvod je sklonjen sa akcije. Da li želite da uklonite ovaj proizvod iz preporučenih?',
-        () => { form.value.featured = false }
-      )
-    }
-  }
-})
-
-// Watch for variant on_sale changes
-watch(() => variantForm.value.on_sale, (newVal, oldVal) => {
-  // Skip if this is initial load or reset
-  if (oldVal === undefined) return
-
-  if (newVal && !oldVal) {
-    // Varijanta je stavljena na akciju
-    if (!form.value.featured) {
-      openConfirm(
-        'Varijanta je označena kao "Na akciji". Da li želite da dodate ovaj proizvod u preporučene?',
-        () => { form.value.featured = true }
-      )
-    }
-  } else if (!newVal && oldVal) {
-    // Varijanta je sklonjena sa akcije
-    // Proveri da li još neka varijanta ima akciju
-    const hasOtherSaleVariants = productVariants.value.some(v =>
-      v.id !== editingVariant.value?.id && v.on_sale
-    )
-
-    if (form.value.featured && !hasOtherSaleVariants && !form.value.on_sale) {
-      openConfirm(
-        'Varijanta je sklonjena sa akcije. Da li želite da uklonite ovaj proizvod iz preporučenih?',
-        () => { form.value.featured = false }
-      )
-    }
-  }
-})
-
 // Form
 const form = ref({
   id: null,
@@ -237,6 +184,59 @@ const saveProductOrder = async () => {
     savingOrder.value = false
   }
 }
+
+// Watch for on_sale changes and ask about featured status
+watch(() => form.value?.on_sale, (newVal, oldVal) => {
+  // Skip if this is initial load or reset
+  if (oldVal === undefined) return
+
+  if (newVal && !oldVal) {
+    // Proizvod je stavljen na akciju
+    if (!form.value.featured) {
+      openConfirm(
+        'Proizvod je označen kao "Na akciji". Da li želite da dodate ovaj proizvod u preporučene?',
+        () => { form.value.featured = true }
+      )
+    }
+  } else if (!newVal && oldVal) {
+    // Proizvod je sklonjen sa akcije
+    if (form.value.featured) {
+      openConfirm(
+        'Proizvod je sklonjen sa akcije. Da li želite da uklonite ovaj proizvod iz preporučenih?',
+        () => { form.value.featured = false }
+      )
+    }
+  }
+})
+
+// Watch for variant on_sale changes
+watch(() => variantForm.value?.on_sale, (newVal, oldVal) => {
+  // Skip if this is initial load or reset
+  if (oldVal === undefined) return
+
+  if (newVal && !oldVal) {
+    // Varijanta je stavljena na akciju
+    if (!form.value.featured) {
+      openConfirm(
+        'Varijanta je označena kao "Na akciji". Da li želite da dodate ovaj proizvod u preporučene?',
+        () => { form.value.featured = true }
+      )
+    }
+  } else if (!newVal && oldVal) {
+    // Varijanta je sklonjena sa akcije
+    // Proveri da li još neka varijanta ima akciju
+    const hasOtherSaleVariants = productVariants.value.some(v =>
+      v.id !== editingVariant.value?.id && v.on_sale
+    )
+
+    if (form.value.featured && !hasOtherSaleVariants && !form.value.on_sale) {
+      openConfirm(
+        'Varijanta je sklonjena sa akcije. Da li želite da uklonite ovaj proizvod iz preporučenih?',
+        () => { form.value.featured = false }
+      )
+    }
+  }
+})
 
 // Price formatting
 const formatPrice = price =>
