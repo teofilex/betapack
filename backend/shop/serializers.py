@@ -137,16 +137,26 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_sold_by_length(self, obj):
         """Vraća da li je proizvod prodavan po metraži"""
-        if obj.product:
-            return obj.product.sold_by_length
+        try:
+            if obj.product and hasattr(obj.product, 'sold_by_length'):
+                return obj.product.sold_by_length
+        except (AttributeError, ValueError):
+            pass
         return False
 
     def get_effective_length_per_unit(self, obj):
         """Vraća efektivnu dužinu po jedinici (iz varijante ili proizvoda)"""
-        if obj.variant and obj.variant.effective_length_per_unit:
-            return obj.variant.effective_length_per_unit
-        if obj.product and obj.product.length_per_unit:
-            return obj.product.length_per_unit
+        try:
+            if obj.variant and hasattr(obj.variant, 'effective_length_per_unit'):
+                length = obj.variant.effective_length_per_unit
+                if length is not None:
+                    return length
+            if obj.product and hasattr(obj.product, 'length_per_unit'):
+                length = obj.product.length_per_unit
+                if length is not None:
+                    return length
+        except (AttributeError, ValueError):
+            pass
         return None
 
     class Meta:
