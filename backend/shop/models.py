@@ -75,13 +75,16 @@ class Product(models.Model):
     # Dodato: Prodaja po metraži
     sold_by_length = models.BooleanField(default=False, help_text="Proizvod se prodaje po metraži")
     length_per_unit = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=6.0, 
+        max_digits=10,
+        decimal_places=2,
+        default=6.0,
         blank=True,
         null=False,
         help_text="Dužina 1 komada u metrima (npr. 6.0 za 6m)"
     )
+
+    # Dodato: Custom sortiranje
+    order = models.IntegerField(default=0, help_text="Redosled prikaza (manji broj = viši u listi)")
     
     def _generate_slug(self, base_slug):
         """Generiše jedinstveni slug sa Latiničnim karakterima"""
@@ -127,7 +130,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['order', '-created_at']  # Prvo po custom order, pa po datumu
 
     def __str__(self):
         return self.name
@@ -141,9 +144,15 @@ class Product(models.Model):
 
     @property
     def min_price(self):
-        """Minimalna cena među svim varijantama (za prikaz 'od' cene)"""
+        """Minimalna cena - prioritet akcijskim varijantama (za prikaz 'od' cene)"""
         if self.variants.exists():
-            # Uzmi najnižu current_price među varijantama
+            # Prvo pokušaj naći najnižu cenu među akcijskim varijantama
+            sale_variants = self.variants.filter(on_sale=True)
+            if sale_variants.exists():
+                # IMA akcijske varijante - prikaži najnižu akcijsku cenu
+                sale_prices = [v.current_price for v in sale_variants]
+                return min(sale_prices) if sale_prices else self.current_price
+            # NEMA akcijske varijante - prikaži najnižu regularnu cenu
             variant_prices = [v.current_price for v in self.variants.all()]
             return min(variant_prices) if variant_prices else self.current_price
         return self.current_price

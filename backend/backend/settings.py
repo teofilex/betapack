@@ -194,6 +194,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',      # Anonimni korisnici: 100 zahteva po satu
+        'user': '1000/hour',     # Ulogovani admini: 1000 zahteva po satu
+        'contact': '3/hour',     # Kontakt forma: 3 poruke po satu
+        'orders': '10/hour',     # Porudžbine: 10 po satu
+    }
 }
 
 SIMPLE_JWT = {

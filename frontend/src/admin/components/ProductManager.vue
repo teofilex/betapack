@@ -12,6 +12,7 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import AdminModal from './AdminModal.vue'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
+import draggable from 'vuedraggable'
 
 const showConfirm = ref(false)
 const confirmMessage = ref("")
@@ -62,6 +63,59 @@ const productVariantsForEdit = ref([]) // List of variants for the edited produc
 // Reset subcategory when category changes
 watch(filterCategory, () => {
   filterSubcategory.value = ''
+})
+
+// Watch for on_sale changes and ask about featured status
+watch(() => form.value.on_sale, (newVal, oldVal) => {
+  // Skip if this is initial load or reset
+  if (oldVal === undefined) return
+
+  if (newVal && !oldVal) {
+    // Proizvod je stavljen na akciju
+    if (!form.value.featured) {
+      openConfirm(
+        'Proizvod je označen kao "Na akciji". Da li želite da dodate ovaj proizvod u preporučene?',
+        () => { form.value.featured = true }
+      )
+    }
+  } else if (!newVal && oldVal) {
+    // Proizvod je sklonjen sa akcije
+    if (form.value.featured) {
+      openConfirm(
+        'Proizvod je sklonjen sa akcije. Da li želite da uklonite ovaj proizvod iz preporučenih?',
+        () => { form.value.featured = false }
+      )
+    }
+  }
+})
+
+// Watch for variant on_sale changes
+watch(() => variantForm.value.on_sale, (newVal, oldVal) => {
+  // Skip if this is initial load or reset
+  if (oldVal === undefined) return
+
+  if (newVal && !oldVal) {
+    // Varijanta je stavljena na akciju
+    if (!form.value.featured) {
+      openConfirm(
+        'Varijanta je označena kao "Na akciji". Da li želite da dodate ovaj proizvod u preporučene?',
+        () => { form.value.featured = true }
+      )
+    }
+  } else if (!newVal && oldVal) {
+    // Varijanta je sklonjena sa akcije
+    // Proveri da li još neka varijanta ima akciju
+    const hasOtherSaleVariants = productVariants.value.some(v =>
+      v.id !== editingVariant.value?.id && v.on_sale
+    )
+
+    if (form.value.featured && !hasOtherSaleVariants && !form.value.on_sale) {
+      openConfirm(
+        'Varijanta je sklonjena sa akcije. Da li želite da uklonite ovaj proizvod iz preporučenih?',
+        () => { form.value.featured = false }
+      )
+    }
+  }
 })
 
 // Form
@@ -134,6 +188,55 @@ const filteredProducts = computed(() => {
 
   return result
 })
+
+// Drag & Drop state
+const isDraggingMode = ref(false)
+const draggableProducts = ref([])
+const savingOrder = ref(false)
+
+// Toggle dragging mode
+const toggleDraggingMode = () => {
+  isDraggingMode.value = !isDraggingMode.value
+  if (isDraggingMode.value) {
+    // Copy products to draggable list
+    draggableProducts.value = [...filteredProducts.value]
+  }
+}
+
+// Cancel dragging
+const cancelDragging = () => {
+  isDraggingMode.value = false
+  draggableProducts.value = []
+}
+
+// Save new order
+const saveProductOrder = async () => {
+  savingOrder.value = true
+  try {
+    // Prepare orders data
+    const orders = draggableProducts.value.map((product, index) => ({
+      id: product.id,
+      order: index
+    }))
+
+    // Send to API
+    await api.post('/products/reorder/', { orders })
+
+    // Refresh products
+    await productStore.fetchProducts()
+    await userProductStore.fetchProducts()
+
+    isDraggingMode.value = false
+    draggableProducts.value = []
+
+    openConfirm('Redosled proizvoda uspešno sačuvan!', null)
+  } catch (err) {
+    console.error('Error saving order:', err)
+    openConfirm('Greška pri čuvanju redosleda!', null)
+  } finally {
+    savingOrder.value = false
+  }
+}
 
 // Price formatting
 const formatPrice = price =>
@@ -586,13 +689,24 @@ onMounted(async () => {
         <p class="text-xs text-gray-500 font-medium">Upravljajte proizvodima u vašoj prodavnici</p>
       </div>
 
-      <button
-        @click="openAddModal"
-        class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md text-xs font-medium shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
-      >
-        <span class="text-sm">➕</span>
-        <span>Dodaj Proizvod</span>
-      </button>
+      <div class="flex gap-2">
+        <button
+          @click="toggleDraggingMode"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+          :class="{ 'bg-orange-600 hover:bg-orange-700': isDraggingMode }"
+        >
+          <span class="text-sm">{{ isDraggingMode ? '✖️' : '☰' }}</span>
+          <span>{{ isDraggingMode ? 'Otkaži' : 'Promeni redosled' }}</span>
+        </button>
+
+        <button
+          @click="openAddModal"
+          class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md text-xs font-medium shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span class="text-sm">➕</span>
+          <span>Dodaj Proizvod</span>
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -664,7 +778,62 @@ onMounted(async () => {
       <p class="text-gray-600 text-sm font-semibold">Učitavanje proizvoda...</p>
     </div>
 
-    <!-- List -->
+    <!-- Drag & Drop Mode -->
+    <div v-else-if="isDraggingMode" class="space-y-4">
+      <!-- Instructions -->
+      <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+        <p class="text-sm font-semibold text-blue-900 mb-2">📝 Prevucite proizvode da promenite redosled</p>
+        <p class="text-xs text-blue-700">Proizvod na vrhu liste će biti prikazan prvi na sajtu.</p>
+      </div>
+
+      <!-- Draggable List -->
+      <draggable
+        v-model="draggableProducts"
+        item-key="id"
+        class="space-y-2"
+        handle=".drag-handle"
+        ghost-class="ghost"
+      >
+        <template #item="{ element: product }">
+          <div class="bg-white border-2 border-gray-300 rounded-lg p-3 flex items-center gap-3 hover:shadow-md transition-all">
+            <!-- Drag Handle -->
+            <div class="drag-handle cursor-move text-2xl text-gray-400 hover:text-gray-600">
+              ☰
+            </div>
+
+            <!-- Product Info -->
+            <div class="flex-1">
+              <h3 class="text-sm font-bold text-gray-900">{{ product.name }}</h3>
+              <p class="text-xs text-gray-500">{{ product.category_name }}</p>
+            </div>
+
+            <!-- Price -->
+            <div class="text-sm font-bold text-green-600">
+              {{ formatPrice(product.current_price) }}
+            </div>
+          </div>
+        </template>
+      </draggable>
+
+      <!-- Save Button -->
+      <div class="flex gap-2 justify-end sticky bottom-4">
+        <button
+          @click="cancelDragging"
+          class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-bold shadow-lg transition-all cursor-pointer"
+        >
+          Otkaži
+        </button>
+        <button
+          @click="saveProductOrder"
+          :disabled="savingOrder"
+          class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ savingOrder ? 'Čuvam...' : '✅ Sačuvaj redosled' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Normal List -->
     <div
       v-else-if="Array.isArray(filteredProducts) && filteredProducts.length > 0"
       class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3"
@@ -1541,3 +1710,11 @@ onMounted(async () => {
     </AdminModal>
   </div>
 </template>
+
+<style scoped>
+.ghost {
+  opacity: 0.5;
+  background: #e3f2fd;
+  border: 2px dashed #1976d2;
+}
+</style>

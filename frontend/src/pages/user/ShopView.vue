@@ -833,7 +833,7 @@ onMounted(async () => {
                             </div>
                           </div>
                           <p v-if="product.sold_by_length" class="text-[10px] text-blue-600 font-semibold italic">
-                            ⚠️ Proizvod se prodaje po metraži (1 komad = {{ getVariantLength(product) || product.length_per_unit || 6 }}m). Možete kupiti ceo proizvod ili na pola (npr. 1, 1.5, 2, 2.5).
+                            ℹ️ Proizvodi se prodaju po komadu (1 kom = {{ getVariantLength(product) || product.length_per_unit || 6 }} m), uz mogućnost kupovine celog ili pola komada ({{ ((getVariantLength(product) || product.length_per_unit || 6) / 2).toFixed(1) }} m).
                           </p>
                           <p v-if="quantityError[product.id]" class="text-[10px] text-red-600 font-semibold italic mt-1">
                             ❌ {{ quantityError[product.id] }}

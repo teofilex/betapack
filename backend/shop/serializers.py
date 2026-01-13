@@ -86,7 +86,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'category', 'category_name', 'subcategory', 'subcategory_name',
             'current_price', 'min_price', 'has_sale_variants',
             'featured', 'in_stock', 'stock_quantity', 'sold_by_length', 'length_per_unit',
-            'variants', 'images', 'created_at', 'updated_at'
+            'order', 'variants', 'images', 'created_at', 'updated_at'
         ]
         extra_kwargs = {
             'length_per_unit': {'required': False}

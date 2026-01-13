@@ -1,7 +1,8 @@
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes, action, throttle_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -16,6 +17,17 @@ from .serializers import (
     ProductVariantSerializer, ProductImageSerializer,
     OrderSerializer, OrderCreateSerializer, ContactMessageSerializer
 )
+
+
+# Custom throttle classes za specifične endpoint-e
+class ContactThrottle(AnonRateThrottle):
+    """Rate limiting za kontakt formu - 3 poruke po satu"""
+    rate = 'contact'
+
+
+class OrderThrottle(AnonRateThrottle):
+    """Rate limiting za kreiranje porudžbina - 10 porudžbina po satu"""
+    rate = 'orders'
 
 
 # User info endpoint
@@ -96,6 +108,41 @@ class ProductViewSet(viewsets.ModelViewSet):
         # OrderItem će imati product=None zbog SET_NULL, ali će zadržati product_name za istorijat
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=False, methods=['post'], permission_classes=[IsAdminUser])
+    def reorder(self, request):
+        """
+        Bulk update order vrednosti za proizvode
+        Očekuje: [{"id": 1, "order": 0}, {"id": 2, "order": 1}, ...]
+        """
+        orders_data = request.data.get('orders', [])
+
+        if not isinstance(orders_data, list):
+            return Response(
+                {"error": "orders mora biti lista"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        updated_count = 0
+        for item in orders_data:
+            product_id = item.get('id')
+            order_value = item.get('order')
+
+            if product_id is None or order_value is None:
+                continue
+
+            try:
+                product = Product.objects.get(id=product_id)
+                product.order = order_value
+                product.save(update_fields=['order'])
+                updated_count += 1
+            except Product.DoesNotExist:
+                pass
+
+        return Response({
+            "message": f"Ažurirano {updated_count} proizvoda",
+            "updated_count": updated_count
+        }, status=status.HTTP_200_OK)
+
 
 # ProductVariant ViewSet
 class ProductVariantViewSet(viewsets.ModelViewSet):
@@ -147,6 +194,7 @@ class ProductImageViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    throttle_classes = [OrderThrottle]
 
     def get_permissions(self):
         # Samo admini mogu videti sve narudžbine
@@ -337,6 +385,7 @@ def order_notifications_stream(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([ContactThrottle])
 def contact_message(request):
     """
     Endpoint za prijem kontakt poruka

@@ -38,3 +38,8 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Screenshots and product images
+*.png
+Screenshot*.png
+slike prizvoda/

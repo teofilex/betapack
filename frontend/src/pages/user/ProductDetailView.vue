@@ -224,15 +224,46 @@ const images = computed(() => {
   })
 })
 
+const sortedVariants = computed(() => {
+  if (!product.value || !product.value.variants || product.value.variants.length === 0) {
+    return []
+  }
+
+  // Helper function to extract numeric dimension (e.g., "16x16" -> 16)
+  const extractDimension = (name) => {
+    const match = name.match(/(\d+)/)
+    return match ? parseInt(match[1]) : 0
+  }
+
+  // Sort: sale variants first, then by dimension
+  return [...product.value.variants].sort((a, b) => {
+    // Akcijske varijante prvo
+    if (a.on_sale && !b.on_sale) return -1
+    if (!a.on_sale && b.on_sale) return 1
+    // Zatim po dimenziji
+    return extractDimension(a.name) - extractDimension(b.name)
+  })
+})
+
 const fetchProduct = async () => {
   loading.value = true
   try {
     const response = await api.get(`/products/${route.params.slugOrId}/`)
     product.value = response.data
 
-    // Auto-select first variant if available
+    // Auto-select first variant if available (first from sorted list - sale variants first)
     if (product.value.variants && product.value.variants.length > 0) {
-      selectedVariant.value = product.value.variants[0]
+      // Use sortedVariants to get the first variant (sale variants are first)
+      const sorted = [...product.value.variants].sort((a, b) => {
+        if (a.on_sale && !b.on_sale) return -1
+        if (!a.on_sale && b.on_sale) return 1
+        const extractDim = (name) => {
+          const match = name.match(/(\d+)/)
+          return match ? parseInt(match[1]) : 0
+        }
+        return extractDim(a.name) - extractDim(b.name)
+      })
+      selectedVariant.value = sorted[0]
       // Check if this variant is in cart and load quantity
       const variantId = selectedVariant.value.id
       const cartItem = cartStore.getCartItem(product.value.id, variantId)
@@ -481,11 +512,11 @@ onMounted(() => {
               </div>
 
               <!-- Variants -->
-              <div v-if="product.variants && product.variants.length > 0" class="mb-4">
+              <div v-if="sortedVariants.length > 0" class="mb-4">
                 <h3 class="font-semibold text-sm text-gray-900 mb-2">Izaberite dimenziju</h3>
                 <div class="grid grid-cols-2 gap-2">
                   <button
-                    v-for="variant in product.variants"
+                    v-for="variant in sortedVariants"
                     :key="variant.id"
                     @click="selectedVariant = variant"
                     :class="[
@@ -526,7 +557,7 @@ onMounted(() => {
                   </button>
                 </div>
                 <p v-if="product.sold_by_length" class="text-xs text-blue-600 font-semibold italic mt-2">
-                  ⚠️ Proizvod se prodaje po metraži (1 komad = {{ getVariantLength() || product.length_per_unit || 6 }}m). Možete kupiti ceo proizvod ili na pola (npr. 1, 1.5, 2, 2.5).
+                  ℹ️ Proizvodi se prodaju po komadu (1 kom = {{ getVariantLength() || product.length_per_unit || 6 }} m), uz mogućnost kupovine celog ili pola komada ({{ ((getVariantLength() || product.length_per_unit || 6) / 2).toFixed(1) }} m).
                 </p>
                 <p v-if="quantityError" class="text-xs text-red-600 font-semibold italic mt-1">
                   ❌ {{ quantityError }}
