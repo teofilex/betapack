@@ -1618,8 +1618,8 @@ onMounted(async () => {
       :show="showConfirm"
       :message="confirmMessage"
       title="Potvrda"
-      confirmText="Obriši"
-      cancelText="Odustani"
+      :confirmText="confirmAction ? 'Potvrdi' : 'U redu'"
+      :cancelText="confirmAction ? 'Odustani' : null"
       @confirm="doConfirm"
       @cancel="closeConfirm"
     />

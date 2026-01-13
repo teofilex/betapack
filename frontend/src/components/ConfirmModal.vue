@@ -30,6 +30,7 @@
           </button>
 
           <button
+            v-if="cancelText"
             @click="$emit('cancel')"
             class="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-800 font-semibold text-xs
                    shadow hover:bg-gray-300 active:scale-95 transition cursor-pointer"
