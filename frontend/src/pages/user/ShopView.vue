@@ -584,7 +584,7 @@ onMounted(async () => {
                       @click="viewProductDetail(product)"
                       class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer group"
                     >
-                      <div class="relative h-48 bg-gray-100 overflow-hidden">
+                      <div class="relative h-48 bg-white overflow-hidden">
                         <img
                           v-if="getProductImage(product)"
                           :src="getImageUrl(getProductImage(product).image)"
