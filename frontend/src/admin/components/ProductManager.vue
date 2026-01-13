@@ -170,7 +170,7 @@ const saveProductOrder = async () => {
     await api.post('/products/reorder/', { orders })
 
     // Refresh products
-    await productStore.fetchProducts()
+    await productStore.fetch()
     await userProductStore.fetchProducts()
 
     isDraggingMode.value = false
