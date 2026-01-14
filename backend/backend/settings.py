@@ -67,6 +67,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Add whitenoise for static files
+    'django.middleware.gzip.GZipMiddleware',  # GZIP compression za smanjenje response size
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -284,3 +285,53 @@ OWNER_EMAILS = os.environ.get('OWNER_EMAILS', 'office@betapack.co.rs').split(','
 
 # Contact form email recipient
 CONTACT_EMAIL_RECIPIENT = os.environ.get('CONTACT_EMAIL_RECIPIENT', 'office@betapack.co.rs')
+
+# ============================================
+# CACHING CONFIGURATION (TTFB Optimization)
+# ============================================
+
+# Redis cache configuration (production) ili dummy cache (development)
+if not DEBUG:
+    # Production - koristi Redis za caching
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                },
+                'PARSER_CLASS': 'redis.connection.HiredisParser',
+            },
+            'KEY_PREFIX': 'betapack',
+            'TIMEOUT': 300,  # 5 minuta default cache timeout
+        }
+    }
+
+    # Session backend - koristi Redis umesto database
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Development - koristi dummy cache (ne cache-uje ništa)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+
+# Cache timeout vrednosti za različite endpoint-e
+CACHE_TTL = {
+    'products': 60 * 5,      # 5 minuta - proizvodi se retko menjaju
+    'categories': 60 * 15,   # 15 minuta - kategorije se vrlo retko menjaju
+    'product_detail': 60 * 5, # 5 minuta - detalji proizvoda
+}
+
+# Database connection pooling za PostgreSQL (production)
+if not DEBUG and os.environ.get('DATABASE_URL'):
+    DATABASES['default']['CONN_MAX_AGE'] = 600  # 10 minuta connection pooling
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True

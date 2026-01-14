@@ -23,8 +23,8 @@ class ProductSitemap(Sitemap):
         # Override da koristimo frontend domen umesto backend domena
         urls = super().get_urls(page=page, site=site, protocol=protocol)
         for url_info in urls:
-            # Zameni api.betapack.co.rs sa betapack.co.rs
-            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'betapack.co.rs')
+            # Zameni api.betapack.co.rs sa www.betapack.co.rs (sajt forsira www verziju)
+            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'www.betapack.co.rs')
         return urls
 
 
@@ -44,7 +44,8 @@ class CategorySitemap(Sitemap):
         # Override da koristimo frontend domen umesto backend domena
         urls = super().get_urls(page=page, site=site, protocol=protocol)
         for url_info in urls:
-            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'betapack.co.rs')
+            # Zameni api.betapack.co.rs sa www.betapack.co.rs (sajt forsira www verziju)
+            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'www.betapack.co.rs')
         return urls
 
 
@@ -69,5 +70,6 @@ class StaticViewSitemap(Sitemap):
         # Override da koristimo frontend domen umesto backend domena
         urls = super().get_urls(page=page, site=site, protocol=protocol)
         for url_info in urls:
-            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'betapack.co.rs')
+            # Zameni api.betapack.co.rs sa www.betapack.co.rs (sajt forsira www verziju)
+            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'www.betapack.co.rs')
         return urls

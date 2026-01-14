@@ -6,6 +6,9 @@ from rest_framework.throttling import AnonRateThrottle
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 
 from django.db import models
 from .models import (
@@ -52,6 +55,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [IsAdminUser()]
 
+    # Cache list endpoint za 15 minuta (kategorije se retko menjaju)
+    @method_decorator(cache_page(60 * 15))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    # Cache retrieve endpoint za 15 minuta
+    @method_decorator(cache_page(60 * 15))
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
 
 # Subcategory ViewSet
 class SubcategoryViewSet(viewsets.ModelViewSet):
@@ -74,6 +87,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [IsAdminUser()]
+
+    # Cache list endpoint za 5 minuta (proizvodi se retko menjaju)
+    @method_decorator(cache_page(60 * 5))
+    @method_decorator(vary_on_headers('Accept-Language'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    # Cache retrieve endpoint za 5 minuta
+    @method_decorator(cache_page(60 * 5))
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
