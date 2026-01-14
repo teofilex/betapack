@@ -301,12 +301,10 @@ if not DEBUG:
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
                 'SOCKET_CONNECT_TIMEOUT': 5,
                 'SOCKET_TIMEOUT': 5,
-                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
                 'CONNECTION_POOL_KWARGS': {
                     'max_connections': 50,
                     'retry_on_timeout': True,
                 },
-                'PARSER_CLASS': 'redis.connection.HiredisParser',
             },
             'KEY_PREFIX': 'betapack',
             'TIMEOUT': 300,  # 5 minuta default cache timeout
