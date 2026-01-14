@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useOrderStore } from '../store/orders'
 import { useAuthStore } from '@/store/auth'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import { api } from '@/services/api'
 
 const emit = defineEmits(['update-count'])
 const orderStore = useOrderStore()
@@ -178,9 +179,8 @@ const startSSE = () => {
   if (eventSource) {
     eventSource.close()
   }
-  
+
   // Kreiraj SSE konekciju sa tokenom u query parametru
-  const { api } = require('@/services/api')
   const baseURL = api.defaults.baseURL || 'http://127.0.0.1:8000/api'
   
   eventSource = new EventSource(`${baseURL}/orders/notifications/?token=${authStore.accessToken}`)
