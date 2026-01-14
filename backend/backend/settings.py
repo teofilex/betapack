@@ -291,36 +291,43 @@ CONTACT_EMAIL_RECIPIENT = os.environ.get('CONTACT_EMAIL_RECIPIENT', 'office@beta
 # ============================================
 
 # Redis cache configuration (production) ili dummy cache (development)
-if not DEBUG:
-    # Production - koristi Redis za caching
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                'SOCKET_CONNECT_TIMEOUT': 5,
-                'SOCKET_TIMEOUT': 5,
-                'CONNECTION_POOL_KWARGS': {
-                    'max_connections': 50,
-                    'retry_on_timeout': True,
-                },
-            },
-            'KEY_PREFIX': 'betapack',
-            'TIMEOUT': 300,  # 5 minuta default cache timeout
-        }
+# PRIVREMENO ISKLJUČENO: Koristi dummy cache dok ne rešimo Redis problem
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
+}
 
-    # Session backend - koristi Redis umesto database
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-    SESSION_CACHE_ALIAS = 'default'
-else:
-    # Development - koristi dummy cache (ne cache-uje ništa)
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
+# if not DEBUG:
+#     # Production - koristi Redis za caching (PRIVREMENO ISKLJUČENO)
+#     CACHES = {
+#         'default': {
+#             'BACKEND': 'django_redis.cache.RedisCache',
+#             'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+#             'OPTIONS': {
+#                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#                 'SOCKET_CONNECT_TIMEOUT': 5,
+#                 'SOCKET_TIMEOUT': 5,
+#                 'CONNECTION_POOL_KWARGS': {
+#                     'max_connections': 50,
+#                     'retry_on_timeout': True,
+#                 },
+#             },
+#             'KEY_PREFIX': 'betapack',
+#             'TIMEOUT': 300,  # 5 minuta default cache timeout
+#         }
+#     }
+#
+#     # Session backend - koristi Redis umesto database
+#     SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+#     SESSION_CACHE_ALIAS = 'default'
+# else:
+#     # Development - koristi dummy cache (ne cache-uje ništa)
+#     CACHES = {
+#         'default': {
+#             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+#         }
+#     }
 
 # Cache timeout vrednosti za različite endpoint-e
 CACHE_TTL = {
