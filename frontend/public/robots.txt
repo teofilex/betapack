@@ -7,7 +7,7 @@ Disallow: /checkout
 Disallow: /order-success/
 
 # Sitemap
-Sitemap: https://betapack.co.rs/sitemap.xml
+Sitemap: https://www.betapack.co.rs/sitemap.xml
 
 # Crawl delay (opcionalno)
 # Crawl-delay: 1

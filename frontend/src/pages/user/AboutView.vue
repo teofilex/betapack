@@ -12,12 +12,12 @@ useHead({
     { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: 'O Nama - BetaPack' },
     { property: 'og:description', content: '25 godina iskustva u bravariji. Kvalitet, preciznost i povoljne cene.' },
-    { property: 'og:url', content: 'https://betapack.co.rs/o-nama' },
+    { property: 'og:url', content: 'https://www.betapack.co.rs/o-nama' },
     { property: 'og:type', content: 'website' },
     { property: 'og:locale', content: 'sr_RS' }
   ],
   link: [
-    { rel: 'canonical', href: 'https://betapack.co.rs/o-nama' }
+    { rel: 'canonical', href: 'https://www.betapack.co.rs/o-nama' }
   ]
 })
 

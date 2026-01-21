@@ -29,7 +29,7 @@ const productDescription = computed(() =>
 const productImage = computed(() =>
   product.value && product.value.images && product.value.images.length > 0
     ? getImageUrl(product.value.images[0].image)
-    : 'https://betapack.vercel.app/betapack-logo.png'
+    : 'https://www.betapack.co.rs/betapack-logo.png'
 )
 const productPrice = computed(() =>
   product.value ? product.value.current_price : 0
@@ -46,7 +46,7 @@ const productSchema = computed(() => {
     description: product.value.description || `Kvalitetan proizvod od kovanog gvožđa - ${product.value.name}`,
     image: product.value.images && product.value.images.length > 0
       ? product.value.images.map(img => getImageUrl(img.image))
-      : ['https://betapack.co.rs/betapack-logo.png'],
+      : ['https://www.betapack.co.rs/betapack-logo.png'],
     sku: product.value.id ? `BP-${product.value.id}` : undefined,
     brand: {
       '@type': 'Brand',
@@ -58,7 +58,7 @@ const productSchema = computed(() => {
     },
     offers: {
       '@type': 'Offer',
-      url: `https://betapack.co.rs/proizvod/${product.value.slug || product.value.id}`,
+      url: `https://www.betapack.co.rs/proizvod/${product.value.slug || product.value.id}`,
       priceCurrency: 'RSD',
       price: product.value.current_price,
       priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
@@ -69,7 +69,7 @@ const productSchema = computed(() => {
       seller: {
         '@type': 'Organization',
         name: 'BetaPack',
-        url: 'https://betapack.co.rs'
+        url: 'https://www.betapack.co.rs'
       }
     },
     category: product.value.category_name || 'Bravarski materijali',
@@ -86,7 +86,7 @@ const breadcrumbSchema = computed(() => {
       '@type': 'ListItem',
       position: 1,
       name: 'Početna',
-      item: 'https://betapack.co.rs'
+      item: 'https://www.betapack.co.rs'
     }
   ]
 
@@ -95,7 +95,7 @@ const breadcrumbSchema = computed(() => {
       '@type': 'ListItem',
       position: 2,
       name: product.value.category_name,
-      item: `https://betapack.co.rs/?category=${product.value.category}`
+      item: `https://www.betapack.co.rs/?category=${product.value.category}`
     })
   }
 
@@ -103,7 +103,7 @@ const breadcrumbSchema = computed(() => {
     '@type': 'ListItem',
     position: product.value.category_name ? 3 : 2,
     name: product.value.name,
-    item: `https://betapack.co.rs/proizvod/${product.value.slug || product.value.id}`
+    item: `https://www.betapack.co.rs/proizvod/${product.value.slug || product.value.id}`
   })
 
   return {
@@ -115,7 +115,7 @@ const breadcrumbSchema = computed(() => {
 
 // Canonical URL
 const canonicalUrl = computed(() =>
-  product.value ? `https://betapack.co.rs/proizvod/${product.value.slug || product.value.id}` : 'https://betapack.co.rs'
+  product.value ? `https://www.betapack.co.rs/proizvod/${product.value.slug || product.value.id}` : 'https://www.betapack.co.rs'
 )
 
 useHead({

@@ -14,12 +14,12 @@ useHead({
     { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: 'Kontakt - BetaPack' },
     { property: 'og:description', content: 'Kontaktirajte nas za sve informacije o bravarskim materijalima' },
-    { property: 'og:url', content: 'https://betapack.co.rs/kontakt' },
+    { property: 'og:url', content: 'https://www.betapack.co.rs/kontakt' },
     { property: 'og:type', content: 'website' },
     { property: 'og:locale', content: 'sr_RS' }
   ],
   link: [
-    { rel: 'canonical', href: 'https://betapack.co.rs/kontakt' }
+    { rel: 'canonical', href: 'https://www.betapack.co.rs/kontakt' }
   ]
 })
 

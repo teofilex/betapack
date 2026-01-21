@@ -15,7 +15,7 @@ useHead({
     { name: 'robots', content: 'noindex, nofollow' }
   ],
   link: [
-    { rel: 'canonical', href: 'https://betapack.co.rs/checkout' }
+    { rel: 'canonical', href: 'https://www.betapack.co.rs/checkout' }
   ]
 })
 

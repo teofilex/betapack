@@ -14,10 +14,10 @@ const localBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': 'LocalBusiness',
   name: 'BetaPack',
-  description: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda.',
-  url: 'https://betapack.co.rs',
-  logo: 'https://betapack.co.rs/betapack-logo.png',
-  image: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg',
+  description: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda u Beogradu.',
+  url: 'https://www.betapack.co.rs',
+  logo: 'https://www.betapack.co.rs/betapack-logo.png',
+  image: 'https://www.betapack.co.rs/Betapack-hero-image-optimized.jpg',
   telephone: '+381-65-330-02-42',
   email: 'office@betapack.co.rs',
   priceRange: '$$',
@@ -59,7 +59,7 @@ const localBusinessSchema = {
     }
   ],
   sameAs: [
-    'https://betapack.co.rs',
+    'https://www.betapack.co.rs',
     'https://betapack.vercel.app'
   ]
 }
@@ -69,12 +69,12 @@ const webSiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'BetaPack',
-  url: 'https://betapack.co.rs',
+  url: 'https://www.betapack.co.rs',
   potentialAction: {
     '@type': 'SearchAction',
     target: {
       '@type': 'EntryPoint',
-      urlTemplate: 'https://betapack.co.rs/?search={search_term_string}'
+      urlTemplate: 'https://www.betapack.co.rs/?search={search_term_string}'
     },
     'query-input': 'required name=search_term_string'
   }
@@ -82,36 +82,36 @@ const webSiteSchema = {
 
 // SEO Meta Tags
 useHead({
-  title: 'BetaPack - Kovano Gvožđe i Bravarski Materijali | Profili, Ograde, Ukrasni Elementi',
+  title: 'Kovano Gvožđe Beograd | BetaPack - Bravarski Materijali Batajnica, Zemun',
   meta: [
     {
       name: 'description',
-      content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera. Širok asortiman kvalitetnih profila i ukrasnih elemenata. Besplatna dostava za porudžbine preko 10.000 RSD.'
+      content: 'Kovano gvožđe Beograd - BetaPack prodaja bravarskih materijala u Batajnici, Zemun. Profili, kutije, firiketi i ukrasni elementi za proizvodnju ograda, kapija i gelenđera. Dostava na teritoriji cele Srbije.'
     },
     {
       name: 'keywords',
-      content: 'kovano gvožđe, bravarija, bravarski materijali, profili, ograde, ukrasni elementi, metalni proizvodi, gelenđeri, kapije'
+      content: 'kovano gvožđe Beograd, kovano gvožđe Batajnica, bravarski materijali Beograd, bravarija Zemun, profili za ograde Beograd, ukrasni elementi Beograd, firiketi, kutije, gelenderi, kapije'
     },
     // Open Graph (Facebook, LinkedIn)
     { property: 'og:site_name', content: 'BetaPack' },
-    { property: 'og:title', content: 'BetaPack - Kovano Gvožđe i Bravarski Materijali' },
-    { property: 'og:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera.' },
-    { property: 'og:image', content: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg' },
+    { property: 'og:title', content: 'Kovano Gvožđe Beograd | BetaPack Batajnica' },
+    { property: 'og:description', content: 'BetaPack - prodaja bravarskih materijala od kovanog gvožđa u Beogradu. Profili, ukrasni elementi za proizvodnju ograda, kapija, gelendera.' },
+    { property: 'og:image', content: 'https://www.betapack.co.rs/Betapack-hero-image-optimized.jpg' },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
     { property: 'og:image:alt', content: 'BetaPack - Kovano gvožđe i bravarski proizvodi' },
-    { property: 'og:url', content: 'https://betapack.co.rs' },
+    { property: 'og:url', content: 'https://www.betapack.co.rs' },
     { property: 'og:type', content: 'website' },
     { property: 'og:locale', content: 'sr_RS' },
     // Twitter Card
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: 'BetaPack - Kovano Gvožđe' },
-    { name: 'twitter:description', content: 'Prodaja bravarskih materijala od kovanog gvožđa' },
-    { name: 'twitter:image', content: 'https://betapack.co.rs/Betapack-hero-image-optimized.jpg' },
+    { name: 'twitter:title', content: 'Kovano Gvožđe Beograd | BetaPack' },
+    { name: 'twitter:description', content: 'BetaPack Batajnica - prodaja bravarskih materijala od kovanog gvožđa za Beograd i okolinu' },
+    { name: 'twitter:image', content: 'https://www.betapack.co.rs/Betapack-hero-image-optimized.jpg' },
     { name: 'twitter:image:alt', content: 'BetaPack - Kovano gvožđe i bravarski proizvodi' }
   ],
   link: [
-    { rel: 'canonical', href: 'https://betapack.co.rs' }
+    { rel: 'canonical', href: 'https://www.betapack.co.rs' }
   ],
   script: [
     {
