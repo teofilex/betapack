@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
@@ -504,12 +504,14 @@ watch(selectedSubcategory, (newVal, oldVal) => {
 
 // Scroll to products grid with offset for sticky header
 const scrollToProducts = () => {
-  if (productsGridRef.value) {
-    const headerOffset = 100 // Account for sticky header
-    const elementPosition = productsGridRef.value.getBoundingClientRect().top
-    const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-    window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
-  }
+  nextTick(() => {
+    if (productsGridRef.value) {
+      const headerOffset = 100 // Account for sticky header
+      const elementPosition = productsGridRef.value.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+    }
+  })
 }
 
 // Watch for changes in filtered products and reset variants for products that are no longer visible
