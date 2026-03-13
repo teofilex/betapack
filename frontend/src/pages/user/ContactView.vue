@@ -10,6 +10,7 @@ useHead({
   title: 'Kontakt - BetaPack | Kovano Gvožđe',
   meta: [
     { name: 'description', content: 'Kontaktirajte BetaPack za sve informacije o bravarskim materijalima. Adresa: Pukovnika Milenka Pavlovića 159 A, Zemun-Batajnica. Telefon: 065/330 02 42.' },
+    { name: 'keywords', content: 'kontakt BetaPack, telefon gvožđara Beograd, adresa bravarija Batajnica, kovano gvožđe Zemun kontakt, gde kupiti kovano gvožđe Beograd, bravarski materijali prodavnica' },
     // Open Graph
     { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: 'Kontakt - BetaPack' },

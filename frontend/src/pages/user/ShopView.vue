@@ -80,6 +80,36 @@ const webSiteSchema = {
   }
 }
 
+// Schema.org JSON-LD for Organization
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'BetaPack d.o.o.',
+  alternateName: 'BetaPack',
+  url: 'https://www.betapack.co.rs',
+  logo: 'https://www.betapack.co.rs/betapack-logo.png',
+  description: 'Prodaja bravarskih materijala i kovanog gvožđa u Beogradu. 25 godina iskustva u proizvodnji profila, ukrasnih elemenata, firiketa i kutija za ograde, kapije i gelendere.',
+  foundingDate: '1999',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+381-65-330-02-42',
+    contactType: 'Customer Service',
+    areaServed: 'RS',
+    availableLanguage: ['Serbian']
+  },
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Pukovnika Milenka Pavlovića 159 A',
+    addressLocality: 'Beograd',
+    addressRegion: 'Zemun-Batajnica',
+    postalCode: '11080',
+    addressCountry: 'RS'
+  },
+  sameAs: [
+    'https://www.betapack.co.rs'
+  ]
+}
+
 // SEO Meta Tags
 useHead({
   title: 'Kovano Gvožđe Beograd | BetaPack - Bravarski Materijali Batajnica, Zemun',
@@ -90,7 +120,7 @@ useHead({
     },
     {
       name: 'keywords',
-      content: 'kovano gvožđe Beograd, kovano gvožđe Batajnica, bravarski materijali Beograd, bravarija Zemun, profili za ograde Beograd, ukrasni elementi Beograd, firiketi, kutije, gelenderi, kapije'
+      content: 'kovano gvožđe Beograd, kupiti kovano gvožđe Beograd, cena profila za ogradu, kovano gvožđe Batajnica, bravarski materijali Beograd, bravarija Zemun, profili za ograde Beograd, cena firiketa, ukrasni elementi Beograd, gde kupiti kovano gvožđe, firiketi cena, kutije za kapije, gelenderi Beograd, kapije kovano gvožđe, materijal za ogradu cena'
     },
     // Open Graph (Facebook, LinkedIn)
     { property: 'og:site_name', content: 'BetaPack' },
@@ -121,6 +151,10 @@ useHead({
     {
       type: 'application/ld+json',
       children: JSON.stringify(webSiteSchema)
+    },
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify(organizationSchema)
     }
   ]
 })
@@ -136,6 +170,8 @@ const carouselContainer = ref(null)
 
 // Filters
 const selectedCategory = ref(null)
+const selectedSubcategory = ref(null)
+const expandedCategories = ref(new Set())
 const searchQuery = ref('')
 const showOnlyOnSale = ref(false)
 
@@ -161,6 +197,11 @@ const filteredProducts = computed(() => {
   // Filter by category
   if (selectedCategory.value) {
     products = products.filter(p => p.category === selectedCategory.value)
+  }
+
+  // Filter by subcategory
+  if (selectedSubcategory.value) {
+    products = products.filter(p => p.subcategory === selectedSubcategory.value)
   }
 
   // Filter by search
@@ -447,6 +488,11 @@ watch([selectedCategory, searchQuery], () => {
   selectedVariants.value = {}
 })
 
+// Reset subcategory when category changes
+watch(selectedCategory, () => {
+  selectedSubcategory.value = null
+})
+
 // Watch for changes in filtered products and reset variants for products that are no longer visible
 watch(filteredProducts, () => {
   // Remove selected variants for products that are no longer in the filtered list
@@ -670,7 +716,7 @@ onMounted(async () => {
 
             <!-- Sidebar -->
             <aside class="lg:col-span-1">
-              <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sticky top-20">
+              <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <h3 class="font-bold text-base lg:text-lg mb-4 text-gray-900 border-b border-gray-200 pb-2">Filteri</h3>
 
                 <!-- Search -->
@@ -689,22 +735,62 @@ onMounted(async () => {
                   <h4 class="font-bold text-sm lg:text-base text-gray-800 mb-2">Kategorije</h4>
 
                   <button
-                    @click="selectedCategory = null"
+                    @click="selectedCategory = null; selectedSubcategory = null"
                     :class="selectedCategory === null ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
                     class="w-full text-left px-3 py-2 text-sm rounded-lg transition mb-1 cursor-pointer font-semibold"
                   >
                     Sve kategorije
                   </button>
 
-                  <button
-                    v-for="cat in categoryStore.categories"
-                    :key="cat.id"
-                    @click="selectedCategory = cat.id"
-                    :class="selectedCategory === cat.id ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
-                    class="w-full text-left px-3 py-2 text-sm rounded-lg transition mb-1 cursor-pointer font-semibold"
-                  >
-                    {{ cat.name }}
-                  </button>
+                  <div v-for="cat in categoryStore.categories" :key="cat.id" class="mb-1">
+                    <!-- Category with subcategories -->
+                    <div v-if="cat.subcategories && cat.subcategories.length > 0">
+                      <div class="flex items-center">
+                        <button
+                          @click="selectedCategory = cat.id; selectedSubcategory = null"
+                          :class="selectedCategory === cat.id && !selectedSubcategory ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
+                          class="flex-1 text-left px-3 py-2 text-sm rounded-l-lg transition cursor-pointer font-semibold"
+                        >
+                          {{ cat.name }}
+                        </button>
+                        <button
+                          @click="expandedCategories.has(cat.id) ? expandedCategories.delete(cat.id) : expandedCategories.add(cat.id)"
+                          class="px-2 py-2 text-gray-500 hover:bg-gray-100 rounded-r-lg transition"
+                        >
+                          <svg
+                            :class="expandedCategories.has(cat.id) ? 'rotate-180' : ''"
+                            class="w-4 h-4 transition-transform"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                      <!-- Subcategories -->
+                      <div v-if="expandedCategories.has(cat.id)" class="ml-3 mt-1 border-l-2 border-gray-200 pl-2">
+                        <button
+                          v-for="sub in cat.subcategories"
+                          :key="sub.id"
+                          @click="selectedCategory = cat.id; selectedSubcategory = sub.id"
+                          :class="selectedSubcategory === sub.id ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                          class="w-full text-left px-3 py-1.5 text-xs rounded-lg transition mb-0.5 cursor-pointer"
+                        >
+                          {{ sub.name }}
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Category without subcategories -->
+                    <button
+                      v-else
+                      @click="selectedCategory = cat.id; selectedSubcategory = null"
+                      :class="selectedCategory === cat.id ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
+                      class="w-full text-left px-3 py-2 text-sm rounded-lg transition cursor-pointer font-semibold"
+                    >
+                      {{ cat.name }}
+                    </button>
+                  </div>
                 </div>
 
                 <!-- On Sale Filter -->
@@ -725,7 +811,9 @@ onMounted(async () => {
             <div class="lg:col-span-4">
               <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-gray-200">
                 <h2 class="text-lg lg:text-xl font-bold text-gray-900">
-                  {{ selectedCategory ? categoryStore.categories.find(c => c.id === selectedCategory)?.name : 'Svi proizvodi' }}
+                  {{ selectedSubcategory
+                    ? categoryStore.categories.find(c => c.id === selectedCategory)?.subcategories?.find(s => s.id === selectedSubcategory)?.name
+                    : (selectedCategory ? categoryStore.categories.find(c => c.id === selectedCategory)?.name : 'Svi proizvodi') }}
                 </h2>
                 <p class="text-sm lg:text-base font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg">{{ filteredProducts.length }} proizvoda</p>
               </div>
@@ -776,6 +864,11 @@ onMounted(async () => {
                       <!-- Stock indicator -->
                       <div v-if="!product.in_stock" class="absolute top-2 left-2 bg-gray-800/90 text-white px-3 py-1 rounded-full text-xs font-semibold z-20">
                         Rasprodato
+                      </div>
+
+                      <!-- SKU badge -->
+                      <div v-if="getSelectedVariant(product)?.sku" class="absolute bottom-2 left-2 bg-gray-800/80 text-white px-2 py-1 rounded text-[10px] font-mono z-20">
+                        {{ getSelectedVariant(product).sku }}
                       </div>
                     </div>
 
@@ -915,7 +1008,7 @@ onMounted(async () => {
                 <span class="text-3xl text-gray-300 mb-3 block">🔍</span>
                 <p class="text-xl text-gray-600 mb-4">Nema proizvoda koji odgovaraju filterima</p>
                 <button
-                  @click="selectedCategory = null; searchQuery = ''; showOnlyOnSale = false"
+                  @click="selectedCategory = null; selectedSubcategory = null; searchQuery = ''; showOnlyOnSale = false"
                   class="mt-4 text-lg text-[#1565c0] hover:underline cursor-pointer font-semibold"
                 >
                   Resetuj filtere

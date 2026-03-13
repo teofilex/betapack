@@ -8,6 +8,7 @@ useHead({
   title: 'O Nama - BetaPack | 25 Godina Iskustva u Bravariji',
   meta: [
     { name: 'description', content: 'BetaPack - 25 godina iskustva u proizvodnji i prodaji bravarskih materijala. Kvalitet, preciznost, brzina i povoljne cene. Vaš pouzdan partner za kovano gvožđe.' },
+    { name: 'keywords', content: 'BetaPack, o nama, bravarija Beograd, iskustvo kovano gvožđe, kvalitetni bravarski materijali, proizvodnja ograda Srbija, pouzdana bravarija Batajnica' },
     // Open Graph
     { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: 'O Nama - BetaPack' },

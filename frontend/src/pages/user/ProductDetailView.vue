@@ -34,6 +34,12 @@ const productImage = computed(() =>
 const productPrice = computed(() =>
   product.value ? product.value.current_price : 0
 )
+const productKeywords = computed(() => {
+  if (!product.value) return 'kovano gvožđe, bravarski materijali, BetaPack'
+  const name = product.value.name || ''
+  const category = product.value.category_name || ''
+  return `${name}, ${category}, kupiti ${name} Beograd, cena ${name}, ${category} Beograd, kovano gvožđe, bravarski materijali, BetaPack`
+})
 
 // Schema.org JSON-LD for Product
 const productSchema = computed(() => {
@@ -122,6 +128,7 @@ useHead({
   title: productTitle,
   meta: [
     { name: 'description', content: productDescription },
+    { name: 'keywords', content: productKeywords },
     // Open Graph
     { property: 'og:site_name', content: 'BetaPack' },
     { property: 'og:title', content: productTitle },
@@ -485,8 +492,13 @@ onMounted(() => {
 
             <!-- Product Info -->
             <div class="flex flex-col min-h-[400px]">
-              <!-- Category -->
-              <p class="text-xs text-[#1976d2] font-semibold mb-1">{{ product.category_name }}</p>
+              <!-- Category & SKU -->
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-xs text-[#1976d2] font-semibold">{{ product.category_name }}</p>
+                <p v-if="selectedVariant?.sku" class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded">
+                  {{ selectedVariant.sku }}
+                </p>
+              </div>
 
               <!-- Title -->
               <h1 class="text-xl lg:text-2xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
