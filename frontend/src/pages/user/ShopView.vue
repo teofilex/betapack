@@ -174,6 +174,7 @@ const selectedSubcategory = ref(null)
 const expandedCategories = ref(new Set())
 const searchQuery = ref('')
 const showOnlyOnSale = ref(false)
+const productsGridRef = ref(null)
 
 // Error message for invalid quantity
 const quantityError = ref({})
@@ -488,10 +489,28 @@ watch([selectedCategory, searchQuery], () => {
   selectedVariants.value = {}
 })
 
-// Reset subcategory when category changes
+// Reset subcategory when category changes and scroll to products
 watch(selectedCategory, () => {
   selectedSubcategory.value = null
+  scrollToProducts()
 })
+
+// Scroll to products when subcategory changes
+watch(selectedSubcategory, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    scrollToProducts()
+  }
+})
+
+// Scroll to products grid with offset for sticky header
+const scrollToProducts = () => {
+  if (productsGridRef.value) {
+    const headerOffset = 100 // Account for sticky header
+    const elementPosition = productsGridRef.value.getBoundingClientRect().top
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+    window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+  }
+}
 
 // Watch for changes in filtered products and reset variants for products that are no longer visible
 watch(filteredProducts, () => {
@@ -820,7 +839,7 @@ onMounted(async () => {
             </aside>
 
             <!-- Products Grid -->
-            <div class="lg:col-span-4">
+            <div ref="productsGridRef" class="lg:col-span-4">
               <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-gray-200">
                 <h2 class="text-lg lg:text-xl font-bold text-gray-900">
                   {{ selectedSubcategory
