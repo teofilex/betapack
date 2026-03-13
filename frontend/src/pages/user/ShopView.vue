@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
@@ -174,7 +174,6 @@ const selectedSubcategory = ref(null)
 const expandedCategories = ref(new Set())
 const searchQuery = ref('')
 const showOnlyOnSale = ref(false)
-const productsGridRef = ref(null)
 
 // Error message for invalid quantity
 const quantityError = ref({})
@@ -504,14 +503,12 @@ watch(selectedSubcategory, (newVal, oldVal) => {
 
 // Scroll to products grid with offset for sticky header
 const scrollToProducts = () => {
-  nextTick(() => {
-    if (productsGridRef.value) {
-      const headerOffset = 100 // Account for sticky header
-      const elementPosition = productsGridRef.value.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+  setTimeout(() => {
+    const element = document.getElementById('products-section')
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  })
+  }, 50)
 }
 
 // Watch for changes in filtered products and reset variants for products that are no longer visible
@@ -841,7 +838,7 @@ onMounted(async () => {
             </aside>
 
             <!-- Products Grid -->
-            <div ref="productsGridRef" class="lg:col-span-4">
+            <div id="products-section" class="lg:col-span-4 scroll-mt-24">
               <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-gray-200">
                 <h2 class="text-lg lg:text-xl font-bold text-gray-900">
                   {{ selectedSubcategory
