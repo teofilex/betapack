@@ -717,7 +717,19 @@ onMounted(async () => {
             <!-- Sidebar -->
             <aside class="lg:col-span-1">
               <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
-                <h3 class="font-bold text-base lg:text-lg mb-4 text-gray-900 border-b border-gray-200 pb-2">Filteri</h3>
+                <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
+                  <h3 class="font-bold text-base lg:text-lg text-gray-900">Filteri</h3>
+                  <button
+                    v-if="selectedCategory || selectedSubcategory || searchQuery || showOnlyOnSale"
+                    @click="selectedCategory = null; selectedSubcategory = null; searchQuery = ''; showOnlyOnSale = false"
+                    class="text-xs text-gray-500 hover:text-red-600 transition cursor-pointer flex items-center gap-1"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Resetuj
+                  </button>
+                </div>
 
                 <!-- Search -->
                 <div class="mb-4">
