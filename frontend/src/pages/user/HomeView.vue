@@ -27,6 +27,7 @@ const sections = [
     title: 'Bravarski materijal i kovano gvožđe',
     tags: ['Kapije', 'Ograde', 'Dekorativni elementi'],
     buttonText: 'Pogledaj ponudu',
+    mobileImage: '/Betapack-home-mobile-steel.jpeg',
     align: 'left'
   },
   {
@@ -34,6 +35,7 @@ const sections = [
     title: 'Ambalaža za ugostiteljstvo i dostavu',
     tags: ['PET', 'PP', 'papir', 'alu', 'folije'],
     buttonText: 'Pogledaj asortiman',
+    mobileImage: '/Betapack-home-mobile-ambalaza.jpeg',
     align: 'right'
   }
 ]
@@ -73,19 +75,23 @@ const goTo = (path) => {
     </header>
 
     <main class="relative flex-1 flex flex-col min-h-0">
+      <!-- Desktop: full panoramic background -->
       <img
         src="/Betapack-home.jpeg"
-        alt="Beta Pack — bravarski materijal i ambalaža"
-        class="absolute inset-0 w-full h-full object-cover"
+        alt=""
+        aria-hidden="true"
+        class="home-bg-desktop absolute inset-0 w-full h-full object-cover object-center hidden md:block"
         fetchpriority="high"
       />
-      <div class="absolute inset-0 bg-gradient-to-b from-[#0a1628]/70 via-[#0a1628]/25 to-[#0a1628]/75"></div>
 
-      <!-- Diagonal accent -->
-      <div class="home-diagonal pointer-events-none absolute inset-0 z-[1]" aria-hidden="true"></div>
+      <!-- Overlay — desktop only (mobile koristi slike po panelima) -->
+      <div class="absolute inset-0 home-overlay hidden md:block"></div>
+
+      <!-- Diagonal accent (desktop only) -->
+      <div class="home-diagonal pointer-events-none absolute inset-0 z-[1] hidden md:block" aria-hidden="true"></div>
 
       <div class="relative z-10 flex flex-col flex-1">
-        <div class="text-center pt-8 md:pt-12 px-4">
+        <div class="text-center pt-8 md:pt-12 px-4 home-header">
           <p class="home-brand text-[#c9a84c] text-xl md:text-2xl tracking-[0.2em] uppercase mb-2">Beta Pack</p>
           <h1 class="home-title text-white text-3xl sm:text-3xl md:text-4xl lg:text-5xl leading-tight tracking-tight">
             Izaberite oblast poslovanja
@@ -97,10 +103,25 @@ const goTo = (path) => {
             v-for="section in sections"
             :key="section.store.id"
             @click="selectStore(section.store.path)"
-            class="home-panel group flex flex-col items-center justify-end px-6 sm:px-10 pb-12 md:pb-20 pt-8 min-h-[340px] md:min-h-0 cursor-pointer transition-all duration-300 hover:bg-black/20"
-            :class="section.align === 'left' ? 'md:items-center md:pr-16' : 'md:items-center md:pl-16'"
+            class="home-panel group relative overflow-hidden flex flex-col md:flex-col items-stretch cursor-pointer transition-all duration-300 md:hover:bg-black/20"
+            :class="[
+              section.align === 'left' ? 'md:items-center md:pr-16' : 'md:items-center md:pl-16',
+              section.store.id === 'steel' ? 'home-panel-steel' : 'home-panel-ambalaza'
+            ]"
           >
-            <div class="flex flex-col items-center text-center max-w-lg">
+            <!-- Mobile: slika gore, jasno vidljiva -->
+            <div class="home-panel-visual md:hidden relative w-full h-56 sm:h-64 flex-shrink-0 overflow-hidden">
+              <img
+                :src="section.mobileImage"
+                :alt="section.title"
+                class="absolute inset-0 w-full h-full object-cover object-center"
+              />
+              <div class="home-panel-visual-fade absolute inset-x-0 bottom-0 h-16"></div>
+            </div>
+
+            <div
+              class="home-panel-body relative z-10 flex flex-col items-center justify-end md:justify-end text-center px-6 sm:px-10 pb-10 md:pb-20 pt-6 md:pt-8 flex-1 max-w-lg mx-auto w-full"
+            >
               <!-- Icons -->
               <div
                 v-if="section.store.id === 'steel'"
@@ -156,6 +177,52 @@ const goTo = (path) => {
 <style scoped>
 .home-page {
   font-family: 'Montserrat', 'Inter', sans-serif;
+}
+
+.home-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 22, 40, 0.7) 0%,
+    rgba(10, 22, 40, 0.25) 45%,
+    rgba(10, 22, 40, 0.75) 100%
+  );
+}
+
+.home-header {
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .home-header {
+    background: #0a1628;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .home-panel {
+    background: #0a1628;
+  }
+
+  .home-panel + .home-panel {
+    border-top: 1px solid rgba(201, 168, 76, 0.25);
+  }
+
+  .home-panel-visual-fade {
+    background: linear-gradient(180deg, transparent, #0a1628);
+  }
+
+  .home-panel-body {
+    background: #0a1628;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-panel {
+    min-height: 420px;
+  }
 }
 
 .home-brand {
@@ -231,6 +298,12 @@ const goTo = (path) => {
 @media (max-width: 767px) {
   .home-diagonal::after {
     display: none;
+  }
+
+  .home-btn {
+    min-width: 200px;
+    width: 100%;
+    max-width: 280px;
   }
 }
 </style>
