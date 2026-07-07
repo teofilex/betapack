@@ -161,7 +161,12 @@ const handleLogout = () => {
                     <div class="flex-1 min-w-0">
                       <h4 class="font-semibold text-sm text-gray-900 line-clamp-1">{{ item.name }}</h4>
                       <p v-if="item.selectedVariant" class="text-xs text-gray-600">{{ item.selectedVariant.name }}</p>
-                      <p class="text-sm font-bold text-green-700 mt-1">{{ formatPrice(item.current_price) }}</p>
+                      <p
+                        class="text-sm font-bold mt-1"
+                        :class="isOnRequest(item) ? 'text-orange-600' : 'text-[#1976d2]'"
+                      >
+                        {{ isOnRequest(item) ? 'Cena na upit' : formatPrice(item.current_price) }}
+                      </p>
                       <div v-if="!isOnRequest(item)" class="flex items-center gap-2 mt-2">
                         <button
                           @click.stop="updateQuantity(item, item.quantity - getQuantityStep(item))"
@@ -177,7 +182,13 @@ const handleLogout = () => {
                           class="ml-auto text-red-600 hover:text-red-700 text-xs font-semibold cursor-pointer"
                         >Ukloni</button>
                       </div>
-                      <p v-if="isPackageMode(item)" class="text-[10px] text-green-600 mt-1">
+                      <div v-else class="flex items-center justify-end mt-2">
+                        <button
+                          @click.stop="removeItem(item)"
+                          class="text-red-600 hover:text-red-700 text-xs font-semibold cursor-pointer"
+                        >Ukloni</button>
+                      </div>
+                      <p v-if="isPackageMode(item)" class="text-[10px] text-[#1976d2] mt-1">
                         {{ item.quantity / (item.package_size || 1) }} pak. ({{ item.quantity }} kom.)
                       </p>
                     </div>
@@ -186,7 +197,7 @@ const handleLogout = () => {
                 <div class="p-4 border-t bg-gray-50 space-y-3">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-gray-900">Ukupno:</span>
-                    <span class="text-xl font-bold text-green-700">{{ formatPrice(cartTotal) }}</span>
+                    <span class="text-xl font-bold text-[#1976d2]">{{ formatPrice(cartTotal) }}</span>
                   </div>
                   <button
                     @click="navigateTo(storeRoute('/cart'))"

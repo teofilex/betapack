@@ -522,8 +522,7 @@ onMounted(loadStoreData)
     <main class="flex-1">
 
       <!-- Hero Image -->
-      <div class="relative overflow-hidden" style="height: 450px;">
-        <!-- Background Image -->
+      <div class="relative overflow-hidden" :style="{ height: storeId === 'ambalaza' ? '580px' : '450px' }">
         <img
           :src="heroStore.heroImage"
           :alt="`BetaPack - ${heroStore.heroTitle}`"
@@ -531,34 +530,112 @@ onMounted(loadStoreData)
           class="absolute inset-0 w-full h-full object-cover"
         />
 
-        <!-- Text Overlay with Fade-in Animation -->
-        <div class="absolute inset-0 flex items-center justify-center">
-          <div class="text-center text-white px-6 py-8 max-w-4xl rounded-xl animate-fade-in-up" style="background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);">
-            <h1 class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.9); animation-delay: 0.2s;">
+        <!-- Ambalaža hero overlay -->
+        <div
+          v-if="storeId === 'ambalaza'"
+          class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/55 to-black/30"
+        ></div>
+
+        <div class="absolute inset-0 flex items-center justify-center px-4">
+          <!-- Ambalaža styled hero -->
+          <div
+            v-if="storeId === 'ambalaza'"
+            class="text-center text-white max-w-4xl w-full animate-fade-in-up"
+          >
+            <span
+              class="inline-block mb-4 px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold tracking-wider uppercase border border-white/25 bg-white/10 backdrop-blur-sm"
+            >
+              Beta Pack Ambalaža
+            </span>
+            <h1
+              class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-5 leading-tight"
+              style="text-shadow: 2px 2px 12px rgba(0,0,0,0.8);"
+            >
               {{ heroStore.heroTitle }}
             </h1>
-            <p class="text-base lg:text-xl text-white" style="text-shadow: 2px 2px 6px rgba(0,0,0,0.9); animation-delay: 0.4s;">
+            <p
+              class="text-sm sm:text-base lg:text-lg text-gray-100 max-w-3xl mx-auto leading-relaxed mb-6"
+              style="text-shadow: 1px 1px 6px rgba(0,0,0,0.8);"
+            >
+              {{ heroStore.heroSubtitle }}
+            </p>
+
+            <div
+              v-if="heroStore.heroTags?.length"
+              class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 max-w-3xl mx-auto"
+            >
+              <span
+                v-for="(tag, index) in heroStore.heroTags"
+                :key="tag"
+                class="inline-flex items-center"
+              >
+                <span
+                  class="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-white/15 backdrop-blur-md border border-white/20 shadow-sm"
+                >
+                  {{ tag }}
+                </span>
+                <span
+                  v-if="index < heroStore.heroTags.length - 1"
+                  class="hidden sm:inline text-white/40 mx-1 text-lg select-none"
+                >•</span>
+              </span>
+            </div>
+
+            <p
+              v-if="heroStore.heroTagline"
+              class="text-base sm:text-lg lg:text-xl font-semibold tracking-wide text-[#42a5f5]"
+              style="text-shadow: 1px 1px 8px rgba(0,0,0,0.9);"
+            >
+              {{ heroStore.heroTagline }}
+            </p>
+          </div>
+
+          <!-- Default hero (Gvožđara) -->
+          <div
+            v-else
+            class="text-center text-white px-6 py-8 max-w-4xl rounded-xl animate-fade-in-up"
+            style="background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);"
+          >
+            <h1
+              class="text-3xl lg:text-5xl xl:text-6xl font-bold mb-4 uppercase"
+              style="text-shadow: 2px 2px 8px rgba(0,0,0,0.9);"
+            >
+              {{ heroStore.heroTitle }}
+            </h1>
+            <p
+              class="text-base lg:text-xl text-white"
+              style="text-shadow: 2px 2px 6px rgba(0,0,0,0.9);"
+            >
               {{ heroStore.heroSubtitle }}
             </p>
           </div>
         </div>
 
         <!-- Buttons positioned at bottom -->
-        <div class="absolute inset-0 flex items-end justify-center pb-12">
-          <div class="flex gap-3 px-4">
-            <a
-              href="#products"
-              class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+        <div class="absolute inset-0 flex items-end justify-center pb-6 sm:pb-10 pointer-events-none">
+          <div class="flex flex-col items-center gap-3 px-4 pointer-events-auto">
+            <div class="flex flex-wrap justify-center gap-3">
+              <a
+                href="#products"
+                class="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+              >
+                {{ heroStore.heroCatalogButton || 'Pogledaj katalog' }}
+              </a>
+              <router-link
+                :to="storeRoute('/kontakt')"
+                class="text-white font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
+                :style="{ backgroundColor: heroStore.accentColor }"
+              >
+                {{ heroStore.heroContactButton || 'Pošalji upit' }}
+              </router-link>
+            </div>
+            <p
+              v-if="storeId === 'ambalaza' && heroStore.heroOfferNote"
+              class="text-center text-xs sm:text-sm text-white/90 max-w-xl leading-relaxed font-medium px-2"
+              style="text-shadow: 1px 1px 6px rgba(0,0,0,0.9);"
             >
-              Pogledaj katalog
-            </a>
-            <router-link
-              :to="storeRoute('/kontakt')"
-              class="text-white font-semibold px-6 py-3 rounded-lg transition cursor-pointer shadow-lg text-sm lg:text-base"
-              :style="{ backgroundColor: heroStore.accentColor }"
-            >
-              Kontaktiraj nas
-            </router-link>
+              {{ heroStore.heroOfferNote }}
+            </p>
           </div>
         </div>
       </div>
@@ -578,7 +655,7 @@ onMounted(loadStoreData)
 
             <!-- Badge 2 -->
             <div class="flex flex-col items-center text-center group">
-              <div class="w-16 h-16 mb-3 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+              <div class="w-16 h-16 mb-3 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
                 <span class="text-3xl">✅</span>
               </div>
               <h3 class="font-bold text-sm md:text-base text-gray-900 mb-1">Garancija kvaliteta</h3>
