@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth'
 import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
 import { STORE_LIST } from '@/config/stores'
+import StoreIcon from '@/components/StoreIcon.vue'
 import {
   getQuantityStep, getMinQuantity, isPackageMode, isLengthMode, isOnRequest
 } from '@/composables/useSellingMode'
@@ -78,7 +79,7 @@ const handleLogout = () => {
               :class="storeId === s.id ? 'bg-[#1976d2] text-white shadow' : 'text-gray-300 hover:text-white hover:bg-white/10'"
               class="flex items-center gap-1 px-3 lg:px-4 py-1.5 rounded-lg transition font-semibold text-sm cursor-pointer"
             >
-              <span>{{ s.icon }}</span>
+              <StoreIcon :store-id="s.id" size="sm" class="flex-shrink-0" />
               <span>{{ s.shortLabel }}</span>
             </button>
           </div>
@@ -233,7 +234,7 @@ const handleLogout = () => {
           :class="storeId === s.id ? 'bg-[#1976d2] text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'"
           class="flex items-center gap-2 w-full text-left px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer"
         >
-          <span>{{ s.icon }}</span>
+          <StoreIcon :store-id="s.id" size="sm" class="flex-shrink-0" />
           <span>{{ s.label }}</span>
         </button>
         <template v-if="store">

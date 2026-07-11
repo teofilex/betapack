@@ -11,10 +11,24 @@ import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
 import { getStoreById } from '@/config/stores'
 import {
-  getSellingMode, getQuantityStep, getMinQuantity, getDefaultQuantity,
+  getSellingMode, getQuantityStep, getMinQuantity, getDefaultQuantity, getPackageSize,
   isValidQuantity, isValidLengthQuantity, isOnRequest, isPackageMode,
   isLengthMode, isWeightMode, formatPriceLabel, getPackageNote
 } from '@/composables/useSellingMode'
+import {
+  getAmbalazaDisplayPrice,
+  formatAmbalazaPriceLabel,
+  getAmbalazaSellingNote,
+  getAmbalazaPackageNote,
+  isAmbalazaOnRequest,
+  isAmbalazaPackageMode,
+  isAmbalazaWeightMode,
+  isAmbalazaValidQuantity,
+  getAmbalazaMinQuantity,
+  getAmbalazaQuantityStep,
+  getAmbalazaDefaultQuantity,
+  getAmbalazaPackageSize
+} from '@/composables/useAmbalazaSelling'
 
 // Schema.org JSON-LD for LocalBusiness
 const localBusinessSchema = {
@@ -274,33 +288,62 @@ const productQuantities = ref({})
 // Selected variants per product (key = product.id, value = variant or null)
 const selectedVariants = ref({})
 
+const isAmbalazaShop = () => storeId.value === 'ambalaza'
+
+const getProductMinQuantity = (product) => {
+  if (isAmbalazaShop()) return getAmbalazaMinQuantity(product, getSelectedVariant(product))
+  return getMinQuantity(product)
+}
+
+const getProductQuantityStep = (product) => {
+  if (isAmbalazaShop()) return getAmbalazaQuantityStep(product, getSelectedVariant(product))
+  return getQuantityStep(product)
+}
+
+const getProductDefaultQuantity = (product, variant = null) => {
+  if (isAmbalazaShop()) return getAmbalazaDefaultQuantity(product, variant ?? getSelectedVariant(product))
+  return getDefaultQuantity(product)
+}
+
 const getQuantity = (productId) => {
   if (productQuantities.value[productId] !== undefined) {
     return productQuantities.value[productId]
   }
   const product = productStore.products.find(p => p.id === productId)
-  return product ? getDefaultQuantity(product) : 1
+  return product ? getProductDefaultQuantity(product) : 1
 }
 
 const setQuantity = (productId, quantity) => {
   const product = productStore.products.find(p => p.id === productId)
-  const minQuantity = product ? getMinQuantity(product) : 1
+  const variant = product ? getSelectedVariant(product) : null
+  const minQuantity = product ? getProductMinQuantity(product) : 1
   if (quantity < minQuantity) quantity = minQuantity
 
-  if (product && !isValidQuantity(product, quantity)) {
-    const mode = getSellingMode(product)
-    if (mode === 'length') {
-      quantityError.value[productId] = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
-      const whole = Math.floor(quantity)
-      const decimal = quantity % 1
-      quantity = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
-    } else if (mode === 'package') {
-      quantityError.value[productId] = `Količina mora biti višekratnik pakovanja (${product.package_size} kom.)`
-      const pkg = parseInt(product.package_size, 10) || 1
-      quantity = Math.max(pkg, Math.round(quantity / pkg) * pkg)
+  if (product) {
+    const valid = isAmbalazaShop()
+      ? isAmbalazaValidQuantity(product, quantity, variant)
+      : isValidQuantity(product, quantity)
+
+    if (!valid) {
+      const mode = isAmbalazaShop()
+        ? (variant?.selling_mode || product.selling_mode)
+        : getSellingMode(product)
+
+      if (mode === 'length') {
+        quantityError.value[productId] = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
+        const whole = Math.floor(quantity)
+        const decimal = quantity % 1
+        quantity = decimal < 0.25 ? whole : (decimal < 0.75 ? whole + 0.5 : whole + 1)
+      } else if (mode === 'package') {
+        const pkg = isAmbalazaShop()
+          ? getAmbalazaPackageSize(product, variant)
+          : getPackageSize(product)
+        quantityError.value[productId] = `Količina mora biti višekratnik pakovanja (${pkg} kom.)`
+        quantity = Math.max(pkg, Math.round(quantity / pkg) * pkg)
+      }
+    } else {
+      quantityError.value[productId] = null
     }
-  } else {
-    quantityError.value[productId] = null
   }
 
   productQuantities.value[productId] = quantity
@@ -342,11 +385,14 @@ const getSortedVariantsByDimension = (product) => {
 const setSelectedVariant = (productId, variant) => {
   selectedVariants.value[productId] = variant
   const product = productStore.products.find(p => p.id === productId)
-  setQuantity(productId, product ? getDefaultQuantity(product) : 1)
+  setQuantity(productId, product ? getProductDefaultQuantity(product, variant) : 1)
 }
 
 // Get price for a product (considering selected variant)
 const getProductPrice = (product) => {
+  if (isAmbalazaShop()) {
+    return getAmbalazaDisplayPrice(product, getSelectedVariant(product))
+  }
   if (isOnRequest(product)) return null
   const variant = getSelectedVariant(product)
   if (variant) {
@@ -364,7 +410,30 @@ const isVariantOnSale = (product) => {
   return product.on_sale
 }
 
-// Get original price of selected variant (before sale)
+const formatProductPriceLabel = (product) => {
+  if (isAmbalazaShop()) {
+    return formatAmbalazaPriceLabel(product, getSelectedVariant(product), formatPrice)
+  }
+  if (isOnRequest(product)) return 'Cena na upit'
+  const price = getProductPrice(product)
+  if (price == null) return 'Cena na upit'
+  const mode = getSellingMode(product)
+  if (mode === 'package') return `${formatPrice(price)} / kom.`
+  if (mode === 'weight') return `${formatPrice(price)} / kg`
+  if (mode === 'length') return `${formatPrice(price)} / kom.`
+  return formatPrice(price)
+}
+
+const isProductOnRequest = (product) => {
+  if (isAmbalazaShop()) return isAmbalazaOnRequest(product, getSelectedVariant(product))
+  return isOnRequest(product)
+}
+
+const getProductSellingNote = (product) => {
+  if (!isAmbalazaShop()) return null
+  return getAmbalazaSellingNote(product, getSelectedVariant(product))
+}
+
 const getVariantOriginalPrice = (product) => {
   const variant = getSelectedVariant(product)
   if (variant) {
@@ -403,11 +472,21 @@ const getCartQuantity = (product) => {
 
 // Update quantity in cart
 const updateCartQuantity = (product, newQuantity) => {
-  const minQuantity = getMinQuantity(product)
+  const minQuantity = getProductMinQuantity(product)
   if (newQuantity < minQuantity) return
 
-  if (!isValidQuantity(product, newQuantity)) {
-    if (isLengthMode(product)) {
+  const variant = getSelectedVariant(product)
+  const valid = isAmbalazaShop()
+    ? isAmbalazaValidQuantity(product, newQuantity, variant)
+    : isValidQuantity(product, newQuantity)
+
+  if (!valid) {
+    if (isAmbalazaShop()) {
+      if (isAmbalazaPackageMode(product, variant)) {
+        const pkg = getAmbalazaPackageSize(product, variant)
+        newQuantity = Math.max(pkg, Math.round(newQuantity / pkg) * pkg)
+      }
+    } else if (isLengthMode(product)) {
       quantityError.value[product.id] = 'Proizvod se prodaje ceo ili na pola (npr. 1, 1.5, 2, 2.5). Uneta vrednost nije validna.'
       const whole = Math.floor(newQuantity)
       const decimal = newQuantity % 1
@@ -421,23 +500,24 @@ const updateCartQuantity = (product, newQuantity) => {
     quantityError.value[product.id] = null
   }
 
-  const variant = getSelectedVariant(product)
   const cartId = variant ? `${product.id}-${variant.id}` : product.id
   cartStore.updateQuantity(cartId, newQuantity)
 }
 
 const addToCartFromCard = (product) => {
-  const quantity = getQuantity(product.id)
+  const variant = getSelectedVariant(product)
+  let quantity = getQuantity(product.id)
 
-  if (!isValidQuantity(product, quantity)) {
-    setQuantity(product.id, getDefaultQuantity(product))
+  if (isAmbalazaShop() && !isAmbalazaValidQuantity(product, quantity, variant)) {
+    quantity = getProductDefaultQuantity(product, variant)
+  } else if (!isAmbalazaShop() && !isValidQuantity(product, quantity)) {
+    setQuantity(product.id, getProductDefaultQuantity(product))
     return
   }
 
   quantityError.value[product.id] = null
-  const variant = getSelectedVariant(product)
   cartStore.add({ ...product, selectedVariant: variant }, quantity)
-  setQuantity(product.id, getDefaultQuantity(product))
+  setQuantity(product.id, getProductDefaultQuantity(product, variant))
 }
 
 // Remove product from cart
@@ -975,14 +1055,27 @@ onMounted(loadStoreData)
                       <div class="mt-auto">
                         <div class="flex items-center justify-between mb-2">
                           <div>
-                            <p v-if="isVariantOnSale(product) && !isOnRequest(product)" class="text-xs text-gray-400 line-through mb-0.5">
+                            <p v-if="isVariantOnSale(product) && !isProductOnRequest(product)" class="text-xs text-gray-400 line-through mb-0.5">
                               {{ formatPrice(getVariantOriginalPrice(product)) }}
                             </p>
-                            <p v-if="isOnRequest(product)" class="text-base font-bold text-orange-600">
+                            <p v-if="isProductOnRequest(product)" class="text-base font-bold text-orange-600">
                               Cena na upit
                             </p>
                             <p v-else class="text-base font-bold" :class="isVariantOnSale(product) ? 'text-red-600' : 'text-green-700'">
-                              {{ formatPriceLabel(product, formatPrice) }}
+                              {{ formatProductPriceLabel(product) }}
+                            </p>
+                            <p
+                              v-if="storeId === 'ambalaza' && getProductSellingNote(product)"
+                              class="text-[10px] text-[#1976d2] font-semibold mt-1"
+                            >
+                              {{ getProductSellingNote(product) }}
+                            </p>
+                            <p
+                              v-if="storeId === 'ambalaza' && isAmbalazaPackageMode(product, getSelectedVariant(product)) && getProductPrice(product)"
+                              class="text-[10px] text-gray-600 mt-0.5"
+                            >
+                              Ukupno ({{ getQuantity(product.id) }} kom.):
+                              {{ formatPrice(getProductPrice(product) * getQuantity(product.id)) }}
                             </p>
                             <p v-if="product.dimensions" class="text-[10px] text-gray-500 mt-0.5">{{ product.dimensions }}</p>
                           </div>
@@ -1014,34 +1107,40 @@ onMounted(loadStoreData)
                             <span class="text-xs font-bold text-gray-700">Količina:</span>
                             <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
                               <button
-                                @click="setQuantity(product.id, getQuantity(product.id) - getQuantityStep(product))"
+                                @click="setQuantity(product.id, getQuantity(product.id) - getProductQuantityStep(product))"
                                 class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                               >
                                 -
                               </button>
                               <input
                                 :value="getQuantity(product.id)"
-                                @input="setQuantity(product.id, parseFloat($event.target.value) || getMinQuantity(product))"
+                                @input="setQuantity(product.id, parseFloat($event.target.value) || getProductMinQuantity(product))"
                                 type="number"
-                                :min="getMinQuantity(product)"
-                                :step="getQuantityStep(product)"
+                                :min="getProductMinQuantity(product)"
+                                :step="getProductQuantityStep(product)"
                                 class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                               />
                               <button
-                                @click="setQuantity(product.id, getQuantity(product.id) + getQuantityStep(product))"
+                                @click="setQuantity(product.id, getQuantity(product.id) + getProductQuantityStep(product))"
                                 class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
                               >
                                 +
                               </button>
                             </div>
                           </div>
-                          <p v-if="isLengthMode(product)" class="text-[10px] text-blue-600 font-semibold italic">
+                          <p v-if="storeId === 'steel' && isLengthMode(product)" class="text-[10px] text-blue-600 font-semibold italic">
                             ℹ️ Proizvodi se prodaju po komadu (1 kom = {{ getVariantLength(product) || product.length_per_unit || 6 }} m), uz mogućnost kupovine celog ili pola komada ({{ ((getVariantLength(product) || product.length_per_unit || 6) / 2).toFixed(1) }} m).
                           </p>
-                          <p v-if="isPackageMode(product)" class="text-[10px] text-green-600 font-semibold italic">
+                          <p v-if="storeId === 'steel' && isPackageMode(product)" class="text-[10px] text-green-600 font-semibold italic">
                             📦 {{ getPackageNote(product) }} — cena po komadu
                           </p>
-                          <p v-if="isWeightMode(product)" class="text-[10px] text-blue-600 font-semibold italic">
+                          <p v-if="storeId === 'steel' && isWeightMode(product)" class="text-[10px] text-blue-600 font-semibold italic">
+                            ⚖️ Prodaja po kilogramu
+                          </p>
+                          <p v-if="storeId === 'ambalaza' && isAmbalazaPackageMode(product, getSelectedVariant(product))" class="text-[10px] text-green-600 font-semibold italic">
+                            📦 {{ getAmbalazaPackageNote(product, getSelectedVariant(product)) }} — cena po komadu
+                          </p>
+                          <p v-if="storeId === 'ambalaza' && isAmbalazaWeightMode(product, getSelectedVariant(product))" class="text-[10px] text-blue-600 font-semibold italic">
                             ⚖️ Prodaja po kilogramu
                           </p>
                           <p v-if="quantityError[product.id]" class="text-[10px] text-red-600 font-semibold italic mt-1">
@@ -1060,33 +1159,36 @@ onMounted(loadStoreData)
                       </div>
                       <div class="flex items-center justify-between w-full px-4 bg-gray-100 rounded-xl py-1">
                         <button
-                          @click.stop="updateCartQuantity(product, getCartQuantity(product) - getQuantityStep(product))"
-                          :disabled="getCartQuantity(product) <= getMinQuantity(product)"
+                          @click.stop="updateCartQuantity(product, getCartQuantity(product) - getProductQuantityStep(product))"
+                          :disabled="getCartQuantity(product) <= getProductMinQuantity(product)"
                           class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         >
                           -
                         </button>
                         <input
                           :value="getCartQuantity(product)"
-                          @input="updateCartQuantity(product, parseFloat($event.target.value) || getMinQuantity(product))"
-                          @blur="updateCartQuantity(product, Math.max(getMinQuantity(product), parseFloat($event.target.value) || getMinQuantity(product)))"
+                          @input="updateCartQuantity(product, parseFloat($event.target.value) || getProductMinQuantity(product))"
+                          @blur="updateCartQuantity(product, Math.max(getProductMinQuantity(product), parseFloat($event.target.value) || getProductMinQuantity(product)))"
                           type="number"
-                          :min="getMinQuantity(product)"
-                          :step="getQuantityStep(product)"
+                          :min="getProductMinQuantity(product)"
+                          :step="getProductQuantityStep(product)"
                           class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                         />
                         <button
-                          @click.stop="updateCartQuantity(product, getCartQuantity(product) + getQuantityStep(product))"
+                          @click.stop="updateCartQuantity(product, getCartQuantity(product) + getProductQuantityStep(product))"
                           class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm flex items-center justify-center"
                         >
                           +
                         </button>
                       </div>
-                      <p v-if="isLengthMode(product)" class="text-[10px] text-blue-600 font-semibold italic text-center">
+                      <p v-if="storeId === 'steel' && isLengthMode(product)" class="text-[10px] text-blue-600 font-semibold italic text-center">
                         📏 Izabrano je {{ (getCartQuantity(product) * (getVariantLength(product) || product.length_per_unit || 6)).toFixed(2) }} metara
                       </p>
-                      <p v-if="isPackageMode(product)" class="text-[10px] text-green-600 font-semibold italic text-center">
+                      <p v-if="storeId === 'steel' && isPackageMode(product)" class="text-[10px] text-green-600 font-semibold italic text-center">
                         📦 {{ getCartQuantity(product) / (product.package_size || 1) }} pak. ({{ getCartQuantity(product) }} kom.)
+                      </p>
+                      <p v-if="storeId === 'ambalaza' && isAmbalazaPackageMode(product, getSelectedVariant(product))" class="text-[10px] text-green-600 font-semibold italic text-center">
+                        📦 {{ getCartQuantity(product) / (getAmbalazaPackageSize(product, getSelectedVariant(product)) || 1) }} pak. ({{ getCartQuantity(product) }} kom.)
                       </p>
                       <p v-if="quantityError[product.id]" class="text-[10px] text-red-600 font-semibold italic text-center mt-1">
                         ❌ {{ quantityError[product.id] }}
@@ -1105,7 +1207,7 @@ onMounted(loadStoreData)
                       @click.stop="addToCartFromCard(product)"
                       class="w-full bg-gradient-to-r from-[#1976d2] to-[#1565c0] hover:from-[#1565c0] hover:to-[#0d47a1] text-white font-bold py-3 rounded-xl transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl text-sm lg:text-base"
                     >
-                      {{ isOnRequest(product) ? 'Dodaj na upit' : '+ Dodaj u korpu' }}
+                      {{ isProductOnRequest(product) ? 'Dodaj na upit' : '+ Dodaj u korpu' }}
                     </button>
                   </div>
                 </div>

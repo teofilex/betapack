@@ -119,9 +119,6 @@ const getOrderStores = (order) => {
 const orderStoreLabel = (order) =>
   getOrderStores(order).map(s => s.shortLabel).join(' + ')
 
-const orderStoreIcons = (order) =>
-  getOrderStores(order).map(s => s.icon).join(' ')
-
 const isMixedOrder = (order) => (order.stores && order.stores.length > 1)
 
 // Watch za promene u listi porudžbina - samo ažuriraj tabove, ne emituj event
@@ -378,7 +375,7 @@ const startSSE = () => {
                   class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                   :class="isMixedOrder(order) ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'"
                 >
-                  {{ orderStoreIcons(order) }} {{ orderStoreLabel(order) }}
+                  {{ orderStoreLabel(order) }}
                 </span>
               </div>
 
@@ -483,7 +480,7 @@ const startSSE = () => {
             </h3>
             <p class="text-xs opacity-90 px-1">{{ formatDate(orderStore.selected.created_at) }}</p>
             <p v-if="getOrderStores(orderStore.selected).length" class="text-xs opacity-90 px-1 mt-1">
-              {{ orderStoreIcons(orderStore.selected) }} {{ orderStoreLabel(orderStore.selected) }}
+              {{ orderStoreLabel(orderStore.selected) }}
             </p>
           </div>
 

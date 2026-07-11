@@ -9,8 +9,8 @@ export function useAdminStore() {
     }
 
     const storeTabs = [
-        { id: 'steel', label: STORES.steel.label, icon: '🔩' },
-        { id: 'ambalaza', label: STORES.ambalaza.label, icon: '📦' },
+        { id: 'steel', label: STORES.steel.label },
+        { id: 'ambalaza', label: STORES.ambalaza.label },
     ]
 
     return { activeStore, setStore, storeTabs }

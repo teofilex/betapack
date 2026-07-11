@@ -176,7 +176,7 @@ onMounted(async () => {
                 v-if="message.store"
                 class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700"
               >
-                {{ getStoreById(message.store).icon }} {{ getStoreById(message.store).shortLabel }}
+                {{ getStoreById(message.store).shortLabel }}
               </span>
             </div>
 

@@ -2,11 +2,13 @@
 import { useHead } from '@unhead/vue'
 import { useRouter } from 'vue-router'
 import { STORES } from '@/config/stores'
+import StoreIcon from '@/components/StoreIcon.vue'
 
 const router = useRouter()
+const HOME_IMAGE = '/betapackHomeNew.png'
 
 useHead({
-  title: 'BetaPack | Gvožđara i Ambalaža Beograd',
+  title: 'BetaPack | Kovano gvožđe i Ambalaža Beograd',
   meta: [
     {
       name: 'description',
@@ -27,7 +29,7 @@ const sections = [
     title: 'Bravarski materijal i kovano gvožđe',
     tags: ['Kapije', 'Ograde', 'Dekorativni elementi'],
     buttonText: 'Pogledaj ponudu',
-    mobileImage: '/Betapack-home-mobile-steel.jpeg',
+    mobileImage: '/steelMobileVersion.jpg',
     align: 'left'
   },
   {
@@ -35,7 +37,7 @@ const sections = [
     title: 'Ambalaža za ugostiteljstvo i dostavu',
     tags: ['PET', 'PP', 'papir', 'alu', 'folije'],
     buttonText: 'Pogledaj asortiman',
-    mobileImage: '/Betapack-home-mobile-ambalaza.jpeg',
+    mobileImage: '/ambalazaMobileVersion.jpg',
     align: 'right'
   }
 ]
@@ -51,7 +53,7 @@ const goTo = (path) => {
 
 <template>
   <div class="home-page min-h-screen flex flex-col bg-[#0a1628] text-white">
-    <header class="relative z-20 border-b border-white/10 bg-[#0a1628]/80 backdrop-blur-sm">
+    <header class="relative z-20 border-b border-white/10 bg-[#0a1628]/90 backdrop-blur-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 cursor-pointer" @click="goTo('/')">
           <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 w-auto" />
@@ -74,20 +76,21 @@ const goTo = (path) => {
       </div>
     </header>
 
-    <main class="relative flex-1 flex flex-col min-h-0">
-      <!-- Desktop: full panoramic background -->
+    <main class="relative flex-1 flex flex-col min-h-0 bg-[#0a1628]">
+      <!-- Hero pozadina -->
       <img
-        src="/Betapack-home.jpeg"
+        :src="HOME_IMAGE"
         alt=""
         aria-hidden="true"
-        class="home-bg-desktop absolute inset-0 w-full h-full object-cover object-center hidden md:block"
+        class="home-hero-image absolute inset-0 w-full h-full object-cover object-center hidden md:block"
         fetchpriority="high"
       />
 
-      <!-- Overlay — desktop only (mobile koristi slike po panelima) -->
+      <!-- Overlay — tamni gradient + blagi vignette -->
       <div class="absolute inset-0 home-overlay hidden md:block"></div>
+      <div class="absolute inset-0 home-vignette hidden md:block pointer-events-none"></div>
 
-      <!-- Diagonal accent (desktop only) -->
+      <!-- Dijagonalna zlatna linija -->
       <div class="home-diagonal pointer-events-none absolute inset-0 z-[1] hidden md:block" aria-hidden="true"></div>
 
       <div class="relative z-10 flex flex-col flex-1">
@@ -103,45 +106,38 @@ const goTo = (path) => {
             v-for="section in sections"
             :key="section.store.id"
             @click="selectStore(section.store.path)"
-            class="home-panel group relative overflow-hidden flex flex-col md:flex-col items-stretch cursor-pointer transition-all duration-300 md:hover:bg-black/20"
+            class="home-panel group relative overflow-hidden flex flex-col items-stretch cursor-pointer transition-all duration-300 md:hover:bg-black/15"
             :class="[
               section.align === 'left' ? 'md:items-center md:pr-16' : 'md:items-center md:pl-16',
               section.store.id === 'steel' ? 'home-panel-steel' : 'home-panel-ambalaza'
             ]"
           >
-            <!-- Mobile: slika gore, jasno vidljiva -->
-            <div class="home-panel-visual md:hidden relative w-full h-56 sm:h-64 flex-shrink-0 overflow-hidden">
+            <!-- Mobilni: slika po sekciji -->
+            <div
+              class="home-panel-visual md:hidden relative w-full flex-shrink-0 overflow-hidden bg-[#0a1628]"
+              :class="
+                section.store.id === 'ambalaza'
+                  ? 'flex items-center justify-center'
+                  : 'min-h-[240px] sm:min-h-[280px] h-[240px] sm:h-[280px]'
+              "
+            >
               <img
                 :src="section.mobileImage"
                 :alt="section.title"
-                class="absolute inset-0 w-full h-full object-cover object-center"
+                class="w-full"
+                :class="
+                  section.store.id === 'ambalaza'
+                    ? 'h-auto object-contain'
+                    : 'absolute inset-0 h-full object-cover object-center'
+                "
               />
-              <div class="home-panel-visual-fade absolute inset-x-0 bottom-0 h-16"></div>
             </div>
 
             <div
-              class="home-panel-body relative z-10 flex flex-col items-center justify-end md:justify-end text-center px-6 sm:px-10 pb-10 md:pb-20 pt-6 md:pt-8 flex-1 max-w-lg mx-auto w-full"
+              class="home-panel-body relative z-10 flex flex-col items-center justify-end text-center px-6 sm:px-10 pb-10 md:pb-20 pt-6 md:pt-8 flex-1 max-w-lg mx-auto w-full"
             >
-              <!-- Icons -->
-              <div
-                v-if="section.store.id === 'steel'"
-                class="mb-6 text-[#c9a84c] opacity-90 group-hover:scale-105 transition-transform duration-300"
-              >
-                <svg class="w-16 h-16 md:w-20 md:h-20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M8 48V20l24-12 24 12v28" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M8 20l24 12 24-12M32 32v16" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M20 36c4-8 8-12 12-12s8 4 12 12" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div
-                v-else
-                class="mb-6 text-[#c9a84c] opacity-90 group-hover:scale-105 transition-transform duration-300"
-              >
-                <svg class="w-16 h-16 md:w-20 md:h-20" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M16 24h32l-4 28H20L16 24z" stroke-linejoin="round"/>
-                  <path d="M24 24V16a8 8 0 0 1 16 0v8" stroke-linecap="round"/>
-                  <path d="M28 36h8M32 32v8" stroke-linecap="round"/>
-                </svg>
+              <div class="home-icon-ring mb-5 text-[#c9a84c] group-hover:scale-105 transition-transform duration-300">
+                <StoreIcon :store-id="section.store.id" size="lg" />
               </div>
 
               <h2 class="home-section-title text-lg sm:text-xl md:text-2xl lg:text-3xl text-white mb-3 leading-snug drop-shadow-lg">
@@ -157,9 +153,7 @@ const goTo = (path) => {
                 :class="section.store.id === 'steel' ? 'home-btn-steel' : 'home-btn-ambalaza'"
               >
                 {{ section.buttonText }}
-                <span
-                  class="home-btn-arrow text-lg leading-none transition-transform duration-300 group-hover:translate-x-1"
-                >→</span>
+                <span class="home-btn-arrow text-lg leading-none transition-transform duration-300 group-hover:translate-x-1">→</span>
               </span>
             </div>
           </button>
@@ -167,7 +161,7 @@ const goTo = (path) => {
       </div>
     </main>
 
-    <footer class="relative z-20 border-t border-white/10 bg-[#0a1628]/90 py-5 text-center text-gray-400 text-sm">
+    <footer class="relative z-20 border-t border-white/10 bg-[#0a1628]/95 py-5 text-center text-gray-400 text-sm">
       <p>BetaPack d.o.o. · Pukovnika Milenka Pavlovića 159 A, Beograd</p>
       <p class="mt-1">📞 +381 65 330 02 42 · ✉️ office@betapack.co.rs</p>
     </footer>
@@ -179,12 +173,25 @@ const goTo = (path) => {
   font-family: 'Montserrat', 'Inter', sans-serif;
 }
 
+.home-hero-image {
+  object-position: center 40%;
+}
+
 .home-overlay {
   background: linear-gradient(
     180deg,
-    rgba(10, 22, 40, 0.7) 0%,
-    rgba(10, 22, 40, 0.25) 45%,
-    rgba(10, 22, 40, 0.75) 100%
+    rgba(10, 22, 40, 0.82) 0%,
+    rgba(10, 22, 40, 0.35) 38%,
+    rgba(10, 22, 40, 0.55) 62%,
+    rgba(10, 22, 40, 0.88) 100%
+  );
+}
+
+.home-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(10, 22, 40, 0.45) 100%
   );
 }
 
@@ -192,14 +199,33 @@ const goTo = (path) => {
   position: relative;
 }
 
+.home-icon-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(201, 168, 76, 0.45);
+  background: rgba(10, 22, 40, 0.55);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 24px rgba(201, 168, 76, 0.12);
+}
+
+@media (min-width: 768px) {
+  .home-icon-ring {
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+
+  .home-panel {
+    min-height: 400px;
+  }
+}
+
 @media (max-width: 767px) {
   .home-header {
-    background: #0a1628;
-    margin-left: -1rem;
-    margin-right: -1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-bottom: 1.5rem;
+    background: linear-gradient(180deg, #0a1628 0%, #0d1a30 100%);
   }
 
   .home-panel {
@@ -210,18 +236,14 @@ const goTo = (path) => {
     border-top: 1px solid rgba(201, 168, 76, 0.25);
   }
 
-  .home-panel-visual-fade {
-    background: linear-gradient(180deg, transparent, #0a1628);
+  .home-panel-visual {
+    border-bottom: 1px solid rgba(201, 168, 76, 0.12);
+    background: linear-gradient(180deg, #0a1628 0%, #0d1a30 100%);
+    padding: 0.25rem 0;
   }
 
   .home-panel-body {
-    background: #0a1628;
-  }
-}
-
-@media (min-width: 768px) {
-  .home-panel {
-    min-height: 420px;
+    background: linear-gradient(180deg, #0a1628 0%, #081220 100%);
   }
 }
 
@@ -288,18 +310,14 @@ const goTo = (path) => {
   bottom: 0;
   left: 50%;
   width: 2px;
-  background: linear-gradient(180deg, transparent, #c9a84c 20%, #c9a84c 80%, transparent);
+  background: linear-gradient(180deg, transparent, #c9a84c 15%, #e8cc72 50%, #c9a84c 85%, transparent);
   transform: translateX(-50%) rotate(12deg);
   transform-origin: center;
-  opacity: 0.6;
-  box-shadow: 0 0 12px rgba(201, 168, 76, 0.4);
+  opacity: 0.75;
+  box-shadow: 0 0 16px rgba(201, 168, 76, 0.5);
 }
 
 @media (max-width: 767px) {
-  .home-diagonal::after {
-    display: none;
-  }
-
   .home-btn {
     min-width: 200px;
     width: 100%;

@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
+import { getAmbalazaDefaultQuantity, getAmbalazaSellingNote, isAmbalazaPackageMode } from '@/composables/useAmbalazaSelling'
 
 const route = useRoute()
 const router = useRouter()
@@ -171,8 +172,10 @@ watch(selectedVariant, () => {
     const cartItem = cartStore.getCartItem(product.value.id, variantId)
     if (cartItem) {
       quantity.value = cartItem.quantity
+    } else if (product.value.store === 'ambalaza') {
+      quantity.value = getAmbalazaDefaultQuantity(product.value, selectedVariant.value)
     } else {
-      quantity.value = 1
+      quantity.value = product.value.sold_by_length ? 0.5 : 1
     }
   } else {
     quantity.value = 1
@@ -212,12 +215,13 @@ const isOnSale = computed(() => {
 const finalPrice = computed(() => {
   if (!product.value) return 0
 
-  // If variant is selected, use variant's current_price (which accounts for sale)
   if (selectedVariant.value) {
-    return parseFloat(selectedVariant.value.current_price || selectedVariant.value.price)
+    const price = selectedVariant.value.current_price ?? selectedVariant.value.price
+    if (product.value.store === 'ambalaza' && selectedVariant.value.selling_mode === 'on_request') return null
+    return parseFloat(price)
   }
 
-  // Otherwise use product's current_price
+  if (product.value.store === 'ambalaza' && product.value.selling_mode === 'on_request') return null
   return parseFloat(product.value.current_price) || 0
 })
 
@@ -507,7 +511,8 @@ onMounted(() => {
 
               <!-- Price -->
               <div class="mb-4">
-                <div v-if="isOnSale" class="flex items-center gap-2">
+                <p v-if="finalPrice == null" class="text-xl lg:text-2xl font-bold text-orange-600">Cena na upit</p>
+                <div v-else-if="isOnSale" class="flex items-center gap-2">
                   <span class="text-base text-gray-400 line-through">
                     {{ formatPrice(selectedVariant ? selectedVariant.price : product.price) }}
                   </span>
@@ -516,7 +521,19 @@ onMounted(() => {
                 <div v-else>
                   <span class="text-xl lg:text-2xl font-bold text-green-700">{{ formatPrice(finalPrice) }}</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Cena uključuje PDV</p>
+                <p
+                  v-if="product.store === 'ambalaza' && selectedVariant"
+                  class="text-xs text-[#1976d2] font-semibold mt-1"
+                >
+                  {{ getAmbalazaSellingNote(product, selectedVariant) }}
+                </p>
+                <p
+                  v-if="product.store === 'ambalaza' && isAmbalazaPackageMode(product, selectedVariant) && finalPrice != null"
+                  class="text-xs text-gray-600 mt-1"
+                >
+                  Ukupno ({{ quantity }} kom.): {{ formatPrice(finalPrice * quantity) }}
+                </p>
+                <p v-if="finalPrice != null" class="text-xs text-gray-500 mt-1">Cena uključuje PDV</p>
               </div>
 
               <!-- Description -->

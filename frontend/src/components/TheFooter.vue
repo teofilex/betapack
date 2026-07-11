@@ -1,5 +1,10 @@
 <script setup>
+import { computed } from 'vue'
+import { useStore } from '@/composables/useStore'
+import { getStoreById } from '@/config/stores'
+
 const currentYear = new Date().getFullYear()
+const { store, storeId } = useStore()
 
 const contactInfo = {
   name: 'Beta Pack d.o.o.',
@@ -9,6 +14,18 @@ const contactInfo = {
   email: 'office@betapack.co.rs',
   coordinates: { lat: 44.913252, lng: 20.2595729 }
 }
+
+const activeStore = computed(() => store.value || getStoreById('steel'))
+
+const footerDescription = computed(() =>
+  activeStore.value.footerDescription ||
+  'Prodaja bravarskih materijala i ambalaže za ugostiteljstvo i prehrambenu industriju.'
+)
+
+const footerTagline = computed(() =>
+  activeStore.value.footerTagline ||
+  'Kvalitetni proizvodi, brza isporuka i pouzdana saradnja.'
+)
 </script>
 
 <template>
@@ -22,12 +39,14 @@ const contactInfo = {
             <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-8 w-auto" />
             <h3 class="text-base font-bold text-white">BETA PACK</h3>
           </div>
+          <p v-if="storeId" class="text-[10px] uppercase tracking-wider text-[#42a5f5] font-semibold mb-2">
+            {{ activeStore.shortLabel }}
+          </p>
           <p class="text-xs leading-relaxed">
-            Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda.
-            Vaš pouzdan partner za kvalitetne materijale.
+            {{ footerDescription }}
           </p>
           <p class="text-xs mt-2 text-gray-400">
-            25 godina sa vama
+            {{ footerTagline }}
           </p>
         </div>
 

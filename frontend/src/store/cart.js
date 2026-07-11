@@ -2,6 +2,13 @@ import { defineStore } from 'pinia'
 import {
     getSellingMode, getPackageSize, getMinQuantity, isOnRequest
 } from '@/composables/useSellingMode'
+import {
+    getAmbalazaSellingMode,
+    getAmbalazaPackageSize,
+    getAmbalazaMinQuantityFromItem,
+    getAmbalazaDisplayPrice,
+    isAmbalazaOnRequest
+} from '@/composables/useAmbalazaSelling'
 
 export const useCartStore = defineStore('cart', {
     state: () => {
@@ -71,25 +78,40 @@ export const useCartStore = defineStore('cart', {
                 : product.id
 
             const found = this.items.find(i => i.cartId === cartId)
-            const sellingMode = getSellingMode(product)
+            const variant = product.selectedVariant
+            const isAmbalaza = product.store === 'ambalaza'
 
-            let itemPrice = product.current_price
-            if (product.selectedVariant?.final_price) {
-                itemPrice = parseFloat(product.selectedVariant.final_price)
+            let sellingMode
+            let packageSize
+            let itemPrice
+
+            if (isAmbalaza) {
+                sellingMode = getAmbalazaSellingMode(product, variant)
+                packageSize = getAmbalazaPackageSize(product, variant)
+                itemPrice = isAmbalazaOnRequest(product, variant)
+                    ? null
+                    : getAmbalazaDisplayPrice(product, variant)
             } else {
-                itemPrice = product.current_price != null ? parseFloat(product.current_price) : null
+                sellingMode = getSellingMode(product)
+                packageSize = getPackageSize(product)
+                itemPrice = product.current_price
+                if (variant?.final_price) {
+                    itemPrice = parseFloat(variant.final_price)
+                } else if (variant?.current_price != null) {
+                    itemPrice = parseFloat(variant.current_price)
+                } else {
+                    itemPrice = product.current_price != null ? parseFloat(product.current_price) : null
+                }
             }
 
             let lengthPerUnit = 6.0
-            if (product.selectedVariant?.effective_length_per_unit) {
-                lengthPerUnit = parseFloat(product.selectedVariant.effective_length_per_unit)
-            } else if (product.selectedVariant?.length_per_unit) {
-                lengthPerUnit = parseFloat(product.selectedVariant.length_per_unit)
+            if (variant?.effective_length_per_unit) {
+                lengthPerUnit = parseFloat(variant.effective_length_per_unit)
+            } else if (variant?.length_per_unit) {
+                lengthPerUnit = parseFloat(variant.length_per_unit)
             } else if (product.length_per_unit) {
                 lengthPerUnit = parseFloat(product.length_per_unit)
             }
-
-            const packageSize = getPackageSize(product)
 
             if (found) {
                 found.quantity += quantity
@@ -107,7 +129,7 @@ export const useCartStore = defineStore('cart', {
                     current_price: itemPrice,
                     images: product.images || [],
                     category_name: product.category_name,
-                    selectedVariant: product.selectedVariant || null,
+                    selectedVariant: variant || null,
                     sold_by_length: product.sold_by_length || sellingMode === 'length',
                     selling_mode: sellingMode,
                     package_size: packageSize,
@@ -124,7 +146,10 @@ export const useCartStore = defineStore('cart', {
             const item = this.items.find(i => i.cartId === itemId || i.id === itemId)
             if (!item) return
 
-            const minQuantity = getMinQuantity(item)
+            const minQuantity = item.store === 'ambalaza'
+                ? getAmbalazaMinQuantityFromItem(item)
+                : getMinQuantity(item)
+
             if (newQuantity >= minQuantity) {
                 item.quantity = newQuantity
                 this.save()

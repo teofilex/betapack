@@ -105,8 +105,43 @@ const variantForm = ref({
   sku: '',
   in_stock: true,
   stock_quantity: 0,
-  length_per_unit: null
+  length_per_unit: null,
+  selling_mode: 'piece',
+  package_size: 1
 })
+
+const AMBALAZA_SELLING_LABELS = {
+  piece: 'Po komadu',
+  package: 'Po pakovanju',
+  weight: 'Po kilogramu',
+  on_request: 'Na upit'
+}
+
+const defaultVariantForm = () => ({
+  name: '',
+  price: 0,
+  on_sale: false,
+  sale_price: null,
+  sku: '',
+  in_stock: true,
+  stock_quantity: 0,
+  length_per_unit: null,
+  selling_mode: 'piece',
+  package_size: 1
+})
+
+const buildVariantPayload = (variant) => {
+  const payload = { ...variant }
+  if (props.store === 'ambalaza') {
+    payload.length_per_unit = null
+    if (payload.selling_mode === 'on_request') {
+      payload.price = 0
+      payload.on_sale = false
+      payload.sale_price = null
+    }
+  }
+  return payload
+}
 
 // Filtered subcategories
 const filteredSubcategories = computed(() => {
@@ -277,16 +312,7 @@ const openAddModal = () => {
   }
 
   // Reset first variant form
-  variantForm.value = {
-    name: '',
-    price: 0,
-    on_sale: false,
-    sale_price: null,
-    sku: '',
-    in_stock: true,
-    stock_quantity: 0,
-    length_per_unit: null
-  }
+  variantForm.value = defaultVariantForm()
 
   productImages.value = []
   productVariants.value = []
@@ -418,19 +444,15 @@ const setPrimaryImage = (index) => {
 const openVariantForm = (variant = null) => {
   if (variant) {
     editingVariant.value = variant
-    variantForm.value = { ...variant }
+    variantForm.value = {
+      ...defaultVariantForm(),
+      ...variant,
+      selling_mode: variant.selling_mode || 'piece',
+      package_size: variant.package_size || 1
+    }
   } else {
     editingVariant.value = null
-    variantForm.value = {
-      name: '',
-      price: 0,
-      on_sale: false,
-      sale_price: null,
-      sku: '',
-      in_stock: true,
-      stock_quantity: 0,
-      length_per_unit: null
-    }
+    variantForm.value = defaultVariantForm()
   }
   showVariantForm.value = true
 }
@@ -447,17 +469,25 @@ const saveVariant = async () => {
     return
   }
 
+  if (props.store === 'ambalaza') {
+    if (variantForm.value.selling_mode !== 'on_request' && (!variantForm.value.price || variantForm.value.price <= 0)) {
+      openConfirm('Cena je obavezna i mora biti veća od 0!', null)
+      return
+    }
+  }
+
+  const payload = buildVariantPayload(variantForm.value)
+
   // If editing an existing variant (from tabs)
   if (editingExistingVariant.value) {
     try {
       const authStore = useAuthStore()
       const authHeaders = { Authorization: `Bearer ${authStore.accessToken}` }
 
-      await api.patch(`product-variants/${editingExistingVariant.value.id}/`, variantForm.value, {
+      await api.patch(`product-variants/${editingExistingVariant.value.id}/`, payload, {
         headers: authHeaders
       })
 
-      // Refresh data
       await handleTabUpdate()
       closeVariantForm()
     } catch (err) {
@@ -468,21 +498,19 @@ const saveVariant = async () => {
     return
   }
 
-  // For new products (not yet saved)
   if (editingVariant.value) {
     const index = productVariants.value.findIndex(v => v === editingVariant.value)
     if (index !== -1) {
-      productVariants.value[index] = { ...variantForm.value }
+      productVariants.value[index] = { ...payload }
     }
   } else {
-    productVariants.value.push({ ...variantForm.value })
+    productVariants.value.push({ ...payload })
   }
   closeVariantForm()
 }
 
 const removeVariant = (variant) => {
-  // Proveri da li je ovo poslednja varijanta
-  if (productVariants.value.length <= 1) {
+  if (props.store === 'steel' && productVariants.value.length <= 1) {
     openConfirm('Ne možeš obrisati poslednju varijantu! Proizvod mora imati bar jednu varijantu.', null)
     return
   }
@@ -511,34 +539,63 @@ const saveProduct = async () => {
 
     let data
     if (isAmbalaza) {
-      // === AMBALAŽA: cena, način prodaje i dimenzije se unose direktno na proizvodu ===
-      const onRequest = form.value.selling_mode === 'on_request'
+      if (!isEditing.value) {
+        if (productVariants.value.length === 0) {
+          openConfirm('Dodajte bar jednu varijantu sa cenom i načinom prodaje!', null)
+          saving.value = false
+          return
+        }
 
-      // Validacija
-      if (!isEditing.value && !onRequest && (!form.value.price || form.value.price <= 0)) {
-        openConfirm('Cena je obavezna i mora biti veća od 0!', null)
-        saving.value = false
-        return
-      }
+        const pricedVariants = productVariants.value.filter(v => v.selling_mode !== 'on_request')
+        const minPrice = pricedVariants.length
+          ? Math.min(...pricedVariants.map(v => parseFloat(v.price)))
+          : null
 
-      const priceValue = onRequest ? null : parseFloat(form.value.price || 0)
+        data = {
+          name: form.value.name,
+          description: form.value.description,
+          price: minPrice,
+          category: form.value.category,
+          subcategory: form.value.subcategory || null,
+          store: 'ambalaza',
+          on_sale: false,
+          sale_price: null,
+          featured: form.value.featured || false,
+          in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
+          stock_quantity: form.value.stock_quantity || 0,
+          sold_by_length: false,
+          selling_mode: 'piece',
+          package_size: 1,
+          dimensions: form.value.dimensions || ''
+        }
+      } else {
+        const onRequest = form.value.selling_mode === 'on_request'
 
-      data = {
-        name: form.value.name,
-        description: form.value.description,
-        price: priceValue,
-        category: form.value.category,
-        subcategory: form.value.subcategory || null,
-        store: 'ambalaza',
-        on_sale: form.value.on_sale || false,
-        sale_price: form.value.on_sale ? parseFloat(form.value.sale_price || 0) : null,
-        featured: form.value.featured || false,
-        in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
-        stock_quantity: form.value.stock_quantity || 0,
-        sold_by_length: false,
-        selling_mode: form.value.selling_mode || 'piece',
-        package_size: form.value.package_size || 1,
-        dimensions: form.value.dimensions || ''
+        if (!onRequest && (!form.value.price || form.value.price <= 0)) {
+          openConfirm('Cena je obavezna i mora biti veća od 0!', null)
+          saving.value = false
+          return
+        }
+
+        const priceValue = onRequest ? null : parseFloat(form.value.price || 0)
+
+        data = {
+          name: form.value.name,
+          description: form.value.description,
+          price: priceValue,
+          category: form.value.category,
+          subcategory: form.value.subcategory || null,
+          store: 'ambalaza',
+          on_sale: form.value.on_sale || false,
+          sale_price: form.value.on_sale ? parseFloat(form.value.sale_price || 0) : null,
+          featured: form.value.featured || false,
+          in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
+          stock_quantity: form.value.stock_quantity || 0,
+          sold_by_length: false,
+          selling_mode: form.value.selling_mode || 'piece',
+          package_size: form.value.package_size || 1,
+          dimensions: form.value.dimensions || ''
+        }
       }
     } else {
       // === GVOŽĐARA: originalno ponašanje (cena iz prve varijante) — NE MENJATI ===
@@ -630,13 +687,15 @@ const saveProduct = async () => {
       }
     }
 
-    // Create variants if any
-    if (productVariants.value.length > 0 && productId) {
-      for (const variant of productVariants.value) {
+    // Create variants (ambalaža: sve varijante; gvožđara: dodatne posle prve)
+    const variantsToCreate = productVariants.value
+
+    if (variantsToCreate.length > 0 && productId) {
+      for (const variant of variantsToCreate) {
         try {
           await api.post('product-variants/', {
             product: productId,
-            ...variant
+            ...buildVariantPayload(variant)
           }, {
             headers: authHeaders
           })
@@ -1064,7 +1123,7 @@ onMounted(loadData)
     <AdminModal
       :show="showModal"
       :title="isEditing ? 'Izmeni Proizvod' : 'Novi Proizvod'"
-      :max-width="isEditing ? 'max-w-[600px]' : 'max-w-[480px]'"
+      :max-width="isEditing ? 'max-w-[600px]' : (props.store === 'ambalaza' ? 'max-w-[520px]' : 'max-w-[480px]')"
       @close="closeModal"
     >
       <!-- Tab Navigation (only when editing gvožđara - ambalaža nema varijante) -->
@@ -1180,8 +1239,8 @@ onMounted(loadData)
             class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none" />
         </div>
 
-        <!-- Selling mode (ambalaza) -->
-        <div v-if="props.store === 'ambalaza'" class="mt-2 bg-green-50 p-3 rounded-lg">
+        <!-- Selling mode (ambalaza — samo pri izmeni postojećeg proizvoda bez varijanti) -->
+        <div v-if="props.store === 'ambalaza' && isEditing" class="mt-2 bg-green-50 p-3 rounded-lg">
           <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Način prodaje</label>
           <select v-model="form.selling_mode"
             class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer">
@@ -1217,6 +1276,69 @@ onMounted(loadData)
           </div>
           <p v-else class="mt-3 text-[10px] text-orange-600 font-semibold px-1">
             ℹ️ Proizvod „na upit" — cena se ne prikazuje, kupac šalje upit.
+          </p>
+        </div>
+
+        <!-- AMBALAŽA: Varijante (obavezno za nove proizvode) -->
+        <div v-if="!isEditing && props.store === 'ambalaza'" class="border-t pt-5 mt-5 bg-green-50/40 p-4 rounded-lg">
+          <div class="flex justify-between items-start gap-3 mb-3">
+            <div>
+              <h4 class="font-semibold text-sm text-gray-800 px-1">Varijante (obavezno)</h4>
+              <p class="text-[10px] text-gray-600 px-1 mt-1">
+                Cena i način prodaje se unose za svaku varijantu. Kliknite „Dodaj varijantu”.
+              </p>
+            </div>
+            <button
+              @click="openVariantForm()"
+              type="button"
+              class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+            >
+              <span>➕</span>
+              <span>Dodaj varijantu</span>
+            </button>
+          </div>
+
+          <div v-if="productVariants.length > 0" class="space-y-2 mb-2">
+            <div
+              v-for="(variant, index) in productVariants"
+              :key="index"
+              class="flex items-center justify-between border rounded-lg p-2 bg-white"
+            >
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-xs text-gray-900">{{ variant.name }}</p>
+                <p class="text-[11px] text-gray-600 mt-0.5">
+                  <span class="font-semibold text-[#1976d2]">{{ AMBALAZA_SELLING_LABELS[variant.selling_mode] || 'Po komadu' }}</span>
+                  <span v-if="variant.selling_mode === 'package'"> ({{ variant.package_size }} kom.)</span>
+                  <span class="mx-1">·</span>
+                  <span v-if="variant.selling_mode === 'on_request'" class="text-orange-600">Na upit</span>
+                  <span v-else-if="variant.on_sale" class="text-red-600">
+                    <span class="line-through text-gray-400">{{ variant.price }} RSD</span>
+                    {{ variant.sale_price }} RSD
+                  </span>
+                  <span v-else class="text-green-700 font-medium">{{ variant.price }} RSD</span>
+                </p>
+              </div>
+              <div class="flex gap-1 ml-2">
+                <button
+                  @click="openVariantForm(variant)"
+                  type="button"
+                  class="px-2 py-1 bg-[#1976d2] text-white rounded text-xs cursor-pointer"
+                >
+                  Izmeni
+                </button>
+                <button
+                  @click="removeVariant(variant)"
+                  type="button"
+                  class="px-2 py-1 bg-red-500 text-white rounded text-xs cursor-pointer"
+                >
+                  Obriši
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p v-else class="text-gray-500 text-xs text-center py-3 border border-dashed border-gray-300 rounded-lg bg-white">
+            Još nema varijanti — dodajte bar jednu pre čuvanja.
           </p>
         </div>
 
@@ -1414,8 +1536,8 @@ onMounted(loadData)
           </div>
         </div>
 
-        <!-- VARIJANTE (samo za nove proizvode) -->
-        <div v-if="!isEditing" class="border-t pt-5 mt-5">
+        <!-- VARIJANTE — dodatne (samo gvožđara, posle prve varijante) -->
+        <div v-if="!isEditing && props.store === 'steel'" class="border-t pt-5 mt-5">
           <div class="flex justify-between items-center mb-3">
             <h4 class="font-medium text-sm text-gray-800 px-1">Varijante (Dimenzije)</h4>
             <button
@@ -1577,6 +1699,8 @@ onMounted(loadData)
         <h3 class="text-sm font-bold text-gray-900 mb-3 px-1">Dodaj novu varijantu</h3>
         <ProductVariantManager
           :product-id="form.id"
+          :store="props.store"
+          :sold-by-length="form.sold_by_length || false"
           @updated="handleTabUpdate"
         />
       </div>
@@ -1620,19 +1744,50 @@ onMounted(loadData)
           />
         </div>
 
-        <div>
-          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Osnovna cena (RSD) *</label>
+        <div v-if="props.store === 'ambalaza'" class="bg-green-50 p-3 rounded-lg border border-green-200">
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Način prodaje *</label>
+          <select
+            v-model="variantForm.selling_mode"
+            class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer"
+          >
+            <option value="piece">Po komadu</option>
+            <option value="package">Po pakovanju</option>
+            <option value="weight">Po kilogramu</option>
+            <option value="on_request">Na upit (bez cene)</option>
+          </select>
+          <div v-if="variantForm.selling_mode === 'package'" class="mt-2">
+            <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Komada u pakovanju</label>
+            <input
+              v-model.number="variantForm.package_size"
+              type="number"
+              min="1"
+              class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+            />
+            <p class="text-[10px] text-gray-600 mt-1 px-1">Cena se unosi po komadu. U korpi se dodaje ceo paket.</p>
+          </div>
+        </div>
+
+        <div v-if="props.store !== 'ambalaza' || variantForm.selling_mode !== 'on_request'">
+          <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">
+            Osnovna cena (RSD) *
+            <span v-if="props.store === 'ambalaza' && variantForm.selling_mode === 'package'" class="text-gray-500 font-normal">— po komadu</span>
+            <span v-else-if="props.store === 'ambalaza' && variantForm.selling_mode === 'weight'" class="text-gray-500 font-normal">— po kilogramu</span>
+          </label>
           <input
             v-model.number="variantForm.price"
             type="number"
             step="0.01"
-            required
+            :required="props.store !== 'ambalaza' || variantForm.selling_mode !== 'on_request'"
             class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
         </div>
 
-        <div class="flex items-center gap-2 bg-yellow-50 p-3 rounded-lg">
+        <p v-if="props.store === 'ambalaza' && variantForm.selling_mode === 'on_request'" class="text-xs text-orange-600 font-semibold px-1">
+          Varijanta „na upit" — cena se ne prikazuje na shopu.
+        </p>
+
+        <div v-if="props.store !== 'ambalaza' || variantForm.selling_mode !== 'on_request'" class="flex items-center gap-2 bg-yellow-50 p-3 rounded-lg">
           <input
             v-model="variantForm.on_sale"
             type="checkbox"
@@ -1642,7 +1797,7 @@ onMounted(loadData)
           <label for="product-variant-on-sale" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Stavi na akciju</label>
         </div>
 
-        <div v-if="variantForm.on_sale">
+        <div v-if="variantForm.on_sale && (props.store !== 'ambalaza' || variantForm.selling_mode !== 'on_request')">
           <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Akcijska cena (RSD) *</label>
           <input
             v-model.number="variantForm.sale_price"
@@ -1675,8 +1830,8 @@ onMounted(loadData)
           <label for="variant-in-stock-form" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Na stanju</label>
         </div>
 
-        <!-- Length per unit (only if product is sold by length) -->
-        <div v-if="form.sold_by_length" class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+        <!-- Length per unit (gvožđara — samo po metraži) -->
+        <div v-if="props.store === 'steel' && form.sold_by_length" class="bg-blue-50 p-3 rounded-lg border border-blue-200">
           <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Dužina 1 komada (u metrima) - Opciono</label>
           <input
             v-model.number="variantForm.length_per_unit"

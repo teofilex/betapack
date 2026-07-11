@@ -190,15 +190,15 @@ class Product(models.Model):
     def min_price(self):
         """Minimalna cena - prioritet akcijskim varijantama (za prikaz 'od' cene)"""
         if self.variants.exists():
-            # Prvo pokušaj naći najnižu cenu među akcijskim varijantama
             sale_variants = self.variants.filter(on_sale=True)
             if sale_variants.exists():
-                # IMA akcijske varijante - prikaži najnižu akcijsku cenu
-                sale_prices = [v.current_price for v in sale_variants]
-                return min(sale_prices) if sale_prices else self.current_price
-            # NEMA akcijske varijante - prikaži najnižu regularnu cenu
-            variant_prices = [v.current_price for v in self.variants.all()]
-            return min(variant_prices) if variant_prices else self.current_price
+                sale_prices = [v.current_price for v in sale_variants if v.current_price is not None]
+                if sale_prices:
+                    return min(sale_prices)
+                return self.current_price
+            variant_prices = [v.current_price for v in self.variants.all() if v.current_price is not None]
+            if variant_prices:
+                return min(variant_prices)
         return self.current_price
 
     @property
@@ -255,6 +255,19 @@ class ProductVariant(models.Model):
     in_stock = models.BooleanField(default=True)
     stock_quantity = models.IntegerField(default=0)
 
+    # Način prodaje (ambalaža — po varijanti; gvožđara koristi nivo proizvoda)
+    selling_mode = models.CharField(
+        max_length=20,
+        choices=SELLING_MODE_CHOICES,
+        default='piece',
+        blank=True,
+        help_text="Način prodaje ove varijante"
+    )
+    package_size = models.PositiveIntegerField(
+        default=1,
+        help_text="Broj komada u pakovanju (za prodaju po pakovanju)"
+    )
+
     # Dužina 1 komada za proizvode po metraži (opciono - ako nije postavljeno, koristi se product.length_per_unit)
     length_per_unit = models.DecimalField(
         max_digits=10,
@@ -298,6 +311,8 @@ class ProductVariant(models.Model):
     @property
     def current_price(self):
         """Trenutna cena varijante (akcijska ako je na akciji, inače osnovna)"""
+        if self.selling_mode == 'on_request':
+            return None
         if self.on_sale and self.sale_price:
             return self.sale_price
         return self.price

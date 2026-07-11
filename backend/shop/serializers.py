@@ -62,7 +62,9 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'product', 'name', 'price', 'on_sale', 'sale_price',
             'current_price', 'final_price', 'sku',
-            'in_stock', 'stock_quantity', 'length_per_unit', 'effective_length_per_unit',
+            'in_stock', 'stock_quantity',
+            'selling_mode', 'package_size',
+            'length_per_unit', 'effective_length_per_unit',
             'created_at'
         ]
         extra_kwargs = {

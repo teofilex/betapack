@@ -69,6 +69,8 @@ const handleUpdate = () => {
         <ProductVariantManager
           v-if="activeTab === 'variants' && product && product.id"
           :product-id="Number(product.id)"
+          :store="product.store || 'steel'"
+          :sold-by-length="product.sold_by_length || false"
           @updated="handleUpdate"
         />
 
