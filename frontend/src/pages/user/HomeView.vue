@@ -5,7 +5,7 @@ import { STORES } from '@/config/stores'
 import StoreIcon from '@/components/StoreIcon.vue'
 
 const router = useRouter()
-const HOME_IMAGE = '/betapackHomeNew.png'
+const HOME_IMAGE = '/betapackHomeNew.jpg'
 
 useHead({
   title: 'BetaPack | Kovano gvožđe i Ambalaža Beograd',
