@@ -56,7 +56,7 @@ const goTo = (path) => {
     <header class="relative z-20 border-b border-white/10 bg-[#0a1628]/90 backdrop-blur-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 cursor-pointer" @click="goTo('/')">
-          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 w-auto" />
+          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 lg:h-12 w-auto" />
           <div class="text-lg font-bold tracking-wide">BETA PACK</div>
         </div>
         <nav class="flex items-center gap-1 sm:gap-3">
