@@ -812,6 +812,7 @@ onMounted(loadData)
 
         <button
           @click="openAddModal"
+          data-testid="admin-product-add-button"
           class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-md text-xs font-medium shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
         >
           <span class="text-sm">➕</span>
@@ -1113,6 +1114,7 @@ onMounted(loadData)
       <p class="text-sm text-gray-500 mb-3">Dodajte prvi proizvod da započnete!</p>
       <button
         @click="openAddModal"
+        data-testid="admin-product-add-first-button"
         class="px-4 py-2.5 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer text-xs flex items-center gap-1.5"
       >
         ➕ Dodaj Prvi Proizvod
@@ -1124,6 +1126,7 @@ onMounted(loadData)
       :show="showModal"
       :title="isEditing ? 'Izmeni Proizvod' : 'Novi Proizvod'"
       :max-width="isEditing ? 'max-w-[600px]' : (props.store === 'ambalaza' ? 'max-w-[520px]' : 'max-w-[480px]')"
+      test-id="admin-product-modal"
       @close="closeModal"
     >
       <!-- Tab Navigation (only when editing gvožđara - ambalaža nema varijante) -->
@@ -1166,13 +1169,14 @@ onMounted(loadData)
       </div>
 
       <!-- Basic Info Tab (or full form for new products) -->
-      <form v-show="!isEditing || currentTab === 'basic'" @submit.prevent="saveProduct" class="space-y-4">
+      <form v-show="!isEditing || currentTab === 'basic'" @submit.prevent="saveProduct" data-testid="admin-product-form" class="space-y-4">
         <!-- NAME -->
         <div>
           <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Naziv *</label>
           <input
             v-model="form.name"
             required
+            data-testid="admin-product-name-input"
             class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
@@ -1184,6 +1188,7 @@ onMounted(loadData)
           <textarea
             v-model="form.description"
             rows="4"
+            data-testid="admin-product-description-input"
             class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs 
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition resize-none shadow-sm"
           ></textarea>
@@ -1195,6 +1200,7 @@ onMounted(loadData)
           <select
             v-model="form.category"
             required
+            data-testid="admin-product-category-select"
             class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white border border-gray-300 text-xs sm:text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none transition-all 
                    shadow-sm hover:border-gray-400 cursor-pointer"
@@ -1211,6 +1217,7 @@ onMounted(loadData)
           <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Podkategorija</label>
           <select
             v-model="form.subcategory"
+            data-testid="admin-product-subcategory-select"
             class="w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white border border-gray-300 text-xs sm:text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:border-[#1976d2] focus:outline-none transition-all 
                    shadow-sm hover:border-gray-400 cursor-pointer"
@@ -1228,14 +1235,14 @@ onMounted(loadData)
 
         <!-- Featured -->
         <label class="flex items-center gap-2 mt-2 cursor-pointer px-1">
-          <input v-model="form.featured" type="checkbox" class="cursor-pointer" />
+          <input v-model="form.featured" type="checkbox" data-testid="admin-product-featured-checkbox" class="cursor-pointer" />
           <span class="text-gray-800 text-xs font-medium cursor-pointer">Preporučeni proizvod</span>
         </label>
 
         <!-- Dimensions -->
         <div v-if="props.store === 'ambalaza'">
           <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Dimenzije</label>
-          <input v-model="form.dimensions" type="text" placeholder="npr. 500ml, 20x30cm"
+          <input v-model="form.dimensions" type="text" placeholder="npr. 500ml, 20x30cm" data-testid="admin-product-dimensions-input"
             class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none" />
         </div>
 
@@ -1280,7 +1287,7 @@ onMounted(loadData)
         </div>
 
         <!-- AMBALAŽA: Varijante (obavezno za nove proizvode) -->
-        <div v-if="!isEditing && props.store === 'ambalaza'" class="border-t pt-5 mt-5 bg-green-50/40 p-4 rounded-lg">
+        <div v-if="!isEditing && props.store === 'ambalaza'" data-testid="admin-product-variants-section" class="border-t pt-5 mt-5 bg-green-50/40 p-4 rounded-lg">
           <div class="flex justify-between items-start gap-3 mb-3">
             <div>
               <h4 class="font-semibold text-sm text-gray-800 px-1">Varijante (obavezno)</h4>
@@ -1291,6 +1298,7 @@ onMounted(loadData)
             <button
               @click="openVariantForm()"
               type="button"
+              data-testid="admin-product-add-variant-button"
               class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium cursor-pointer flex items-center gap-1.5 flex-shrink-0"
             >
               <span>➕</span>
@@ -1298,10 +1306,11 @@ onMounted(loadData)
             </button>
           </div>
 
-          <div v-if="productVariants.length > 0" class="space-y-2 mb-2">
+          <div v-if="productVariants.length > 0" data-testid="admin-product-variants-list" class="space-y-2 mb-2">
             <div
               v-for="(variant, index) in productVariants"
               :key="index"
+              :data-testid="`admin-product-variant-item-${index}`"
               class="flex items-center justify-between border rounded-lg p-2 bg-white"
             >
               <div class="flex-1 min-w-0">
@@ -1337,7 +1346,7 @@ onMounted(loadData)
             </div>
           </div>
 
-          <p v-else class="text-gray-500 text-xs text-center py-3 border border-dashed border-gray-300 rounded-lg bg-white">
+          <p v-else data-testid="admin-product-variants-empty" class="text-gray-500 text-xs text-center py-3 border border-dashed border-gray-300 rounded-lg bg-white">
             Još nema varijanti — dodajte bar jednu pre čuvanja.
           </p>
         </div>
@@ -1345,7 +1354,7 @@ onMounted(loadData)
         <!-- Sold by Length (steel) -->
         <div v-if="props.store === 'steel'" class="mt-2 bg-blue-50 p-3 rounded-lg">
           <label class="flex items-center gap-2 cursor-pointer px-1">
-            <input v-model="form.sold_by_length" type="checkbox" class="cursor-pointer" />
+            <input v-model="form.sold_by_length" type="checkbox" data-testid="admin-product-sold-by-length-checkbox" class="cursor-pointer" />
             <span class="text-gray-800 text-xs font-medium cursor-pointer">Custom dužina proizvoda (prodaja po metraži)</span>
           </label>
           <p class="text-[10px] text-gray-600 mt-1 px-1">Proizvod se prodaje po metraži. Dozvoljene su decimalne vrednosti (0.5, 1, 1.5, itd.). Dužinu unesite u varijantama ispod.</p>
@@ -1354,7 +1363,7 @@ onMounted(loadData)
         <!-- Stock Management -->
         <div class="border-t pt-4 mt-4">
           <label class="flex items-center gap-2 mb-3 cursor-pointer px-1">
-            <input v-model="form.in_stock" type="checkbox" class="cursor-pointer" />
+            <input v-model="form.in_stock" type="checkbox" data-testid="admin-product-in-stock-checkbox" class="cursor-pointer" />
             <span class="text-gray-800 text-xs font-medium cursor-pointer">Proizvod je na stanju</span>
           </label>
 
@@ -1365,6 +1374,7 @@ onMounted(loadData)
               type="number"
               min="0"
               placeholder="0 = neograničeno"
+              data-testid="admin-product-stock-quantity-input"
               class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs
                      focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
             />
@@ -1373,7 +1383,7 @@ onMounted(loadData)
         </div>
 
         <!-- PRVA VARIJANTA (obavezno za nove proizvode - samo gvožđara) -->
-        <div v-if="!isEditing && props.store === 'steel'" class="border-t pt-5 mt-5 bg-blue-50 p-4 rounded-lg">
+        <div v-if="!isEditing && props.store === 'steel'" data-testid="admin-product-first-variant-section" class="border-t pt-5 mt-5 bg-blue-50 p-4 rounded-lg">
           <h4 class="font-semibold text-xs mb-1.5 text-gray-800 px-1">📐 Prva varijanta (obavezno)</h4>
           <p class="text-[10px] text-gray-600 mb-3 px-1">
             Svaki proizvod mora imati bar jednu varijantu. Ako proizvod nema različitih dimenzija, samo unesi cenu.
@@ -1387,6 +1397,7 @@ onMounted(loadData)
               <input
                 v-model="variantForm.name"
                 placeholder="npr. 45×45mm ili ostavi prazno za standardnu varijantu"
+                data-testid="admin-product-first-variant-name-input"
                 class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
@@ -1400,6 +1411,7 @@ onMounted(loadData)
                 type="number"
                 step="0.01"
                 required
+                data-testid="admin-product-first-variant-price-input"
                 class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
@@ -1410,6 +1422,7 @@ onMounted(loadData)
               <input
                 v-model="variantForm.sku"
                 placeholder="npr. TACNA-45"
+                data-testid="admin-product-first-variant-sku-input"
                 class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
@@ -1420,6 +1433,7 @@ onMounted(loadData)
                 v-model="variantForm.on_sale"
                 type="checkbox"
                 id="first-variant-on-sale"
+                data-testid="admin-product-first-variant-on-sale-checkbox"
                 class="cursor-pointer"
               />
               <label for="first-variant-on-sale" class="text-gray-800 text-xs font-medium cursor-pointer px-1">
@@ -1434,6 +1448,7 @@ onMounted(loadData)
                 type="number"
                 step="0.01"
                 :required="variantForm.on_sale"
+                data-testid="admin-product-first-variant-sale-price-input"
                 class="w-full px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-300 text-xs
                        focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
               />
@@ -1446,6 +1461,7 @@ onMounted(loadData)
                 v-model.number="variantForm.stock_quantity"
                 type="number"
                 min="0"
+                data-testid="admin-product-first-variant-stock-quantity-input"
                 class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
               />
@@ -1456,6 +1472,7 @@ onMounted(loadData)
                 v-model="variantForm.in_stock"
                 type="checkbox"
                 id="first-variant-in-stock"
+                data-testid="admin-product-first-variant-in-stock-checkbox"
                 class="cursor-pointer"
               />
               <label for="first-variant-in-stock" class="text-gray-800 text-xs font-medium cursor-pointer px-1">
@@ -1472,6 +1489,7 @@ onMounted(loadData)
                 step="0.1"
                 min="0.1"
                 placeholder="npr. 4.0 ili 6.0"
+                data-testid="admin-product-first-variant-length-input"
                 class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-300 text-xs
                        focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
               />
@@ -1483,7 +1501,7 @@ onMounted(loadData)
         </div>
 
         <!-- SLIKE PROIZVODA (samo za nove proizvode) -->
-        <div v-if="!isEditing" class="border-t pt-5 mt-5">
+        <div v-if="!isEditing" data-testid="admin-product-images-section" class="border-t pt-5 mt-5">
           <h4 class="font-semibold text-sm mb-3 text-gray-800 px-1">Slike proizvoda</h4>
           
           <!-- Upload -->
@@ -1493,6 +1511,7 @@ onMounted(loadData)
               @change="handleImageSelect"
               accept="image/*"
               multiple
+              data-testid="admin-product-images-input"
               class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm cursor-pointer"
             />
             <p class="text-xs text-gray-500 mt-1 px-1">Možete odabrati više slika odjednom</p>
@@ -1543,6 +1562,7 @@ onMounted(loadData)
             <button
               @click="openVariantForm()"
               type="button"
+              data-testid="admin-product-add-extra-variant-button"
               class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium cursor-pointer flex items-center gap-1.5"
             >
               <span>➕</span>
@@ -1604,13 +1624,14 @@ onMounted(loadData)
         </div>
 
         <!-- ERROR -->
-        <p v-if="error" class="text-red-600 font-semibold">{{ error }}</p>
+        <p v-if="error" data-testid="admin-product-error" class="text-red-600 font-semibold">{{ error }}</p>
 
         <!-- BUTTONS (only show in basic tab when editing, always show for new products) -->
         <div v-if="!isEditing || currentTab === 'basic'" class="flex justify-end gap-2 pt-1">
           <button
             type="button"
             @click="closeModal"
+            data-testid="admin-product-cancel-button"
             class="px-3 py-2 bg-gray-300 rounded-lg font-semibold hover:bg-gray-400 transition cursor-pointer text-xs"
           >
             Otkaži
@@ -1619,6 +1640,7 @@ onMounted(loadData)
           <button
             type="submit"
             :disabled="saving"
+            data-testid="admin-product-save-button"
             class="px-3 py-2 bg-[#1976d2] text-white rounded-lg font-semibold shadow
                    hover:bg-[#1565c0] transition cursor-pointer disabled:opacity-60 text-xs"
           >
@@ -1720,15 +1742,17 @@ onMounted(loadData)
       :title="(editingVariant || editingExistingVariant) ? 'Izmeni varijantu' : 'Nova varijanta'"
       max-width="max-w-md"
       z-index="z-[2000]"
+      test-id="admin-product-variant-modal"
       @close="closeVariantForm"
     >
-      <form @submit.prevent="saveVariant" class="space-y-2">
+      <form @submit.prevent="saveVariant" data-testid="admin-product-variant-form" class="space-y-2">
         <div>
           <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Naziv (dimenzije) *</label>
           <input
             v-model="variantForm.name"
             required
             placeholder="npr. 180×135×18mm"
+            data-testid="admin-product-variant-name-input"
             class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
@@ -1739,6 +1763,7 @@ onMounted(loadData)
           <input
             v-model="variantForm.sku"
             placeholder="npr. TACNA-70-180"
+            data-testid="admin-product-variant-sku-input"
             class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
@@ -1748,6 +1773,7 @@ onMounted(loadData)
           <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Način prodaje *</label>
           <select
             v-model="variantForm.selling_mode"
+            data-testid="admin-product-variant-selling-mode-select"
             class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer"
           >
             <option value="piece">Po komadu</option>
@@ -1761,6 +1787,7 @@ onMounted(loadData)
               v-model.number="variantForm.package_size"
               type="number"
               min="1"
+              data-testid="admin-product-variant-package-size-input"
               class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
             />
             <p class="text-[10px] text-gray-600 mt-1 px-1">Cena se unosi po komadu. U korpi se dodaje ceo paket.</p>
@@ -1778,6 +1805,7 @@ onMounted(loadData)
             type="number"
             step="0.01"
             :required="props.store !== 'ambalaza' || variantForm.selling_mode !== 'on_request'"
+            data-testid="admin-product-variant-price-input"
             class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
@@ -1792,6 +1820,7 @@ onMounted(loadData)
             v-model="variantForm.on_sale"
             type="checkbox"
             id="product-variant-on-sale"
+            data-testid="admin-product-variant-on-sale-checkbox"
             class="cursor-pointer"
           />
           <label for="product-variant-on-sale" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Stavi na akciju</label>
@@ -1804,6 +1833,7 @@ onMounted(loadData)
             type="number"
             step="0.01"
             :required="variantForm.on_sale"
+            data-testid="admin-product-variant-sale-price-input"
             class="w-full px-3 py-2 rounded-lg bg-red-50 border border-red-300 text-sm
                    focus:ring-2 focus:ring-red-400 focus:outline-none transition shadow-sm"
           />
@@ -1815,6 +1845,7 @@ onMounted(loadData)
           <input
             v-model.number="variantForm.stock_quantity"
             type="number"
+            data-testid="admin-product-variant-stock-quantity-input"
             class="w-full px-3 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm
                    focus:ring-2 focus:ring-[#1976d2] focus:outline-none transition shadow-sm"
           />
@@ -1825,6 +1856,7 @@ onMounted(loadData)
             v-model="variantForm.in_stock"
             type="checkbox"
             id="variant-in-stock-form"
+            data-testid="admin-product-variant-in-stock-checkbox"
             class="cursor-pointer"
           />
           <label for="variant-in-stock-form" class="text-gray-800 text-xs font-medium cursor-pointer px-1">Na stanju</label>
@@ -1839,6 +1871,7 @@ onMounted(loadData)
             step="0.1"
             min="0.1"
             placeholder="npr. 4.0 ili 6.0"
+            data-testid="admin-product-variant-length-input"
             class="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-sm
                    focus:ring-2 focus:ring-blue-400 focus:outline-none transition shadow-sm"
           />
@@ -1852,6 +1885,7 @@ onMounted(loadData)
           <button
             type="button"
             @click="closeVariantForm"
+            data-testid="admin-product-variant-cancel-button"
             class="px-3 py-2 bg-gray-300 rounded-lg font-semibold hover:bg-gray-400
                    transition cursor-pointer text-xs"
           >
@@ -1859,6 +1893,7 @@ onMounted(loadData)
           </button>
           <button
             type="submit"
+            data-testid="admin-product-variant-save-button"
             class="px-3 py-2 bg-[#1976d2] text-white rounded-lg font-semibold shadow
                    hover:bg-[#1565c0] transition cursor-pointer text-xs"
           >

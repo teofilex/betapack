@@ -15,6 +15,10 @@ const props = defineProps({
   zIndex: {
     type: String,
     default: 'z-[1000]'
+  },
+  testId: {
+    type: String,
+    default: ''
   }
 })
 
@@ -34,6 +38,7 @@ const close = () => {
   >
     <div
       :class="maxWidth"
+      :data-testid="testId || undefined"
       class="bg-white rounded-lg w-full max-h-[98vh] shadow-xl overflow-hidden animate-slide-up"
     >
       <!-- HEADER -->
