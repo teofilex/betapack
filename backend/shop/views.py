@@ -55,6 +55,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [IsAdminUser()]
 
+    # Cache list endpoint za 15 minuta (kategorije se retko menjaju)
+    # Cache ključ uključuje query string, pa se ?store=steel i ?store=ambalaza kešuju odvojeno
+    @method_decorator(cache_page(60 * 15))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    # Cache retrieve endpoint za 15 minuta
+    @method_decorator(cache_page(60 * 15))
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
     def get_queryset(self):
         queryset = Category.objects.annotate(
             product_count=models.Count('products')
@@ -96,6 +107,18 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [IsAdminUser()]
+
+    # Cache list endpoint za 5 minuta (proizvodi se retko menjaju)
+    # Cache ključ uključuje query string, pa se ?store=steel i ?store=ambalaza kešuju odvojeno
+    @method_decorator(cache_page(60 * 5))
+    @method_decorator(vary_on_headers('Accept-Language'))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    # Cache retrieve endpoint za 5 minuta
+    @method_decorator(cache_page(60 * 5))
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

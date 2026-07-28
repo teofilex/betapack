@@ -17,7 +17,9 @@ class ProductSitemap(Sitemap):
     def location(self, obj):
         # Koristi slug ako postoji, inače ID (backward compatibility)
         identifier = obj.slug if obj.slug else obj.id
-        return f'/proizvod/{identifier}'
+        # URL-ovi su od uvođenja ambalaže razdvojeni po prodavnici: /steel/... i /ambalaza/...
+        store = obj.store or 'steel'
+        return f'/{store}/proizvod/{identifier}'
 
     def get_urls(self, page=1, site=None, protocol=None):
         # Override da koristimo frontend domen umesto backend domena
@@ -38,7 +40,8 @@ class CategorySitemap(Sitemap):
 
     def location(self, obj):
         # Za sada koristi query parameter (kasnije može slug)
-        return f'/?category={obj.id}'
+        store = obj.store or 'steel'
+        return f'/{store}/?category={obj.id}'
 
     def get_urls(self, page=1, site=None, protocol=None):
         # Override da koristimo frontend domen umesto backend domena
@@ -55,16 +58,15 @@ class StaticViewSitemap(Sitemap):
     protocol = 'https'
 
     def items(self):
-        return ['home', 'about', 'contact']
+        # Početna je od uvođenja ambalaže razdelnik ka dvema prodavnicama,
+        # pa svaka prodavnica ima svoju ponudu, o-nama i kontakt stranicu.
+        paths = ['/']
+        for store in ('steel', 'ambalaza'):
+            paths += [f'/{store}', f'/{store}/o-nama', f'/{store}/kontakt']
+        return paths
 
     def location(self, item):
-        if item == 'home':
-            return '/'
-        elif item == 'about':
-            return '/o-nama'
-        elif item == 'contact':
-            return '/kontakt'
-        return f'/{item}'
+        return item
 
     def get_urls(self, page=1, site=None, protocol=None):
         # Override da koristimo frontend domen umesto backend domena
