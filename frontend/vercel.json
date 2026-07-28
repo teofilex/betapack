@@ -1,4 +1,28 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        { "type": "query", "key": "category", "value": "(?<category>.*)" }
+      ],
+      "destination": "/steel/?category=:category",
+      "statusCode": 301
+    },
+    {
+      "source": "/proizvod/:slugOrId",
+      "destination": "/steel/proizvod/:slugOrId",
+      "statusCode": 301
+    },
+    {
+      "source": "/order-success/:orderId",
+      "destination": "/steel/order-success/:orderId",
+      "statusCode": 301
+    },
+    { "source": "/o-nama", "destination": "/steel/o-nama", "statusCode": 301 },
+    { "source": "/kontakt", "destination": "/steel/kontakt", "statusCode": 301 },
+    { "source": "/cart", "destination": "/steel/cart", "statusCode": 301 },
+    { "source": "/checkout", "destination": "/steel/checkout", "statusCode": 301 }
+  ],
   "rewrites": [
     {
       "source": "/sitemap.xml",

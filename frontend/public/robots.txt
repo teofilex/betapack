@@ -2,6 +2,16 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+
+# Korpa, naplata i potvrda porudžbine — po prodavnici
+Disallow: /steel/cart
+Disallow: /steel/checkout
+Disallow: /steel/order-success/
+Disallow: /ambalaza/cart
+Disallow: /ambalaza/checkout
+Disallow: /ambalaza/order-success/
+
+# Stare putanje (301 na /steel ekvivalent, ostaju zabranjene)
 Disallow: /cart
 Disallow: /checkout
 Disallow: /order-success/
