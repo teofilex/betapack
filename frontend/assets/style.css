@@ -12,6 +12,17 @@ body {
     overflow-x: hidden;
 }
 
+/* Sve pozadine u aplikaciji su svetle, pa i sema boja mora biti svetla.
+   Bez ovoga tamni sistemski rezim korisnika obeli nasledjeni tekst —
+   npr. sadrzaj input polja, koji nigde nema eksplicitno zadatu boju. */
+html {
+    color-scheme: light;
+}
+
+body {
+    color: #111827;
+}
+
 #app {
     margin: 0;
     padding: 0;

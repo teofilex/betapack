@@ -16,7 +16,14 @@ const head = createHead()
 app.use(head)
 app.use(PrimeVue, {
     theme: {
-        preset: Aura
+        preset: Aura,
+        options: {
+            // Bez ovoga PrimeVue vezuje tamnu temu za sistemsko podesenje korisnika
+            // i ubacuje `:root { color-scheme: dark }`. Pozadine u aplikaciji su
+            // svetle, pa bi nasledjen tekst (npr. sadrzaj input polja) postao beo
+            // na beloj podlozi. Selektor se namerno nikad ne primenjuje.
+            darkModeSelector: '.app-dark'
+        }
     }
 });
 app.use(createPinia())
