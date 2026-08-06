@@ -1,0 +1,7 @@
+# Jedini spisak zavisnosti projekta je backend/requirements.txt.
+# Ovaj fajl postoji samo da bi ga Nixpacks (Railway) nasao u korenu i
+# prepoznao projekat kao Python, pa instalirao tacno iste verzije koje
+# instalira i buildCommand iz railway.json.
+#
+# Nemoj ovde dodavati pakete — idu u backend/requirements.txt.
+-r backend/requirements.txt
