@@ -27,4 +27,4 @@ urllib3==2.5.0; python_version >= '3.9'
 whitenoise==6.11.0; python_version >= '3.9'
 redis==5.2.1; python_version >= '3.8'
 django-redis==5.4.0; python_version >= '3.8'
-django-filter
+django-filter==26.1
