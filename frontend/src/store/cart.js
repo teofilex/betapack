@@ -7,7 +7,8 @@ import {
     getAmbalazaPackageSize,
     getAmbalazaMinQuantityFromItem,
     getAmbalazaDisplayPrice,
-    isAmbalazaOnRequest
+    isAmbalazaOnRequest,
+    getAmbalazaOnRequestUnit
 } from '@/composables/useAmbalazaSelling'
 
 export const useCartStore = defineStore('cart', {
@@ -119,6 +120,9 @@ export const useCartStore = defineStore('cart', {
                 found.sold_by_length = product.sold_by_length || sellingMode === 'length'
                 found.selling_mode = sellingMode
                 found.package_size = packageSize
+                if (isAmbalaza && isAmbalazaOnRequest(product, variant)) {
+                    found.on_request_unit = getAmbalazaOnRequestUnit(product, variant)
+                }
                 found.length_per_unit = lengthPerUnit
             } else {
                 this.items.push({
@@ -133,6 +137,9 @@ export const useCartStore = defineStore('cart', {
                     sold_by_length: product.sold_by_length || sellingMode === 'length',
                     selling_mode: sellingMode,
                     package_size: packageSize,
+                    on_request_unit: isAmbalaza && isAmbalazaOnRequest(product, variant)
+                        ? getAmbalazaOnRequestUnit(product, variant)
+                        : undefined,
                     length_per_unit: lengthPerUnit,
                     dimensions: product.dimensions || '',
                     quantity

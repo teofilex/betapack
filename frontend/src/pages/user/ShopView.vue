@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
@@ -132,6 +132,7 @@ const organizationSchema = {
 }
 
 const router = useRouter()
+const route = useRoute()
 const { storeId, store, storeRoute } = useStore()
 const heroStore = computed(() => store.value || getStoreById('steel'))
 
@@ -349,22 +350,24 @@ const setQuantity = (productId, quantity) => {
   productQuantities.value[productId] = quantity
 }
 
-// Get selected variant for a product
+// Get selected variant for a product.
+// selectedVariants čuva samo ID (ne ceo objekat) — varijanta se uvek
+// traži iznova u trenutnom product.variants, da izbegnemo prikaz
+// zastarelog objekta posle refetch-a (npr. nakon izmene u adminu).
 const getSelectedVariant = (product) => {
-  // If already selected, return it
-  if (selectedVariants.value[product.id]) {
-    return selectedVariants.value[product.id]
-  }
-  // Otherwise, auto-select variant
-  if (product.variants && product.variants.length > 0) {
-    // Try to find and select a sale variant first
-    const saleVariant = product.variants.find(v => v.on_sale)
-    const variantToSelect = saleVariant || product.variants[0]
+  if (!product.variants || product.variants.length === 0) return null
 
-    selectedVariants.value[product.id] = variantToSelect
-    return variantToSelect
+  const selectedId = selectedVariants.value[product.id]
+  if (selectedId != null) {
+    const current = product.variants.find(v => v.id === selectedId)
+    if (current) return current
   }
-  return null
+
+  // Otherwise, auto-select variant
+  const saleVariant = product.variants.find(v => v.on_sale)
+  const variantToSelect = saleVariant || product.variants[0]
+  selectedVariants.value[product.id] = variantToSelect.id
+  return variantToSelect
 }
 
 // Sort variants by dimension only (for dropdown display)
@@ -383,7 +386,7 @@ const getSortedVariantsByDimension = (product) => {
 
 // Set selected variant for a product
 const setSelectedVariant = (productId, variant) => {
-  selectedVariants.value[productId] = variant
+  selectedVariants.value[productId] = variant?.id ?? null
   const product = productStore.products.find(p => p.id === productId)
   setQuantity(productId, product ? getProductDefaultQuantity(product, variant) : 1)
 }
@@ -577,6 +580,8 @@ watch(filteredProducts, () => {
 }, { deep: true })
 
 const loadStoreData = async () => {
+  if (!storeId.value) return
+
   // Reset filters when switching store
   selectedCategory.value = null
   selectedSubcategory.value = null
@@ -588,11 +593,47 @@ const loadStoreData = async () => {
   await productStore.fetchProducts(storeId.value)
 }
 
-watch(storeId, () => {
-  loadStoreData()
+watch(
+  () => route.fullPath,
+  () => {
+    if (route.name?.endsWith('-shop')) {
+      loadStoreData()
+    }
+  },
+  { immediate: true }
+)
+
+const onPageShow = (event) => {
+  if (event.persisted && route.name?.endsWith('-shop')) {
+    loadStoreData()
+  }
+}
+
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'visible' && route.name?.endsWith('-shop')) {
+    loadStoreData()
+  }
+}
+
+// 'focus' pokriva slučaj kada su admin i shop u dva odvojena prozora
+// jedan pored drugog (oba "visible", pa 'visibilitychange' ne okine).
+const onWindowFocus = () => {
+  if (route.name?.endsWith('-shop')) {
+    loadStoreData()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('pageshow', onPageShow)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  window.addEventListener('focus', onWindowFocus)
 })
 
-onMounted(loadStoreData)
+onUnmounted(() => {
+  window.removeEventListener('pageshow', onPageShow)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+  window.removeEventListener('focus', onWindowFocus)
+})
 </script>
 
 <template>
@@ -1102,31 +1143,29 @@ onMounted(loadStoreData)
                         </div>
 
                         <!-- Quantity Selector (only show if product is NOT in cart) -->
-                        <div v-if="!cartStore.isInCart(product.id, getSelectedVariant(product)?.id)" class="mb-2" @click.stop>
-                          <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs font-bold text-gray-700">Količina:</span>
-                            <div class="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
-                              <button
-                                @click="setQuantity(product.id, getQuantity(product.id) - getProductQuantityStep(product))"
-                                class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
-                              >
-                                -
-                              </button>
-                              <input
-                                :value="getQuantity(product.id)"
-                                @input="setQuantity(product.id, parseFloat($event.target.value) || getProductMinQuantity(product))"
-                                type="number"
-                                :min="getProductMinQuantity(product)"
-                                :step="getProductQuantityStep(product)"
-                                class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
-                              />
-                              <button
-                                @click="setQuantity(product.id, getQuantity(product.id) + getProductQuantityStep(product))"
-                                class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
-                              >
-                                +
-                              </button>
-                            </div>
+                        <div v-if="!cartStore.isInCart(product.id, getSelectedVariant(product)?.id)" class="mb-2 w-full" @click.stop>
+                          <span class="block text-xs font-bold text-gray-700 mb-1">Količina:</span>
+                          <div class="flex items-center gap-1.5 w-full bg-gray-100 rounded-xl p-1">
+                            <button
+                              @click="setQuantity(product.id, getQuantity(product.id) - getProductQuantityStep(product))"
+                              class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm flex items-center justify-center"
+                            >
+                              −
+                            </button>
+                            <input
+                              :value="getQuantity(product.id)"
+                              @input="setQuantity(product.id, parseFloat($event.target.value) || getProductMinQuantity(product))"
+                              type="number"
+                              :min="getProductMinQuantity(product)"
+                              :step="getProductQuantityStep(product)"
+                              class="flex-1 min-w-0 w-full text-sm font-semibold tabular-nums text-center text-gray-900 bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                            />
+                            <button
+                              @click="setQuantity(product.id, getQuantity(product.id) + getProductQuantityStep(product))"
+                              class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm flex items-center justify-center"
+                            >
+                              +
+                            </button>
                           </div>
                           <p v-if="storeId === 'steel' && isLengthMode(product)" class="text-[10px] text-blue-600 font-semibold italic">
                             ℹ️ Proizvodi se prodaju po komadu (1 kom = {{ getVariantLength(product) || product.length_per_unit || 6 }} m), uz mogućnost kupovine celog ili pola komada ({{ ((getVariantLength(product) || product.length_per_unit || 6) / 2).toFixed(1) }} m).
@@ -1138,7 +1177,10 @@ onMounted(loadStoreData)
                             ⚖️ Prodaja po kilogramu
                           </p>
                           <p v-if="storeId === 'ambalaza' && isAmbalazaPackageMode(product, getSelectedVariant(product))" class="text-[10px] text-green-600 font-semibold italic">
-                            📦 {{ getAmbalazaPackageNote(product, getSelectedVariant(product)) }} — cena po komadu
+                            📦 {{ getAmbalazaPackageNote(product, getSelectedVariant(product)) }}<span v-if="!isProductOnRequest(product)"> — cena po komadu</span>
+                          </p>
+                          <p v-if="storeId === 'ambalaza' && isProductOnRequest(product)" class="text-[10px] text-orange-600 font-semibold italic">
+                            {{ getProductSellingNote(product) }}
                           </p>
                           <p v-if="storeId === 'ambalaza' && isAmbalazaWeightMode(product, getSelectedVariant(product))" class="text-[10px] text-blue-600 font-semibold italic">
                             ⚖️ Prodaja po kilogramu
@@ -1153,17 +1195,15 @@ onMounted(loadStoreData)
 
                   <div class="px-5 lg:px-6 pb-5 lg:pb-6 flex-shrink-0">
                     <!-- If product is in cart, show quantity controls -->
-                    <div v-if="cartStore.isInCart(product.id, getSelectedVariant(product)?.id)" class="space-y-2">
-                      <div class="flex items-center gap-2 mb-2" @click.stop>
-                        <span class="text-xs font-bold text-gray-700">Izmeni količinu:</span>
-                      </div>
-                      <div class="flex items-center justify-between w-full px-4 bg-gray-100 rounded-xl py-1">
+                    <div v-if="cartStore.isInCart(product.id, getSelectedVariant(product)?.id)" class="space-y-2 w-full" @click.stop>
+                      <span class="block text-xs font-bold text-gray-700 mb-1">Izmeni količinu:</span>
+                      <div class="flex items-center gap-1.5 w-full bg-gray-100 rounded-xl p-1">
                         <button
                           @click.stop="updateCartQuantity(product, getCartQuantity(product) - getProductQuantityStep(product))"
                           :disabled="getCartQuantity(product) <= getProductMinQuantity(product)"
-                          class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                          class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         >
-                          -
+                          −
                         </button>
                         <input
                           :value="getCartQuantity(product)"
@@ -1172,11 +1212,11 @@ onMounted(loadStoreData)
                           type="number"
                           :min="getProductMinQuantity(product)"
                           :step="getProductQuantityStep(product)"
-                          class="w-16 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                          class="flex-1 min-w-0 w-full text-sm font-semibold tabular-nums text-center text-gray-900 bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                         />
                         <button
                           @click.stop="updateCartQuantity(product, getCartQuantity(product) + getProductQuantityStep(product))"
-                          class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm flex items-center justify-center"
+                          class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm flex items-center justify-center"
                         >
                           +
                         </button>

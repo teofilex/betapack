@@ -11,6 +11,40 @@ import { useStore } from '@/composables/useStore'
 import {
   getQuantityStep, getMinQuantity, isValidLengthQuantity, isPackageMode, isLengthMode, isOnRequest, formatQuantityLabel
 } from '@/composables/useSellingMode'
+import {
+  getAmbalazaMinQuantityFromItem,
+  getAmbalazaQuantityStepFromItem
+} from '@/composables/useAmbalazaSelling'
+
+const getItemMinQuantity = (item) => (
+  item.store === 'ambalaza' ? getAmbalazaMinQuantityFromItem(item) : getMinQuantity(item)
+)
+const getItemQuantityStep = (item) => (
+  item.store === 'ambalaza' ? getAmbalazaQuantityStepFromItem(item) : getQuantityStep(item)
+)
+const isItemPackageMode = (item) => {
+  if (item.store === 'ambalaza') {
+    if (item.selling_mode === 'on_request') return item.on_request_unit === 'package'
+    return item.selling_mode === 'package'
+  }
+  return isPackageMode(item)
+}
+
+const isItemWeightMode = (item) => {
+  if (item.store === 'ambalaza') {
+    if (item.selling_mode === 'on_request') return item.on_request_unit === 'weight'
+    return item.selling_mode === 'weight'
+  }
+  return false
+}
+
+const formatItemQuantityLabel = (item) => {
+  if (item.store === 'ambalaza' && item.selling_mode === 'on_request' && item.on_request_unit === 'package') {
+    const pkg = parseInt(item.package_size, 10) || 1
+    return `${item.quantity / pkg} pak. (${item.quantity} kom.)`
+  }
+  return formatQuantityLabel(item, item.quantity)
+}
 
 // SEO Meta Tags
 useHead({
@@ -61,7 +95,7 @@ const cartTotal = computed(() => cartStore.total)
 const cartCount = computed(() => cartStore.itemCount)
 
 const updateQuantity = (item, newQuantity) => {
-  const minQuantity = getMinQuantity(item)
+  const minQuantity = getItemMinQuantity(item)
   if (newQuantity < minQuantity) return
 
   if (isLengthMode(item) && !isValidLengthQuantity(newQuantity)) {
@@ -165,32 +199,35 @@ const goToCheckout = () => {
               <!-- Quantity & Actions -->
               <div class="flex flex-col items-end justify-between">
                 <!-- Quantity -->
-                <div v-if="!isOnRequest(item)" class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <div class="flex items-center gap-1.5 w-full bg-gray-100 rounded-lg p-1">
                   <button
-                    @click="updateQuantity(item, item.quantity - getQuantityStep(item))"
-                    :disabled="item.quantity <= getMinQuantity(item)"
-                    class="w-8 h-8 bg-white rounded text-gray-700 hover:bg-gray-200 hover:text-black font-bold transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed border border-gray-300 hover:border-gray-400"
-                  >-</button>
+                    @click="updateQuantity(item, item.quantity - getItemQuantityStep(item))"
+                    :disabled="item.quantity <= getItemMinQuantity(item)"
+                    class="w-8 h-8 shrink-0 bg-white rounded text-gray-700 hover:bg-gray-200 hover:text-black text-sm font-bold transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed border border-gray-300 hover:border-gray-400 flex items-center justify-center"
+                  >−</button>
                   <input
                     :value="item.quantity"
-                    @input="updateQuantity(item, parseFloat($event.target.value) || getMinQuantity(item))"
-                    @blur="updateQuantity(item, Math.max(getMinQuantity(item), parseFloat($event.target.value) || getMinQuantity(item)))"
+                    @input="updateQuantity(item, parseFloat($event.target.value) || getItemMinQuantity(item))"
+                    @blur="updateQuantity(item, Math.max(getItemMinQuantity(item), parseFloat($event.target.value) || getItemMinQuantity(item)))"
                     type="number"
-                    :min="getMinQuantity(item)"
-                    :step="getQuantityStep(item)"
-                    class="w-24 text-center font-semibold bg-white border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                    :min="getItemMinQuantity(item)"
+                    :step="getItemQuantityStep(item)"
+                    class="flex-1 min-w-0 w-full text-sm font-semibold tabular-nums text-center bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                   />
                   <button
-                    @click="updateQuantity(item, item.quantity + getQuantityStep(item))"
-                    class="w-8 h-8 bg-white rounded text-gray-700 hover:bg-gray-200 hover:text-black font-bold transition cursor-pointer border border-gray-300 hover:border-gray-400"
+                    @click="updateQuantity(item, item.quantity + getItemQuantityStep(item))"
+                    class="w-8 h-8 shrink-0 bg-white rounded text-gray-700 hover:bg-gray-200 hover:text-black text-sm font-bold transition cursor-pointer border border-gray-300 hover:border-gray-400 flex items-center justify-center"
                   >+</button>
                 </div>
-                <p v-else class="text-xs text-orange-600 font-semibold">Cena na upit</p>
+                <p v-if="isOnRequest(item)" class="text-[10px] text-orange-600 font-semibold mt-1 text-right">Cena na upit</p>
+                <p v-if="isItemWeightMode(item)" class="text-[10px] text-blue-600 font-semibold italic mt-1 text-right">
+                  ⚖️ {{ item.quantity }} kg
+                </p>
                 <p v-if="isLengthMode(item)" class="text-[10px] text-blue-600 font-semibold italic mt-1 text-right">
                   📏 {{ (parseFloat(item.quantity) * (item.length_per_unit || 6)).toFixed(2) }} metara
                 </p>
-                <p v-if="isPackageMode(item)" class="text-[10px] text-green-600 font-semibold italic mt-1 text-right">
-                  📦 {{ formatQuantityLabel(item, item.quantity) }}
+                <p v-if="isItemPackageMode(item)" class="text-[10px] text-green-600 font-semibold italic mt-1 text-right">
+                  📦 {{ formatItemQuantityLabel(item) }}
                 </p>
                 <p v-if="quantityErrors[item.cartId || item.id]" class="text-[10px] text-red-600 font-semibold italic mt-1 text-right">
                   ❌ {{ quantityErrors[item.cartId || item.id] }}

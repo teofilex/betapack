@@ -41,13 +41,11 @@ export const useProductStore = defineStore('adminProducts', {
         async update(id, payload) {
             const auth = useAuthStore()
 
-            await api.put(
+            await api.patch(
                 `products/${id}/`,
                 payload,
                 { headers: { Authorization: `Bearer ${auth.accessToken}` } }
             )
-
-            await this.fetch()
         },
 
         async remove(id) {
@@ -57,8 +55,6 @@ export const useProductStore = defineStore('adminProducts', {
                 `products/${id}/`,
                 { headers: { Authorization: `Bearer ${auth.accessToken}` } }
             )
-
-            await this.fetch()
         },
 
     }

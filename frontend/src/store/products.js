@@ -1,7 +1,5 @@
-import { defineStore} from 'pinia'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+import { defineStore } from 'pinia'
+import { api } from '@/services/api'
 
 export const useProductStore = defineStore('products', {
     state: () => ({
@@ -47,8 +45,10 @@ export const useProductStore = defineStore('products', {
             this.loading = true
             this.currentStore = store
             try {
-                const r = await axios.get(`${API_URL}/products/`, { params: { store } })
-                this.products = r.data
+                const res = await api.get('products/', {
+                    params: { store, _: Date.now() }
+                })
+                this.products = res.data
             } finally {
                 this.loading = false
             }

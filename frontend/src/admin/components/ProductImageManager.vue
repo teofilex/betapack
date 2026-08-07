@@ -3,7 +3,9 @@ import { ref } from 'vue'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/store/auth'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import { formatApiError } from '@/utils/formatApiError'
 import { getImageUrl } from '@/composables/useImageUrl'
+import { compressImageFile } from '@/utils/compressImage'
 
 const props = defineProps({
   productId: Number
@@ -60,25 +62,23 @@ const uploadImage = async () => {
   if (!selectedFile.value) return
 
   uploading.value = true
-  const formData = new FormData()
-  formData.append('image', selectedFile.value)
-  formData.append('product', props.productId)
-  formData.append('is_primary', images.value.length === 0) // Prva slika je primary
-
   try {
+    const compressed = await compressImageFile(selectedFile.value)
+    const formData = new FormData()
+    formData.append('image', compressed)
+    formData.append('product', props.productId)
+    formData.append('is_primary', images.value.length === 0)
+
     const authStore = useAuthStore()
     await api.post('product-images/', formData, {
-      headers: { 
-        Authorization: `Bearer ${authStore.accessToken}`,
-        'Content-Type': 'multipart/form-data' 
-      }
+      headers: { Authorization: `Bearer ${authStore.accessToken}` }
     })
     selectedFile.value = null
     await fetchImages()
     emit('updated')
   } catch (error) {
     console.error('Upload error:', error)
-    const errorMsg = error.response?.data?.detail || error.response?.data?.message || 'Greška pri upload-u slike'
+    const errorMsg = formatApiError(error, 'Greška pri upload-u slike')
     openConfirm(errorMsg, null)
   } finally {
     uploading.value = false

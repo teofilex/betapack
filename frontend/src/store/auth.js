@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
-        async refreshToken() {
+        async refreshAccessToken() {
             if (!this.refreshToken) {
                 return false
             }
@@ -67,7 +67,6 @@ export const useAuthStore = defineStore('auth', {
                 this.accessToken = response.data.access
                 localStorage.setItem('access', this.accessToken)
 
-                // Ako refresh token postoji u odgovoru, ažuriraj ga
                 if (response.data.refresh) {
                     this.refreshToken = response.data.refresh
                     localStorage.setItem('refresh', this.refreshToken)
@@ -76,7 +75,6 @@ export const useAuthStore = defineStore('auth', {
                 return true
             } catch (error) {
                 console.error('refresh token failed:', error)
-                // Ako refresh token nije validan, odloguj korisnika
                 this.logout()
                 return false
             }
@@ -96,7 +94,7 @@ export const useAuthStore = defineStore('auth', {
             } catch (error) {
                 // Ako je token istekao, pokušaj da ga osvežiš
                 if (error.response?.status === 401) {
-                    const refreshed = await this.refreshToken()
+                    const refreshed = await this.refreshAccessToken()
                     if (refreshed) {
                         // Pokušaj ponovo da dobiješ korisnika sa novim tokenom
                         await this.fetchUser()

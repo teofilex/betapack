@@ -6,19 +6,40 @@ export function getAmbalazaSellingMode(product, variant = null) {
   return 'piece'
 }
 
+export function getAmbalazaOnRequestUnit(product, variant = null) {
+  if (variant?.on_request_unit) return variant.on_request_unit
+  if (product?.on_request_unit) return product.on_request_unit
+  return 'piece'
+}
+
 export function isAmbalazaOnRequest(product, variant = null) {
   return getAmbalazaSellingMode(product, variant) === 'on_request'
 }
 
 export function isAmbalazaPackageMode(product, variant = null) {
-  return getAmbalazaSellingMode(product, variant) === 'package'
+  const mode = getAmbalazaSellingMode(product, variant)
+  if (mode === 'on_request') {
+    return getAmbalazaOnRequestUnit(product, variant) === 'package'
+  }
+  return mode === 'package'
 }
 
 export function isAmbalazaWeightMode(product, variant = null) {
-  return getAmbalazaSellingMode(product, variant) === 'weight'
+  const mode = getAmbalazaSellingMode(product, variant)
+  if (mode === 'on_request') {
+    return getAmbalazaOnRequestUnit(product, variant) === 'weight'
+  }
+  return mode === 'weight'
 }
 
 export function getAmbalazaPackageSize(product, variant = null) {
+  const mode = getAmbalazaSellingMode(product, variant)
+  if (mode === 'on_request') {
+    if (getAmbalazaOnRequestUnit(product, variant) === 'package') {
+      return parseInt(variant?.package_size ?? product?.package_size, 10) || 1
+    }
+    return 1
+  }
   if (variant?.selling_mode === 'package') {
     return parseInt(variant.package_size, 10) || 1
   }
@@ -26,15 +47,14 @@ export function getAmbalazaPackageSize(product, variant = null) {
 }
 
 export function getAmbalazaQuantityStep(product, variant = null) {
-  const mode = getAmbalazaSellingMode(product, variant)
-  if (mode === 'package') return getAmbalazaPackageSize(product, variant)
+  if (isAmbalazaPackageMode(product, variant)) {
+    return getAmbalazaPackageSize(product, variant)
+  }
   return 1
 }
 
 export function getAmbalazaMinQuantity(product, variant = null) {
-  const mode = getAmbalazaSellingMode(product, variant)
-  if (mode === 'package') return getAmbalazaPackageSize(product, variant)
-  return 1
+  return getAmbalazaQuantityStep(product, variant)
 }
 
 export function getAmbalazaDefaultQuantity(product, variant = null) {
@@ -42,8 +62,7 @@ export function getAmbalazaDefaultQuantity(product, variant = null) {
 }
 
 export function isAmbalazaValidQuantity(product, quantity, variant = null) {
-  const mode = getAmbalazaSellingMode(product, variant)
-  if (mode === 'package') {
+  if (isAmbalazaPackageMode(product, variant)) {
     const pkg = getAmbalazaPackageSize(product, variant)
     return quantity > 0 && quantity % pkg === 0
   }
@@ -72,7 +91,15 @@ export function formatAmbalazaPriceLabel(product, variant, formatPrice) {
 
 export function getAmbalazaSellingNote(product, variant = null) {
   const mode = getAmbalazaSellingMode(product, variant)
-  if (mode === 'on_request') return 'Prodaja na upit'
+  if (mode === 'on_request') {
+    const unit = getAmbalazaOnRequestUnit(product, variant)
+    if (unit === 'package') {
+      const pkg = getAmbalazaPackageSize(product, variant)
+      return `Prodaja na upit — po pakovanju (${pkg} kom.)`
+    }
+    if (unit === 'weight') return 'Prodaja na upit — po kilogramu'
+    return 'Prodaja na upit — po komadu'
+  }
   if (mode === 'package') {
     const pkg = getAmbalazaPackageSize(product, variant)
     return `Prodaje se po pakovanju (${pkg} kom.)`
@@ -87,15 +114,16 @@ export function getAmbalazaPackageNote(product, variant = null) {
   return `Pakovanje: ${pkg} komada`
 }
 
-/** Ukupna cena za izabranu količinu (cena po komadu × broj komada). */
 export function getAmbalazaLineTotal(product, variant, quantity, formatPrice) {
   const unitPrice = getAmbalazaDisplayPrice(product, variant)
   if (unitPrice == null) return null
   return formatPrice(unitPrice * quantity)
 }
 
-/** Za cart item (ima selling_mode / package_size sa servera ili pri dodavanju). */
 export function getAmbalazaMinQuantityFromItem(item) {
+  if (item?.selling_mode === 'on_request' && item?.on_request_unit === 'package') {
+    return parseInt(item.package_size, 10) || 1
+  }
   if (item?.selling_mode === 'package') {
     return parseInt(item.package_size, 10) || 1
   }
@@ -107,6 +135,10 @@ export function getAmbalazaQuantityStepFromItem(item) {
 }
 
 export function isAmbalazaValidQuantityFromItem(item, quantity) {
+  if (item?.selling_mode === 'on_request' && item?.on_request_unit === 'package') {
+    const pkg = parseInt(item.package_size, 10) || 1
+    return quantity > 0 && quantity % pkg === 0
+  }
   if (item?.selling_mode === 'package') {
     const pkg = parseInt(item.package_size, 10) || 1
     return quantity > 0 && quantity % pkg === 0
