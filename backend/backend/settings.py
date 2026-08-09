@@ -65,13 +65,11 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-        "corsheaders.middleware.CorsMiddleware",
-
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add whitenoise for static files
-    'django.middleware.gzip.GZipMiddleware',  # GZIP compression za smanjenje response size
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -174,6 +172,15 @@ if not DEBUG:
     }
 
     print(f"CLOUDINARY CONFIG: CLOUD_NAME={CLOUDINARY_STORAGE['CLOUD_NAME']}")  # Debug log
+
+    missing_cloudinary = [
+        key for key, value in CLOUDINARY_STORAGE.items() if not value
+    ]
+    if missing_cloudinary:
+        raise ValueError(
+            'Cloudinary nije konfigurisan za produkciju. '
+            f'Nedostaju env varijable: {", ".join(missing_cloudinary)}'
+        )
 
     # Use custom Cloudinary storage backend
     DEFAULT_FILE_STORAGE = 'shop.storage.CloudinaryMediaStorage'

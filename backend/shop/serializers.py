@@ -63,7 +63,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             'id', 'product', 'name', 'price', 'on_sale', 'sale_price',
             'current_price', 'final_price', 'sku',
             'in_stock', 'stock_quantity',
-            'selling_mode', 'package_size',
+            'selling_mode', 'package_size', 'on_request_unit',
             'length_per_unit', 'effective_length_per_unit',
             'created_at'
         ]
@@ -90,7 +90,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'category', 'category_name', 'subcategory', 'subcategory_name',
             'current_price', 'min_price', 'original_min_price', 'has_sale_variants',
             'featured', 'in_stock', 'stock_quantity',
-            'selling_mode', 'package_size',
+            'selling_mode', 'package_size', 'on_request_unit',
             'sold_by_length', 'length_per_unit',
             'order', 'variants', 'images', 'created_at', 'updated_at'
         ]

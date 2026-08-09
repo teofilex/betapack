@@ -18,6 +18,12 @@ SELLING_MODE_CHOICES = [
     ('on_request', 'Na upit'),
 ]
 
+ON_REQUEST_UNIT_CHOICES = [
+    ('piece', 'Po komadu'),
+    ('package', 'Po pakovanju'),
+    ('weight', 'Po kilogramu'),
+]
+
 
 class Category(models.Model):
     store = models.CharField(max_length=20, choices=STORE_CHOICES, default='steel')
@@ -100,6 +106,13 @@ class Product(models.Model):
     package_size = models.PositiveIntegerField(
         default=1,
         help_text="Broj komada u jednom pakovanju (za prodaju po pakovanju)"
+    )
+    on_request_unit = models.CharField(
+        max_length=20,
+        choices=ON_REQUEST_UNIT_CHOICES,
+        default='piece',
+        blank=True,
+        help_text="Jedinica prodaje kada je cena na upit"
     )
 
     # Dodato: Prodaja po metraži (steel - legacy, koristi selling_mode='length')
@@ -266,6 +279,13 @@ class ProductVariant(models.Model):
     package_size = models.PositiveIntegerField(
         default=1,
         help_text="Broj komada u pakovanju (za prodaju po pakovanju)"
+    )
+    on_request_unit = models.CharField(
+        max_length=20,
+        choices=ON_REQUEST_UNIT_CHOICES,
+        default='piece',
+        blank=True,
+        help_text="Jedinica prodaje kada je cena na upit"
     )
 
     # Dužina 1 komada za proizvode po metraži (opciono - ako nije postavljeno, koristi se product.length_per_unit)

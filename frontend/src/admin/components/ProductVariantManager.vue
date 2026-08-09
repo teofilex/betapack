@@ -46,6 +46,7 @@ const defaultForm = () => ({
   stock_quantity: 0,
   selling_mode: 'piece',
   package_size: 1,
+  on_request_unit: 'piece',
   length_per_unit: null
 })
 
@@ -71,7 +72,8 @@ const openForm = (variant = null) => {
       ...defaultForm(),
       ...variant,
       selling_mode: variant.selling_mode || 'piece',
-      package_size: variant.package_size || 1
+      package_size: variant.package_size || 1,
+      on_request_unit: variant.on_request_unit || 'piece'
     }
   } else {
     editing.value = null
@@ -117,14 +119,19 @@ const buildPayload = () => {
   if (isAmbalaza.value) {
     payload.selling_mode = form.value.selling_mode || 'piece'
     payload.package_size = form.value.package_size || 1
+    payload.on_request_unit = form.value.on_request_unit || 'piece'
     payload.length_per_unit = null
 
     if (payload.selling_mode === 'on_request') {
       payload.price = 0
       payload.on_sale = false
       payload.sale_price = null
+      if (payload.on_request_unit !== 'package') {
+        payload.package_size = 1
+      }
     } else {
       payload.price = form.value.price
+      payload.on_request_unit = 'piece'
     }
   } else {
     payload.price = form.value.price
@@ -251,6 +258,13 @@ watch(() => props.productId, (newId) => {
               <span v-if="isAmbalaza && variant.selling_mode">
                 <strong>Prodaja:</strong> {{ SELLING_MODE_LABELS[variant.selling_mode] || variant.selling_mode }}
                 <span v-if="variant.selling_mode === 'package'"> ({{ variant.package_size }} kom.)</span>
+                <span v-else-if="variant.selling_mode === 'on_request' && variant.on_request_unit === 'package'">
+                  — po pakovanju ({{ variant.package_size }} kom.)
+                </span>
+                <span v-else-if="variant.selling_mode === 'on_request' && variant.on_request_unit === 'weight'">
+                  — po kilogramu
+                </span>
+                <span v-else-if="variant.selling_mode === 'on_request'"> — po komadu</span>
               </span>
               <span v-if="!isAmbalaza && variant.length_per_unit"><strong>Dužina:</strong> {{ variant.length_per_unit }}m</span>
             </div>
@@ -341,6 +355,34 @@ watch(() => props.productId, (newId) => {
             />
             <p class="text-[10px] text-gray-600 mt-1 px-1">Cena se unosi po komadu. U korpi se dodaje ceo paket.</p>
           </div>
+
+          <div v-if="form.selling_mode === 'on_request'" class="mt-2 space-y-2">
+            <div>
+              <label class="block text-[10px] font-medium mb-2 text-gray-800 px-1">Jedinica prodaje</label>
+              <select
+                v-model="form.on_request_unit"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs
+                       focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer"
+              >
+                <option value="piece">Po komadu</option>
+                <option value="package">Po pakovanju</option>
+                <option value="weight">Po kilogramu</option>
+              </select>
+            </div>
+            <div v-if="form.on_request_unit === 'package'">
+              <label class="block text-[10px] font-medium mb-2 text-gray-800 px-1">Komada u pakovanju</label>
+              <input
+                v-model.number="form.package_size"
+                type="number"
+                min="1"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs
+                       focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+              />
+            </div>
+            <p class="text-[10px] text-orange-600 font-semibold px-1">
+              Cena ostaje na upit — kupac unosi količinu po izabranoj jedinici.
+            </p>
+          </div>
         </div>
 
         <div v-if="!isAmbalaza || form.selling_mode !== 'on_request'">
@@ -360,7 +402,7 @@ watch(() => props.productId, (newId) => {
         </div>
 
         <p v-if="isAmbalaza && form.selling_mode === 'on_request'" class="text-[10px] text-orange-600 font-semibold px-1">
-          Varijanta „na upit" — cena se ne prikazuje, kupac šalje upit.
+          Varijanta „na upit" — cena se ne prikazuje na shopu.
         </p>
 
         <div v-if="!isAmbalaza || form.selling_mode !== 'on_request'" class="flex items-center gap-2 bg-yellow-50 p-2 rounded-lg">

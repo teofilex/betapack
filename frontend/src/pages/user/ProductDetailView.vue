@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
@@ -8,7 +8,7 @@ import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
-import { getAmbalazaDefaultQuantity, getAmbalazaSellingNote, isAmbalazaPackageMode } from '@/composables/useAmbalazaSelling'
+import { getAmbalazaDefaultQuantity, getAmbalazaSellingNote, isAmbalazaPackageMode, getAmbalazaQuantityStep, getAmbalazaMinQuantity } from '@/composables/useAmbalazaSelling'
 
 const route = useRoute()
 const router = useRouter()
@@ -261,7 +261,9 @@ const sortedVariants = computed(() => {
 const fetchProduct = async () => {
   loading.value = true
   try {
-    const response = await api.get(`/products/${route.params.slugOrId}/`)
+    const response = await api.get(`/products/${route.params.slugOrId}/`, {
+      params: { _: Date.now() }
+    })
     product.value = response.data
 
     // Auto-select first variant if available (first from sorted list - sale variants first)
@@ -412,6 +414,20 @@ const validateAndUpdateQuantity = (newQuantity) => {
   }
 }
 
+const getQtyStep = () => {
+  if (product.value?.store === 'ambalaza') {
+    return getAmbalazaQuantityStep(product.value, selectedVariant.value)
+  }
+  return product.value?.sold_by_length ? 0.5 : 1
+}
+
+const getQtyMin = () => {
+  if (product.value?.store === 'ambalaza') {
+    return getAmbalazaMinQuantity(product.value, selectedVariant.value)
+  }
+  return product.value?.sold_by_length ? 0.5 : 1
+}
+
 // Get length_per_unit from variant or product
 const getVariantLength = () => {
   if (selectedVariant.value) {
@@ -426,8 +442,42 @@ const getVariantLength = () => {
   return product.value?.length_per_unit ? parseFloat(product.value.length_per_unit) : null
 }
 
+const onPageShow = (event) => {
+  if (event.persisted) {
+    fetchProduct()
+  }
+}
+
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    fetchProduct()
+  }
+}
+
+// 'focus' pokriva slučaj kada su admin i shop u dva odvojena prozora
+// jedan pored drugog (oba "visible", pa 'visibilitychange' ne okine).
+const onWindowFocus = () => {
+  fetchProduct()
+}
+
+watch(
+  () => route.params.slugOrId,
+  () => {
+    fetchProduct()
+  }
+)
+
 onMounted(() => {
   fetchProduct()
+  window.addEventListener('pageshow', onPageShow)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  window.addEventListener('focus', onWindowFocus)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('pageshow', onPageShow)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+  window.removeEventListener('focus', onWindowFocus)
 })
 </script>
 
@@ -563,26 +613,26 @@ onMounted(() => {
               </div>
 
               <!-- Quantity -->
-              <div class="mb-3">
+              <div class="mb-3 w-full">
                 <h3 class="font-semibold text-sm text-gray-900 mb-2">Količina</h3>
-                <div class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <div class="flex items-center gap-1.5 w-full bg-gray-100 rounded-lg p-1">
                   <button
-                    @click="validateAndUpdateQuantity(Math.max(product.sold_by_length ? 0.5 : 1, quantity - (product.sold_by_length ? 0.5 : 1)))"
-                    class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
+                    @click="validateAndUpdateQuantity(Math.max(getQtyMin(), quantity - getQtyStep()))"
+                    class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm flex items-center justify-center"
                   >
-                    -
+                    −
                   </button>
                   <input
                     :value="quantity"
-                    @input="validateAndUpdateQuantity(parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
+                    @input="validateAndUpdateQuantity(parseFloat($event.target.value) || getQtyMin())"
                     type="number"
-                    :min="product.sold_by_length ? 0.5 : 1"
-                    :step="product.sold_by_length ? 0.5 : 1"
-                    class="w-32 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                    :min="getQtyMin()"
+                    :step="getQtyStep()"
+                    class="flex-1 min-w-0 w-full text-sm font-semibold tabular-nums text-center text-gray-900 bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                   />
                   <button
-                    @click="validateAndUpdateQuantity(quantity + (product.sold_by_length ? 0.5 : 1))"
-                    class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
+                    @click="validateAndUpdateQuantity(quantity + getQtyStep())"
+                    class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm flex items-center justify-center"
                   >
                     +
                   </button>
@@ -624,26 +674,26 @@ onMounted(() => {
                   <div class="mb-2">
                     <h3 class="font-semibold text-sm text-gray-900">Izmeni količinu</h3>
                   </div>
-                  <div class="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                  <div class="flex items-center gap-1.5 w-full bg-gray-100 rounded-lg p-1">
                     <button
-                      @click="updateCartQuantity(getCartQuantity - (product.sold_by_length ? 0.5 : 1))"
-                      :disabled="getCartQuantity <= (product.sold_by_length ? 0.5 : 1)"
-                      class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      @click="updateCartQuantity(getCartQuantity - getQtyStep())"
+                      :disabled="getCartQuantity <= getQtyMin()"
+                      class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
-                      -
+                      −
                     </button>
                     <input
                       :value="getCartQuantity"
-                      @input="updateCartQuantity(parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1))"
-                      @blur="updateCartQuantity(Math.max(product.sold_by_length ? 0.5 : 1, parseFloat($event.target.value) || (product.sold_by_length ? 0.5 : 1)))"
+                      @input="updateCartQuantity(parseFloat($event.target.value) || getQtyMin())"
+                      @blur="updateCartQuantity(Math.max(getQtyMin(), parseFloat($event.target.value) || getQtyMin()))"
                       type="number"
-                      :min="product.sold_by_length ? 0.5 : 1"
-                      :step="product.sold_by_length ? 0.5 : 1"
-                      class="w-32 text-center text-base font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+                      :min="getQtyMin()"
+                      :step="getQtyStep()"
+                      class="flex-1 min-w-0 w-full text-sm font-semibold tabular-nums text-center text-gray-900 bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
                     />
                     <button
-                      @click="updateCartQuantity(getCartQuantity + (product.sold_by_length ? 0.5 : 1))"
-                      class="w-8 h-8 bg-white rounded-lg hover:bg-gray-200 transition text-base font-bold cursor-pointer shadow-sm"
+                      @click="updateCartQuantity(getCartQuantity + getQtyStep())"
+                      class="w-8 h-8 shrink-0 bg-white rounded-md hover:bg-gray-200 transition text-sm font-bold cursor-pointer shadow-sm flex items-center justify-center"
                     >
                       +
                     </button>

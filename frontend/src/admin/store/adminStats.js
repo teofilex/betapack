@@ -42,7 +42,7 @@ export const useAdminStatsStore = defineStore('adminStats', {
             } catch (e) {
                 console.error("Greška pri učitavanju brojača:", e)
                 if (e.response?.status === 401) {
-                    const refreshed = await auth.refreshToken()
+                    const refreshed = await auth.refreshAccessToken()
                     if (refreshed) await this.refresh(store)
                 }
             }

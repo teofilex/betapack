@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useProductStore } from '@/admin/store/products'
-import { useProductStore as useUserProductStore } from '@/store/products'
 import { useCategoryStore } from '@/admin/store/categories'
 import { useSubcategoryStore } from '@/admin/store/subcategories'
 import { useAuthStore } from '@/store/auth'
@@ -12,6 +11,8 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import AdminModal from './AdminModal.vue'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
+import { formatApiError } from '@/utils/formatApiError'
+import { compressImageFile } from '@/utils/compressImage'
 import draggable from 'vuedraggable'
 
 const showConfirm = ref(false)
@@ -38,7 +39,6 @@ const emit = defineEmits(['update-count'])
 const props = defineProps({ store: { type: String, default: 'steel' } })
 
 const productStore = useProductStore()
-const userProductStore = useUserProductStore()
 const categoryStore = useCategoryStore()
 const subcategoryStore = useSubcategoryStore()
 
@@ -83,6 +83,7 @@ const form = ref({
   length_per_unit: 6.0,
   selling_mode: 'piece',
   package_size: 1,
+  on_request_unit: 'piece',
   dimensions: ''
 })
 
@@ -107,7 +108,8 @@ const variantForm = ref({
   stock_quantity: 0,
   length_per_unit: null,
   selling_mode: 'piece',
-  package_size: 1
+  package_size: 1,
+  on_request_unit: 'piece'
 })
 
 const AMBALAZA_SELLING_LABELS = {
@@ -127,21 +129,103 @@ const defaultVariantForm = () => ({
   stock_quantity: 0,
   length_per_unit: null,
   selling_mode: 'piece',
-  package_size: 1
+  package_size: 1,
+  on_request_unit: 'piece'
 })
 
 const buildVariantPayload = (variant) => {
   const payload = { ...variant }
   if (props.store === 'ambalaza') {
     payload.length_per_unit = null
+    payload.on_request_unit = payload.on_request_unit || 'piece'
     if (payload.selling_mode === 'on_request') {
       payload.price = 0
       payload.on_sale = false
       payload.sale_price = null
+      if (payload.on_request_unit !== 'package') {
+        payload.package_size = 1
+      }
+    } else {
+      payload.on_request_unit = 'piece'
     }
   }
   return payload
 }
+
+/** Proizvod bez varijanti koristi form; sa varijantama cena/način prodaje dolaze iz varijanti. */
+const deriveAmbalazaProductPricing = (variants) => {
+  const pricedVariants = variants.filter(v => v.selling_mode !== 'on_request')
+  const minPrice = pricedVariants.length
+    ? Math.min(...pricedVariants.map(v => parseFloat(v.price)))
+    : null
+  const allOnRequest = variants.length > 0 && variants.every(v => v.selling_mode === 'on_request')
+  const primary = variants[0] || {}
+
+  if (allOnRequest) {
+    return {
+      price: null,
+      selling_mode: 'on_request',
+      on_request_unit: primary.on_request_unit || 'piece',
+      package_size: primary.on_request_unit === 'package' ? (primary.package_size || 1) : 1,
+      on_sale: false,
+      sale_price: null
+    }
+  }
+
+  const mode = primary.selling_mode || 'piece'
+  return {
+    price: minPrice,
+    selling_mode: mode,
+    on_request_unit: primary.on_request_unit || 'piece',
+    package_size: mode === 'package' ? (primary.package_size || 1) : 1,
+    on_sale: false,
+    sale_price: null
+  }
+}
+
+const buildVariantApiPayload = (variant) => {
+  const base = buildVariantPayload(variant)
+  const payload = {
+    name: base.name,
+    price: base.price,
+    on_sale: base.on_sale ?? false,
+    sale_price: base.sale_price,
+    sku: base.sku || '',
+    in_stock: base.in_stock !== false,
+    stock_quantity: base.stock_quantity ?? 0
+  }
+
+  if (props.store === 'ambalaza') {
+    payload.selling_mode = base.selling_mode || 'piece'
+    payload.package_size = base.package_size || 1
+    payload.on_request_unit = base.on_request_unit || 'piece'
+    payload.length_per_unit = null
+  } else {
+    payload.length_per_unit = base.length_per_unit
+  }
+
+  return payload
+}
+
+const syncAmbalazaProductFromVariants = async (productId) => {
+  if (!productId || props.store !== 'ambalaza') return
+
+  const authStore = useAuthStore()
+  const headers = { Authorization: `Bearer ${authStore.accessToken}` }
+  const response = await api.get(`product-variants/?product_id=${productId}`, { headers })
+  const variants = response.data
+  if (!variants.length) return
+
+  await api.patch(`products/${productId}/`, deriveAmbalazaProductPricing(variants), { headers })
+}
+
+const showEditTabs = computed(() =>
+  isEditing.value && (props.store === 'steel' || props.store === 'ambalaza')
+)
+
+const ambalazaUsesVariantPricing = computed(() =>
+  props.store === 'ambalaza' && isEditing.value && productVariantsForEdit.value.length > 0
+)
 
 // Filtered subcategories
 const filteredSubcategories = computed(() => {
@@ -210,7 +294,6 @@ const saveProductOrder = async () => {
 
     // Refresh products
     await productStore.fetch(props.store)
-    await userProductStore.fetchProducts()
 
     isDraggingMode.value = false
     draggableProducts.value = []
@@ -308,6 +391,7 @@ const openAddModal = () => {
     length_per_unit: 6.0,
     selling_mode: 'piece',
     package_size: 1,
+    on_request_unit: 'piece',
     dimensions: ''
   }
 
@@ -332,6 +416,7 @@ const openEditModal = async (product) => {
     length_per_unit: product.length_per_unit || 6.0,
     selling_mode: product.selling_mode || 'piece',
     package_size: product.package_size || 1,
+    on_request_unit: product.on_request_unit || 'piece',
     dimensions: product.dimensions || ''
   }
 
@@ -408,22 +493,23 @@ const closeModal = () => {
 }
 
 // Image handling
-const handleImageSelect = (event) => {
+const handleImageSelect = async (event) => {
   const files = Array.from(event.target.files)
-  files.forEach(file => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        productImages.value.push({
-          file: file,
-          preview: e.target.result,
-          is_primary: productImages.value.length === 0
-        })
-      }
-      reader.readAsDataURL(file)
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) continue
+
+    const compressed = await compressImageFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      productImages.value.push({
+        file: compressed,
+        preview: e.target.result,
+        is_primary: productImages.value.length === 0
+      })
     }
-  })
-  event.target.value = '' // Reset input
+    reader.readAsDataURL(compressed)
+  }
+  event.target.value = ''
 }
 
 const removeImage = (index) => {
@@ -448,7 +534,8 @@ const openVariantForm = (variant = null) => {
       ...defaultVariantForm(),
       ...variant,
       selling_mode: variant.selling_mode || 'piece',
-      package_size: variant.package_size || 1
+      package_size: variant.package_size || 1,
+      on_request_unit: variant.on_request_unit || 'piece'
     }
   } else {
     editingVariant.value = null
@@ -476,7 +563,7 @@ const saveVariant = async () => {
     }
   }
 
-  const payload = buildVariantPayload(variantForm.value)
+  const payload = buildVariantApiPayload(variantForm.value)
 
   // If editing an existing variant (from tabs)
   if (editingExistingVariant.value) {
@@ -488,6 +575,7 @@ const saveVariant = async () => {
         headers: authHeaders
       })
 
+      await syncAmbalazaProductFromVariants(form.value.id)
       await handleTabUpdate()
       closeVariantForm()
     } catch (err) {
@@ -525,7 +613,13 @@ const removeVariant = (variant) => {
 const editingExistingVariant = ref(null)
 const openVariantEditForm = (variant) => {
   editingExistingVariant.value = variant
-  variantForm.value = { ...variant }
+  variantForm.value = {
+    ...defaultVariantForm(),
+    ...variant,
+    selling_mode: variant.selling_mode || 'piece',
+    package_size: variant.package_size || 1,
+    on_request_unit: variant.on_request_unit || 'piece'
+  }
   showVariantForm.value = true
 }
 
@@ -539,35 +633,33 @@ const saveProduct = async () => {
 
     let data
     if (isAmbalaza) {
+      const ambalazaBase = {
+        name: form.value.name,
+        description: form.value.description,
+        category: form.value.category,
+        subcategory: form.value.subcategory || null,
+        store: 'ambalaza',
+        featured: form.value.featured || false,
+        in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
+        stock_quantity: form.value.stock_quantity || 0,
+        sold_by_length: false,
+        dimensions: form.value.dimensions || ''
+      }
+
       if (!isEditing.value) {
         if (productVariants.value.length === 0) {
-          openConfirm('Dodajte bar jednu varijantu sa cenom i načinom prodaje!', null)
+          openConfirm('Dodajte bar jednu varijantu!', null)
           saving.value = false
           return
         }
 
-        const pricedVariants = productVariants.value.filter(v => v.selling_mode !== 'on_request')
-        const minPrice = pricedVariants.length
-          ? Math.min(...pricedVariants.map(v => parseFloat(v.price)))
-          : null
-
         data = {
-          name: form.value.name,
-          description: form.value.description,
-          price: minPrice,
-          category: form.value.category,
-          subcategory: form.value.subcategory || null,
-          store: 'ambalaza',
-          on_sale: false,
-          sale_price: null,
-          featured: form.value.featured || false,
-          in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
-          stock_quantity: form.value.stock_quantity || 0,
-          sold_by_length: false,
-          selling_mode: 'piece',
-          package_size: 1,
-          dimensions: form.value.dimensions || ''
+          ...ambalazaBase,
+          ...deriveAmbalazaProductPricing(productVariants.value)
         }
+      } else if (productVariantsForEdit.value.length > 0) {
+        // Sa varijantama — način prodaje se menja po varijanti, ne na nivou proizvoda
+        data = { ...ambalazaBase }
       } else {
         const onRequest = form.value.selling_mode === 'on_request'
 
@@ -580,21 +672,13 @@ const saveProduct = async () => {
         const priceValue = onRequest ? null : parseFloat(form.value.price || 0)
 
         data = {
-          name: form.value.name,
-          description: form.value.description,
+          ...ambalazaBase,
           price: priceValue,
-          category: form.value.category,
-          subcategory: form.value.subcategory || null,
-          store: 'ambalaza',
           on_sale: form.value.on_sale || false,
           sale_price: form.value.on_sale ? parseFloat(form.value.sale_price || 0) : null,
-          featured: form.value.featured || false,
-          in_stock: form.value.in_stock !== undefined ? form.value.in_stock : true,
-          stock_quantity: form.value.stock_quantity || 0,
-          sold_by_length: false,
           selling_mode: form.value.selling_mode || 'piece',
           package_size: form.value.package_size || 1,
-          dimensions: form.value.dimensions || ''
+          on_request_unit: form.value.on_request_unit || 'piece'
         }
       }
     } else {
@@ -642,7 +726,6 @@ const saveProduct = async () => {
         headers: authHeaders
       })
       productId = response.data.id
-      await productStore.fetch(props.store) // Refresh list
 
       // Gvožđara: kreiraj obaveznu prvu varijantu. Ambalaža nema varijante (cena je na proizvodu).
       try {
@@ -662,60 +745,40 @@ const saveProduct = async () => {
       }
     }
 
-    // Upload images if any
+    // Upload images if any (parallelno)
     if (productImages.value.length > 0 && productId) {
-      for (let i = 0; i < productImages.value.length; i++) {
-        const imageData = productImages.value[i]
+      await Promise.all(productImages.value.map(async (imageData) => {
         const formData = new FormData()
         formData.append('image', imageData.file)
         formData.append('product', productId)
         formData.append('is_primary', imageData.is_primary)
 
-        try {
-          await api.post('product-images/', formData, {
-            headers: { 
-              ...authHeaders,
-              'Content-Type': 'multipart/form-data' 
-            }
-          })
-        } catch (err) {
-          console.error('Error uploading image:', err)
-          const errorMsg = err.response?.data?.detail || err.response?.data?.message || 'Greška pri upload-u slike.'
-          error.value = errorMsg
-          throw err // Re-throw da se vidi u konzoli
-        }
-      }
+        await api.post('product-images/', formData, { headers: authHeaders })
+      }))
     }
 
-    // Create variants (ambalaža: sve varijante; gvožđara: dodatne posle prve)
+    // Create variants (parallelno)
     const variantsToCreate = productVariants.value
 
     if (variantsToCreate.length > 0 && productId) {
-      for (const variant of variantsToCreate) {
-        try {
-          await api.post('product-variants/', {
-            product: productId,
-            ...buildVariantPayload(variant)
-          }, {
-            headers: authHeaders
-          })
-        } catch (err) {
-          console.error('Error creating variant:', err)
-          const errorMsg = err.response?.data?.detail || err.response?.data?.message || JSON.stringify(err.response?.data) || 'Greška pri kreiranju varijante.'
-          error.value = errorMsg
-          throw err // Re-throw da se vidi u konzoli
-        }
-      }
+      await Promise.all(variantsToCreate.map(async (variant) => {
+        await api.post('product-variants/', {
+          product: productId,
+          ...buildVariantApiPayload(variant)
+        }, { headers: authHeaders })
+      }))
+    }
+
+    if (isAmbalaza && productId) {
+      await syncAmbalazaProductFromVariants(productId)
     }
 
     await productStore.fetch(props.store)
     emit('update-count')
-    // Osveži proizvode u user store-u da se prikažu nove slike
-    await userProductStore.fetchProducts()
     closeModal()
   } catch (err) {
     console.error(err)
-    error.value = 'Greška pri čuvanju proizvoda.'
+    error.value = formatApiError(err, 'Greška pri čuvanju proizvoda.')
   } finally {
     saving.value = false
   }
@@ -746,9 +809,11 @@ const openDetailModal = (product) => {
   showDetailModal.value = true
 }
 
-const closeDetailModal = () => {
+const closeDetailModal = async () => {
   showDetailModal.value = false
   selectedProduct.value = null
+  await productStore.fetch(props.store)
+  emit('update-count')
 }
 
 const handleDetailUpdate = async () => {
@@ -758,22 +823,19 @@ const handleDetailUpdate = async () => {
 
 // Handle updates from variant/image managers in tabs
 const handleTabUpdate = async () => {
-  await productStore.fetch(props.store)
-  await userProductStore.fetchProducts()
-
-  // Refresh variants list for the current product
   if (form.value.id) {
     try {
       const authStore = useAuthStore()
-      const response = await api.get(`product-variants/?product_id=${form.value.id}`, {
-        headers: { Authorization: `Bearer ${authStore.accessToken}` }
-      })
+      const headers = { Authorization: `Bearer ${authStore.accessToken}` }
+      const response = await api.get(`product-variants/?product_id=${form.value.id}`, { headers })
       productVariantsForEdit.value = response.data
+      await syncAmbalazaProductFromVariants(form.value.id)
     } catch (err) {
       console.error('Error refreshing variants:', err)
     }
   }
 
+  await productStore.fetch(props.store)
   emit('update-count')
 }
 
@@ -789,6 +851,7 @@ const loadData = async () => {
 watch(() => props.store, loadData)
 
 onMounted(loadData)
+
 </script>
 
 <template>
@@ -1129,8 +1192,8 @@ onMounted(loadData)
       test-id="admin-product-modal"
       @close="closeModal"
     >
-      <!-- Tab Navigation (only when editing gvožđara - ambalaža nema varijante) -->
-      <div v-if="isEditing && props.store === 'steel'" class="flex gap-1.5 mb-3 border-b border-gray-200 overflow-x-auto">
+      <!-- Tab Navigation (gvožđara + ambalaža pri izmeni) -->
+      <div v-if="showEditTabs" class="flex gap-1.5 mb-3 border-b border-gray-200 overflow-x-auto">
         <button
           type="button"
           @click="currentTab = 'basic'"
@@ -1246,8 +1309,15 @@ onMounted(loadData)
             class="w-full px-2.5 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none" />
         </div>
 
-        <!-- Selling mode (ambalaza — samo pri izmeni postojećeg proizvoda bez varijanti) -->
-        <div v-if="props.store === 'ambalaza' && isEditing" class="mt-2 bg-green-50 p-3 rounded-lg">
+        <div
+          v-if="ambalazaUsesVariantPricing"
+          class="mt-2 bg-amber-50 border border-amber-200 p-3 rounded-lg text-[11px] text-amber-900"
+        >
+          Način prodaje i cena se podešavaju <strong>po varijanti</strong> — izaberite tab varijante iznad i kliknite „Izmeni varijantu”.
+        </div>
+
+        <!-- Selling mode (ambalaza — samo proizvodi bez varijanti) -->
+        <div v-if="props.store === 'ambalaza' && isEditing && !ambalazaUsesVariantPricing" class="mt-2 bg-green-50 p-3 rounded-lg">
           <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Način prodaje</label>
           <select v-model="form.selling_mode"
             class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer">
@@ -1261,6 +1331,23 @@ onMounted(loadData)
             <input v-model.number="form.package_size" type="number" min="1"
               class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none" />
             <p class="text-[10px] text-gray-600 mt-1 px-1">Cena se unosi po komadu. U korpi se dodaje ceo paket.</p>
+          </div>
+
+          <div v-if="form.selling_mode === 'on_request'" class="mt-2 space-y-2">
+            <div>
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Jedinica prodaje</label>
+              <select v-model="form.on_request_unit"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer">
+                <option value="piece">Po komadu</option>
+                <option value="package">Po pakovanju</option>
+                <option value="weight">Po kilogramu</option>
+              </select>
+            </div>
+            <div v-if="form.on_request_unit === 'package'">
+              <label class="block mb-1 text-xs font-medium text-gray-800 px-1">Komada u pakovanju</label>
+              <input v-model.number="form.package_size" type="number" min="1"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs focus:ring-2 focus:ring-[#1976d2] focus:outline-none" />
+            </div>
           </div>
 
           <!-- Cena (ambalaza) -->
@@ -1319,7 +1406,12 @@ onMounted(loadData)
                   <span class="font-semibold text-[#1976d2]">{{ AMBALAZA_SELLING_LABELS[variant.selling_mode] || 'Po komadu' }}</span>
                   <span v-if="variant.selling_mode === 'package'"> ({{ variant.package_size }} kom.)</span>
                   <span class="mx-1">·</span>
-                  <span v-if="variant.selling_mode === 'on_request'" class="text-orange-600">Na upit</span>
+                  <span v-if="variant.selling_mode === 'on_request'" class="text-orange-600">
+                    Na upit
+                    <span v-if="variant.on_request_unit === 'package'"> — po pakovanju ({{ variant.package_size }} kom.)</span>
+                    <span v-else-if="variant.on_request_unit === 'weight'"> — po kilogramu</span>
+                    <span v-else> — po komadu</span>
+                  </span>
                   <span v-else-if="variant.on_sale" class="text-red-600">
                     <span class="line-through text-gray-400">{{ variant.price }} RSD</span>
                     {{ variant.sale_price }} RSD
@@ -1674,8 +1766,25 @@ onMounted(loadData)
             </div>
 
             <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">Način prodaje</label>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900">
+                {{ AMBALAZA_SELLING_LABELS[variant.selling_mode] || 'Po komadu' }}
+                <span v-if="variant.selling_mode === 'package'"> ({{ variant.package_size }} kom.)</span>
+                <span v-if="variant.selling_mode === 'on_request'">
+                  —
+                  <span v-if="variant.on_request_unit === 'package'">po pakovanju ({{ variant.package_size }} kom.)</span>
+                  <span v-else-if="variant.on_request_unit === 'weight'">po kilogramu</span>
+                  <span v-else>po komadu</span>
+                </span>
+              </p>
+            </div>
+
+            <div>
               <label class="block text-xs font-medium text-gray-700 mb-1.5 px-1">Osnovna cena</label>
-              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-base text-gray-900 font-semibold">{{ variant.price }} RSD</p>
+              <p class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-base text-gray-900 font-semibold">
+                <span v-if="variant.selling_mode === 'on_request'" class="text-orange-600 text-sm">Na upit</span>
+                <span v-else>{{ variant.price }} RSD</span>
+              </p>
             </div>
 
             <div>
@@ -1791,6 +1900,28 @@ onMounted(loadData)
               class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
             />
             <p class="text-[10px] text-gray-600 mt-1 px-1">Cena se unosi po komadu. U korpi se dodaje ceo paket.</p>
+          </div>
+          <div v-if="variantForm.selling_mode === 'on_request'" class="mt-2 space-y-2">
+            <div>
+              <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Jedinica prodaje</label>
+              <select
+                v-model="variantForm.on_request_unit"
+                class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none cursor-pointer"
+              >
+                <option value="piece">Po komadu</option>
+                <option value="package">Po pakovanju</option>
+                <option value="weight">Po kilogramu</option>
+              </select>
+            </div>
+            <div v-if="variantForm.on_request_unit === 'package'">
+              <label class="block text-xs font-medium mb-1.5 text-gray-800 px-1">Komada u pakovanju</label>
+              <input
+                v-model.number="variantForm.package_size"
+                type="number"
+                min="1"
+                class="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:ring-2 focus:ring-[#1976d2] focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 
