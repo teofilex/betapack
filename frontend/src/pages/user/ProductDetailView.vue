@@ -165,18 +165,24 @@ useHead({
   ]
 })
 
-// Reset quantity to 1 when variant changes, or load from cart if variant is in cart
+// Pocetna kolicina zavisi od nacina prodaje: ambalaza koja ide u pakovanjima
+// krece od pune velicine pakovanja, gvozdje po metrazi od pola metra.
+// Koristi se i pri ucitavanju proizvoda i pri promeni varijante, da brojac
+// nikad ne krene od vrednosti koja je ispod dozvoljenog minimuma.
+const pocetnaKolicina = (variant = null) => {
+  if (!product.value) return 1
+  if (product.value.store === 'ambalaza') {
+    return getAmbalazaDefaultQuantity(product.value, variant)
+  }
+  return product.value.sold_by_length ? 0.5 : 1
+}
+
+// Reset quantity when variant changes, or load from cart if variant is in cart
 watch(selectedVariant, () => {
   if (product.value) {
     const variantId = selectedVariant.value ? selectedVariant.value.id : null
     const cartItem = cartStore.getCartItem(product.value.id, variantId)
-    if (cartItem) {
-      quantity.value = cartItem.quantity
-    } else if (product.value.store === 'ambalaza') {
-      quantity.value = getAmbalazaDefaultQuantity(product.value, selectedVariant.value)
-    } else {
-      quantity.value = product.value.sold_by_length ? 0.5 : 1
-    }
+    quantity.value = cartItem ? cartItem.quantity : pocetnaKolicina(selectedVariant.value)
   } else {
     quantity.value = 1
   }
@@ -282,19 +288,11 @@ const fetchProduct = async () => {
       // Check if this variant is in cart and load quantity
       const variantId = selectedVariant.value.id
       const cartItem = cartStore.getCartItem(product.value.id, variantId)
-      if (cartItem) {
-        quantity.value = cartItem.quantity
-      } else {
-        quantity.value = 1
-      }
+      quantity.value = cartItem ? cartItem.quantity : pocetnaKolicina(selectedVariant.value)
     } else {
       // No variants, check if product is in cart
       const cartItem = cartStore.getCartItem(product.value.id, null)
-      if (cartItem) {
-        quantity.value = cartItem.quantity
-      } else {
-        quantity.value = 1
-      }
+      quantity.value = cartItem ? cartItem.quantity : pocetnaKolicina(null)
     }
   } catch (error) {
     console.error('Error fetching product:', error)

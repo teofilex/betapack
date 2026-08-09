@@ -19,6 +19,19 @@ api.interceptors.request.use(
 
 let refreshPromise = null
 
+// Kada osvezavanje tokena ne uspe, zahtev se ponavlja bez Authorization
+// zaglavlja. Bez toga bi istekao token iz admin sesije obarao i javne
+// endpointe, pa bi kupcu ponuda ostala prazna. Za zasticene endpointe
+// ovaj pokusaj vrati 401, sto je i ispravno — korisnik ide na login.
+const retryBezTokena = (request) => {
+    localStorage.removeItem('access')
+    localStorage.removeItem('refresh')
+    if (request.headers) {
+        delete request.headers.Authorization
+    }
+    return api.request(request)
+}
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -45,7 +58,7 @@ api.interceptors.response.use(
 
             const refreshed = await refreshPromise
             if (!refreshed) {
-                return Promise.reject(error)
+                return retryBezTokena(originalRequest)
             }
 
             const token = localStorage.getItem('access')
@@ -55,7 +68,7 @@ api.interceptors.response.use(
 
             return api.request(originalRequest)
         } catch (refreshError) {
-            return Promise.reject(refreshError)
+            return retryBezTokena(originalRequest)
         }
     }
 )
