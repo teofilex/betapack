@@ -1176,13 +1176,10 @@ onUnmounted(() => {
                           <p v-if="storeId === 'steel' && isWeightMode(product)" class="text-[10px] text-blue-600 font-semibold italic">
                             ⚖️ Prodaja po kilogramu
                           </p>
-                          <p v-if="storeId === 'ambalaza' && isAmbalazaPackageMode(product, getSelectedVariant(product))" class="text-[10px] text-green-600 font-semibold italic">
-                            📦 {{ getAmbalazaPackageNote(product, getSelectedVariant(product)) }}<span v-if="!isProductOnRequest(product)"> — cena po komadu</span>
+                          <p v-if="storeId === 'ambalaza' && !isProductOnRequest(product) && isAmbalazaPackageMode(product, getSelectedVariant(product))" class="text-[10px] text-green-600 font-semibold italic">
+                            📦 {{ getAmbalazaPackageNote(product, getSelectedVariant(product)) }} — cena po komadu
                           </p>
-                          <p v-if="storeId === 'ambalaza' && isProductOnRequest(product)" class="text-[10px] text-orange-600 font-semibold italic">
-                            {{ getProductSellingNote(product) }}
-                          </p>
-                          <p v-if="storeId === 'ambalaza' && isAmbalazaWeightMode(product, getSelectedVariant(product))" class="text-[10px] text-blue-600 font-semibold italic">
+                          <p v-if="storeId === 'ambalaza' && !isProductOnRequest(product) && isAmbalazaWeightMode(product, getSelectedVariant(product))" class="text-[10px] text-blue-600 font-semibold italic">
                             ⚖️ Prodaja po kilogramu
                           </p>
                           <p v-if="quantityError[product.id]" class="text-[10px] text-red-600 font-semibold italic mt-1">

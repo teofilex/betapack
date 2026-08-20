@@ -610,8 +610,8 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <!-- Quantity -->
-              <div class="mb-3 w-full">
+              <!-- Quantity (samo dok proizvod nije u korpi — kad je u korpi, koristi se "Izmeni količinu" ispod) -->
+              <div v-if="!isInCart" class="mb-3 w-full">
                 <h3 class="font-semibold text-sm text-gray-900 mb-2">Količina</h3>
                 <div class="flex items-center gap-1.5 w-full bg-gray-100 rounded-lg p-1">
                   <button
