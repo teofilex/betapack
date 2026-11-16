@@ -72,13 +72,46 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         }
 
 
+# Cene zavisne od varijanti se racunaju iz varijanti koje je viewset vec ucitao
+# (prefetch_related('variants')). Svojstva Product.min_price, original_min_price i
+# has_sale_variants rade variants.filter(...) pa bi za svaki proizvod slala nove
+# SQL upite (N+1: ~390 upita za 127 proizvoda). Logika je ista kao u modelu.
+_PRICE_FIELD = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+def _price_repr(value):
+    return None if value is None else _PRICE_FIELD.to_representation(value)
+
+
+def variants_min_price(product, variants):
+    if variants:
+        sale_variants = [v for v in variants if v.on_sale]
+        if sale_variants:
+            sale_prices = [v.current_price for v in sale_variants if v.current_price is not None]
+            if sale_prices:
+                return min(sale_prices)
+            return product.current_price
+        variant_prices = [v.current_price for v in variants if v.current_price is not None]
+        if variant_prices:
+            return min(variant_prices)
+    return product.current_price
+
+
+def variants_original_min_price(variants):
+    sale_variants = [v for v in variants if v.on_sale]
+    if sale_variants:
+        cheapest_sale = min(sale_variants, key=lambda v: v.current_price)
+        return cheapest_sale.price
+    return None
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     subcategory_name = serializers.CharField(source='subcategory.name', read_only=True)
     current_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    original_min_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    has_sale_variants = serializers.BooleanField(read_only=True)
+    min_price = serializers.SerializerMethodField()
+    original_min_price = serializers.SerializerMethodField()
+    has_sale_variants = serializers.SerializerMethodField()
     variants = ProductVariantSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
 
@@ -101,6 +134,15 @@ class ProductSerializer(serializers.ModelSerializer):
         }
         # Slug se auto-generiše u modelu; ne validiramo unique_together(store, slug) na nivou serializera
         validators = []
+
+    def get_min_price(self, obj):
+        return _price_repr(variants_min_price(obj, list(obj.variants.all())))
+
+    def get_original_min_price(self, obj):
+        return _price_repr(variants_original_min_price(list(obj.variants.all())))
+
+    def get_has_sale_variants(self, obj):
+        return any(v.on_sale for v in obj.variants.all())
 
     def to_internal_value(self, data):
         """

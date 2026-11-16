@@ -305,7 +305,16 @@ CONTACT_EMAIL_RECIPIENT = os.environ.get('CONTACT_EMAIL_RECIPIENT', 'office@beta
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    }
+    },
+    # Kes liste proizvoda (shop/cache.py): fajlovi u /tmp, deli ga vise gunicorn
+    # procesa, bez novih servisa. 'default' ostaje Dummy namerno: DRF throttling
+    # cuva brojace u 'default' kesu, pa bi pravi kes ukljucio limit od 100/h po IP.
+    'products': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.environ.get('PRODUCTS_CACHE_DIR', '/tmp/betapack-products-cache'),
+        'TIMEOUT': 300,
+        'OPTIONS': {'MAX_ENTRIES': 50},
+    },
 }
 
 # if not DEBUG:

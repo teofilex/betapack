@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.cache import caches
 from django.template.loader import render_to_string
 
 from django.db import models
@@ -12,6 +13,7 @@ from .models import (
     Category, Subcategory, Product, ProductVariant,
     ProductImage, Order, OrderItem, ContactMessage
 )
+from .cache import CACHE_ALIAS, CACHEABLE_STORES, LIST_TTL, list_key
 from .serializers import (
     CategorySerializer, SubcategorySerializer, ProductSerializer,
     ProductVariantSerializer, ProductImageSerializer,
@@ -98,6 +100,23 @@ class ProductViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+    def list(self, request, *args, **kwargs):
+        # Javna lista (celu ponudu jedne prodavnice) se kesira; svaka izmena proizvoda,
+        # varijante, slike ili kategorije poništava kes (shop/signals.py).
+        store = request.query_params.get('store')
+        # '_' je stari cache-buster iz starijih verzija frontenda
+        extra_params = set(request.query_params) - {'store', '_'}
+        if extra_params or store not in CACHEABLE_STORES:
+            return super().list(request, *args, **kwargs)
+
+        key = list_key(store)
+        cache = caches[CACHE_ALIAS]
+        data = cache.get(key)
+        if data is None:
+            data = list(super().list(request, *args, **kwargs).data)
+            cache.set(key, data, LIST_TTL)
+        return Response(data)
 
     def get_queryset(self):
         queryset = Product.objects.prefetch_related('images', 'variants').select_related('category', 'subcategory')
