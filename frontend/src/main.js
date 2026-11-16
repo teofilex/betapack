@@ -9,6 +9,7 @@ import 'primeicons/primeicons.css';
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
 import { createHead } from '@unhead/vue/client'
+import { inject } from '@vercel/analytics'
 
 const app = createApp(App)
 const head = createHead()
@@ -28,4 +29,8 @@ app.use(PrimeVue, {
 });
 app.use(createPinia())
 app.use(router)
+
+// Vercel Web Analytics: prati i promene ruta u SPA-u (history API)
+inject()
+
 app.mount('#app')
