@@ -63,7 +63,9 @@ const carouselIndex = ref(0)
 const carouselContainer = ref(null)
 
 // Filters
-const selectedCategory = ref(null)
+// Kategorija zivi u adresi (?category=N): klik, Nazad/Napred, osvezavanje i direktan
+// link daju isti prikaz. Ostali filteri (podkategorija, pretraga, akcija) su lokalni.
+const selectedCategory = computed(() => activeCategory.value?.id ?? null)
 const selectedSubcategory = ref(null)
 const expandedCategories = ref(new Set())
 const searchQuery = ref('')
@@ -425,11 +427,45 @@ watch([selectedCategory, searchQuery], () => {
   selectedVariants.value = {}
 })
 
-// Reset subcategory when category changes and scroll to products
-watch(selectedCategory, () => {
-  selectedSubcategory.value = null
+// Podkategorija vazi samo unutar svoje kategorije; pri promeni kategorije
+// (klik ili Nazad/Napred) se odbacuje ako joj ne pripada.
+watch(selectedCategory, (categoryId) => {
+  const category = categoryStore.categories.find(c => c.id === categoryId)
+  const belongs = category?.subcategories?.some(s => s.id === selectedSubcategory.value)
+  if (!belongs) {
+    selectedSubcategory.value = null
+  }
   scrollToProducts()
 })
+
+// Upisuje kategoriju u adresu (push, da Nazad vraca na prethodnu kategoriju)
+const setCategory = (categoryId) => {
+  if (categoryId === selectedCategory.value) return
+  const query = { ...route.query }
+  if (categoryId == null) {
+    delete query.category
+  } else {
+    query.category = String(categoryId)
+  }
+  router.push({ path: route.path, query })
+}
+
+const selectCategory = (categoryId) => {
+  selectedSubcategory.value = null
+  setCategory(categoryId)
+}
+
+const selectSubcategory = (categoryId, subcategoryId) => {
+  selectedSubcategory.value = subcategoryId
+  setCategory(categoryId)
+}
+
+const resetFilters = () => {
+  selectedSubcategory.value = null
+  searchQuery.value = ''
+  showOnlyOnSale.value = false
+  setCategory(null)
+}
 
 // Scroll to products when subcategory changes
 watch(selectedSubcategory, (newVal, oldVal) => {
@@ -462,21 +498,18 @@ watch(filteredProducts, () => {
 const loadStoreData = async () => {
   if (!storeId.value) return
 
-  // Reset filters when switching store
-  selectedCategory.value = null
+  // Reset filters when switching store (kategorija se ravna po adresi)
   selectedSubcategory.value = null
   searchQuery.value = ''
   showOnlyOnSale.value = false
   selectedVariants.value = {}
   productQuantities.value = {}
   await categoryStore.fetchCategories(storeId.value)
-  // Strana kategorije iz sitemap-a: /steel?category=N otvara tu kategoriju
-  selectedCategory.value = activeCategory.value?.id ?? null
   await productStore.fetchProducts(storeId.value)
 }
 
 watch(
-  () => route.fullPath,
+  () => route.path,
   () => {
     if (route.name?.endsWith('-shop')) {
       loadStoreData()
@@ -807,7 +840,7 @@ onUnmounted(() => {
                   <h3 class="font-bold text-base lg:text-lg text-gray-900">Filteri</h3>
                   <button
                     v-if="selectedCategory || selectedSubcategory || searchQuery || showOnlyOnSale"
-                    @click="selectedCategory = null; selectedSubcategory = null; searchQuery = ''; showOnlyOnSale = false"
+                    @click="resetFilters"
                     class="text-xs text-gray-500 hover:text-red-600 transition cursor-pointer flex items-center gap-1"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -833,7 +866,7 @@ onUnmounted(() => {
                   <h4 class="font-bold text-sm lg:text-base text-gray-800 mb-2">Kategorije</h4>
 
                   <button
-                    @click="selectedCategory = null; selectedSubcategory = null"
+                    @click="selectCategory(null)"
                     :class="selectedCategory === null ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
                     class="w-full text-left px-3 py-2 text-sm rounded-lg transition mb-1 cursor-pointer font-semibold"
                   >
@@ -845,7 +878,7 @@ onUnmounted(() => {
                     <div v-if="cat.subcategories && cat.subcategories.length > 0">
                       <div class="flex items-center">
                         <button
-                          @click="selectedCategory = cat.id; selectedSubcategory = null"
+                          @click="selectCategory(cat.id)"
                           :class="selectedCategory === cat.id && !selectedSubcategory ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
                           class="flex-1 text-left px-3 py-2 text-sm rounded-l-lg transition cursor-pointer font-semibold"
                         >
@@ -871,7 +904,7 @@ onUnmounted(() => {
                         <button
                           v-for="sub in cat.subcategories"
                           :key="sub.id"
-                          @click="selectedCategory = cat.id; selectedSubcategory = sub.id"
+                          @click="selectSubcategory(cat.id, sub.id)"
                           :class="selectedSubcategory === sub.id ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-600 hover:bg-gray-100'"
                           class="w-full text-left px-3 py-1.5 text-xs rounded-lg transition mb-0.5 cursor-pointer"
                         >
@@ -882,7 +915,7 @@ onUnmounted(() => {
                     <!-- Category without subcategories -->
                     <button
                       v-else
-                      @click="selectedCategory = cat.id; selectedSubcategory = null"
+                      @click="selectCategory(cat.id)"
                       :class="selectedCategory === cat.id ? 'bg-gradient-to-r from-[#1976d2] to-[#1565c0] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-gray-100'"
                       class="w-full text-left px-3 py-2 text-sm rounded-lg transition cursor-pointer font-semibold"
                     >
@@ -1137,7 +1170,7 @@ onUnmounted(() => {
                 <span class="text-3xl text-gray-300 mb-3 block">🔍</span>
                 <p class="text-xl text-gray-600 mb-4">Nema proizvoda koji odgovaraju filterima</p>
                 <button
-                  @click="selectedCategory = null; selectedSubcategory = null; searchQuery = ''; showOnlyOnSale = false"
+                  @click="resetFilters"
                   class="mt-4 text-lg text-[#1565c0] hover:underline cursor-pointer font-semibold"
                 >
                   Resetuj filtere
