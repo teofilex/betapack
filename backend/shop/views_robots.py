@@ -5,17 +5,13 @@ from django.contrib.sitemaps.views import sitemap as django_sitemap
 
 @require_GET
 def robots_txt(request):
+    # API domen nije sajt: nema stranica za pretragu. Sitemap sajta se servira
+    # sa www domena (Vercel rewrite), pa ovde nema Sitemap linije.
     lines = [
         "User-agent: *",
-        "Allow: /",
-        "Disallow: /admin/",
-        "Disallow: /api/",
-        "Disallow: /cart",
-        "Disallow: /checkout",
-        "",
-        f"Sitemap: https://betapack-production.up.railway.app/sitemap.xml",
+        "Disallow: /",
     ]
-    return HttpResponse("\n".join(lines), content_type="text/plain")
+    return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
 
 
 def sitemap_view(request, sitemaps, **kwargs):

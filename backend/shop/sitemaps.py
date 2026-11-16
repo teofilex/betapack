@@ -1,11 +1,24 @@
 from django.contrib.sitemaps import Sitemap
 from .models import Product, Category
 
+# Sajt (frontend) je na www domenu. Sitemap se servira sa API-ja (preko Vercel rewrite-a),
+# pa domen ne sme da zavisi od hosta zahteva.
+FRONTEND_DOMAIN = 'www.betapack.co.rs'
 
-class ProductSitemap(Sitemap):
+
+class FrontendSitemap(Sitemap):
+    """Osnova za sve sitemap-ove: https + www domen, bez obzira na host zahteva."""
+    protocol = 'https'
+
+    def get_domain(self, site=None):
+        return FRONTEND_DOMAIN
+
+
+# Putanje moraju biti iste kao canonical na stranama: /<prodavnica> bez kose crte
+# na kraju, kategorije kao /<prodavnica>?category=N, proizvodi pod svojom prodavnicom.
+class ProductSitemap(FrontendSitemap):
     changefreq = "daily"
     priority = 0.8
-    protocol = 'https'
 
     def items(self):
         return Product.objects.filter(in_stock=True)
@@ -21,19 +34,10 @@ class ProductSitemap(Sitemap):
         store = obj.store or 'steel'
         return f'/{store}/proizvod/{identifier}'
 
-    def get_urls(self, page=1, site=None, protocol=None):
-        # Override da koristimo frontend domen umesto backend domena
-        urls = super().get_urls(page=page, site=site, protocol=protocol)
-        for url_info in urls:
-            # Zameni api.betapack.co.rs sa www.betapack.co.rs (sajt forsira www verziju)
-            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'www.betapack.co.rs')
-        return urls
 
-
-class CategorySitemap(Sitemap):
+class CategorySitemap(FrontendSitemap):
     changefreq = "weekly"
     priority = 0.6
-    protocol = 'https'
 
     def items(self):
         return Category.objects.all()
@@ -41,21 +45,12 @@ class CategorySitemap(Sitemap):
     def location(self, obj):
         # Za sada koristi query parameter (kasnije može slug)
         store = obj.store or 'steel'
-        return f'/{store}/?category={obj.id}'
-
-    def get_urls(self, page=1, site=None, protocol=None):
-        # Override da koristimo frontend domen umesto backend domena
-        urls = super().get_urls(page=page, site=site, protocol=protocol)
-        for url_info in urls:
-            # Zameni api.betapack.co.rs sa www.betapack.co.rs (sajt forsira www verziju)
-            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'www.betapack.co.rs')
-        return urls
+        return f'/{store}?category={obj.id}'
 
 
-class StaticViewSitemap(Sitemap):
+class StaticViewSitemap(FrontendSitemap):
     priority = 0.5
     changefreq = 'monthly'
-    protocol = 'https'
 
     def items(self):
         # Početna je od uvođenja ambalaže razdelnik ka dvema prodavnicama,
@@ -67,11 +62,3 @@ class StaticViewSitemap(Sitemap):
 
     def location(self, item):
         return item
-
-    def get_urls(self, page=1, site=None, protocol=None):
-        # Override da koristimo frontend domen umesto backend domena
-        urls = super().get_urls(page=page, site=site, protocol=protocol)
-        for url_info in urls:
-            # Zameni api.betapack.co.rs sa www.betapack.co.rs (sajt forsira www verziju)
-            url_info['location'] = url_info['location'].replace('api.betapack.co.rs', 'www.betapack.co.rs')
-        return urls
