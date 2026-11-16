@@ -8,12 +8,14 @@ import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
+import { getStoreById } from '@/config/stores'
+import { buildHead, absoluteUrl, SITE_URL } from '@/utils/seo'
 import { getAmbalazaDefaultQuantity, getAmbalazaSellingNote, isAmbalazaPackageMode, getAmbalazaQuantityStep, getAmbalazaMinQuantity } from '@/composables/useAmbalazaSelling'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
-const { storeRoute } = useStore()
+const { storeRoute, storeId } = useStore()
 
 const product = ref(null)
 const loading = ref(true)
@@ -22,40 +24,52 @@ const selectedImageIndex = ref(0)
 const quantity = ref(1)
 const quantityError = ref(null)
 
+// Prodavnica kojoj proizvod pripada. Dok se proizvod ne ucita, vazi prodavnica iz URL-a.
+const productStoreId = computed(() => product.value?.store || storeId.value || 'steel')
+const productStore = computed(() => getStoreById(productStoreId.value))
+
+// Prava putanja proizvoda: /<prodavnica>/proizvod/<slug>
+const productPath = computed(() =>
+  product.value
+    ? `${productStore.value.path}/proizvod/${product.value.slug || product.value.id}`
+    : productStore.value.path
+)
+
+const defaultDescription = (name) =>
+  productStoreId.value === 'ambalaza'
+    ? `Ambalaža za hranu i ugostiteljstvo - ${name}`
+    : `Kvalitetan proizvod od kovanog gvožđa - ${name}`
+
 // Dynamic SEO Meta Tags based on product
 const productTitle = computed(() =>
   product.value ? `${product.value.name} - ${product.value.category_name || 'Proizvodi'} | BetaPack` : 'Proizvod | BetaPack'
 )
 const productDescription = computed(() =>
-  product.value ? product.value.description || `Kvalitetan proizvod od kovanog gvožđa - ${product.value.name}` : 'BetaPack proizvod'
+  product.value ? product.value.description || defaultDescription(product.value.name) : 'BetaPack proizvod'
 )
 const productImage = computed(() =>
   product.value && product.value.images && product.value.images.length > 0
     ? getImageUrl(product.value.images[0].image)
-    : 'https://www.betapack.co.rs/betapack-logo.png'
+    : `${SITE_URL}/betapack-logo.png`
 )
 const productPrice = computed(() =>
   product.value ? product.value.current_price : 0
 )
-const productKeywords = computed(() => {
-  if (!product.value) return 'kovano gvožđe, bravarski materijali, BetaPack'
-  const name = product.value.name || ''
-  const category = product.value.category_name || ''
-  return `${name}, ${category}, kupiti ${name} Beograd, cena ${name}, ${category} Beograd, kovano gvožđe, bravarski materijali, BetaPack`
-})
 
 // Schema.org JSON-LD for Product
 const productSchema = computed(() => {
   if (!product.value) return null
 
+  const isSteel = productStoreId.value === 'steel'
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.value.name,
-    description: product.value.description || `Kvalitetan proizvod od kovanog gvožđa - ${product.value.name}`,
+    description: product.value.description || defaultDescription(product.value.name),
     image: product.value.images && product.value.images.length > 0
       ? product.value.images.map(img => getImageUrl(img.image))
-      : ['https://www.betapack.co.rs/betapack-logo.png'],
+      : [`${SITE_URL}/betapack-logo.png`],
     sku: product.value.id ? `BP-${product.value.id}` : undefined,
     brand: {
       '@type': 'Brand',
@@ -67,7 +81,7 @@ const productSchema = computed(() => {
     },
     offers: {
       '@type': 'Offer',
-      url: `https://www.betapack.co.rs/proizvod/${product.value.slug || product.value.id}`,
+      url: absoluteUrl(productPath.value),
       priceCurrency: 'RSD',
       price: product.value.current_price,
       priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
@@ -78,91 +92,70 @@ const productSchema = computed(() => {
       seller: {
         '@type': 'Organization',
         name: 'BetaPack',
-        url: 'https://www.betapack.co.rs'
+        url: SITE_URL
       }
     },
-    category: product.value.category_name || 'Bravarski materijali',
-    material: 'Gvožđe'
+    category: product.value.category_name || (isSteel ? 'Bravarski materijali' : 'Ambalaža'),
+    // Materijal je poznat samo za kovano gvozdje; ambalaza je od raznih materijala
+    ...(isSteel ? { material: 'Gvožđe' } : {})
   }
 })
 
-// Schema.org JSON-LD for BreadcrumbList
+// Schema.org JSON-LD for BreadcrumbList: Početna > prodavnica > kategorija > proizvod
 const breadcrumbSchema = computed(() => {
   if (!product.value) return null
 
-  const items = [
-    {
-      '@type': 'ListItem',
-      position: 1,
-      name: 'Početna',
-      item: 'https://www.betapack.co.rs'
-    }
+  const trail = [
+    { name: 'Početna', url: `${SITE_URL}/` },
+    { name: productStore.value.shortLabel, url: absoluteUrl(productStore.value.path) }
   ]
 
   if (product.value.category_name) {
-    items.push({
-      '@type': 'ListItem',
-      position: 2,
+    trail.push({
       name: product.value.category_name,
-      item: `https://www.betapack.co.rs/?category=${product.value.category}`
+      url: absoluteUrl(`${productStore.value.path}?category=${product.value.category}`)
     })
   }
 
-  items.push({
-    '@type': 'ListItem',
-    position: product.value.category_name ? 3 : 2,
-    name: product.value.name,
-    item: `https://www.betapack.co.rs/proizvod/${product.value.slug || product.value.id}`
-  })
+  trail.push({ name: product.value.name, url: absoluteUrl(productPath.value) })
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: items
+    itemListElement: trail.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url
+    }))
   }
 })
 
-// Canonical URL
-const canonicalUrl = computed(() =>
-  product.value ? `https://www.betapack.co.rs/proizvod/${product.value.slug || product.value.id}` : 'https://www.betapack.co.rs'
-)
+useHead(() => {
+  const head = buildHead({
+    title: productTitle.value,
+    description: productDescription.value,
+    path: productPath.value,
+    image: productImage.value,
+    imageAlt: productTitle.value,
+    type: 'product'
+  })
 
-useHead({
-  title: productTitle,
-  meta: [
-    { name: 'description', content: productDescription },
-    { name: 'keywords', content: productKeywords },
-    // Open Graph
-    { property: 'og:site_name', content: 'BetaPack' },
-    { property: 'og:title', content: productTitle },
-    { property: 'og:description', content: productDescription },
-    { property: 'og:image', content: productImage },
-    { property: 'og:image:alt', content: productTitle },
-    { property: 'og:url', content: canonicalUrl },
-    { property: 'og:type', content: 'product' },
-    { property: 'og:locale', content: 'sr_RS' },
-    { property: 'product:price:amount', content: productPrice },
-    { property: 'product:price:currency', content: 'RSD' },
-    // Twitter Card
-    { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: productTitle },
-    { name: 'twitter:description', content: productDescription },
-    { name: 'twitter:image', content: productImage },
-    { name: 'twitter:image:alt', content: productTitle }
-  ],
-  link: [
-    { rel: 'canonical', href: canonicalUrl }
-  ],
-  script: [
-    {
-      type: 'application/ld+json',
-      children: () => JSON.stringify(productSchema.value)
-    },
-    {
-      type: 'application/ld+json',
-      children: () => JSON.stringify(breadcrumbSchema.value)
-    }
-  ]
+  return {
+    ...head,
+    meta: [
+      ...head.meta,
+      { property: 'product:price:amount', content: productPrice.value },
+      { property: 'product:price:currency', content: 'RSD' }
+    ],
+    // Structured data postoji tek kad je proizvod ucitan
+    script: product.value
+      ? [
+          { type: 'application/ld+json', key: 'ld-product', innerHTML: JSON.stringify(productSchema.value) },
+          { type: 'application/ld+json', key: 'ld-breadcrumb', innerHTML: JSON.stringify(breadcrumbSchema.value) }
+        ]
+      : []
+  }
 })
 
 // Pocetna kolicina zavisi od nacina prodaje: ambalaza koja ide u pakovanjima
@@ -271,6 +264,12 @@ const fetchProduct = async () => {
       params: { _: Date.now() }
     })
     product.value = response.data
+
+    // Proizvod otvoren pod pogresnom prodavnicom (npr. stari /proizvod/<slug> link
+    // za ambalazu) prebacuje se na svoju pravu putanju.
+    if (product.value.store && storeId.value && product.value.store !== storeId.value) {
+      router.replace({ path: productPath.value, query: route.query, hash: route.hash })
+    }
 
     // Auto-select first variant if available (first from sorted list - sale variants first)
     if (product.value.variants && product.value.variants.length > 0) {

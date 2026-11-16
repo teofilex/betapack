@@ -10,6 +10,7 @@ import { useCartStore } from '@/store/cart'
 import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
 import { getStoreById } from '@/config/stores'
+import { buildHead, DEFAULT_OG_IMAGE } from '@/utils/seo'
 import {
   getSellingMode, getQuantityStep, getMinQuantity, getDefaultQuantity, getPackageSize,
   isValidQuantity, isValidLengthQuantity, isOnRequest, isPackageMode,
@@ -30,157 +31,32 @@ import {
   getAmbalazaPackageSize
 } from '@/composables/useAmbalazaSelling'
 
-// Schema.org JSON-LD for LocalBusiness
-const localBusinessSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
-  name: 'BetaPack',
-  description: 'Prodaja bravarskih materijala od kovanog gvožđa za proizvodnju ograda, kapija, gelendera i drugih metalnih proizvoda u Beogradu.',
-  url: 'https://www.betapack.co.rs',
-  logo: 'https://www.betapack.co.rs/betapack-logo.png',
-  image: 'https://www.betapack.co.rs/Betapack-hero-image-optimized.jpg',
-  telephone: '+381-65-330-02-42',
-  email: 'office@betapack.co.rs',
-  priceRange: '$$',
-  paymentAccepted: ['Cash', 'Credit Card', 'Bank Transfer'],
-  currenciesAccepted: 'RSD',
-  contactPoint: {
-    '@type': 'ContactPoint',
-    telephone: '+381-65-330-02-42',
-    contactType: 'Customer Service',
-    areaServed: 'RS',
-    availableLanguage: ['Serbian'],
-    email: 'office@betapack.co.rs'
-  },
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Pukovnika Milenka Pavlovića 159 A',
-    addressLocality: 'Beograd',
-    addressRegion: 'Zemun-Batajnica',
-    postalCode: '11080',
-    addressCountry: 'RS'
-  },
-  geo: {
-    '@type': 'GeoCoordinates',
-    latitude: 44.914361,
-    longitude: 20.258167
-  },
-  openingHoursSpecification: [
-    {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      opens: '08:00',
-      closes: '17:00'
-    },
-    {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: 'Saturday',
-      opens: '08:00',
-      closes: '14:00'
-    }
-  ],
-  sameAs: [
-    'https://www.betapack.co.rs',
-    'https://betapack.vercel.app'
-  ]
-}
-
-// Schema.org JSON-LD for WebSite (enables Google Search Box)
-const webSiteSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'BetaPack',
-  url: 'https://www.betapack.co.rs',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: {
-      '@type': 'EntryPoint',
-      urlTemplate: 'https://www.betapack.co.rs/?search={search_term_string}'
-    },
-    'query-input': 'required name=search_term_string'
-  }
-}
-
-// Schema.org JSON-LD for Organization
-const organizationSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'BetaPack d.o.o.',
-  alternateName: 'BetaPack',
-  url: 'https://www.betapack.co.rs',
-  logo: 'https://www.betapack.co.rs/betapack-logo.png',
-  description: 'Prodaja bravarskih materijala i kovanog gvožđa u Beogradu. 25 godina iskustva u proizvodnji profila, ukrasnih elemenata, firiketa i kutija za ograde, kapije i gelendere.',
-  foundingDate: '1999',
-  contactPoint: {
-    '@type': 'ContactPoint',
-    telephone: '+381-65-330-02-42',
-    contactType: 'Customer Service',
-    areaServed: 'RS',
-    availableLanguage: ['Serbian']
-  },
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Pukovnika Milenka Pavlovića 159 A',
-    addressLocality: 'Beograd',
-    addressRegion: 'Zemun-Batajnica',
-    postalCode: '11080',
-    addressCountry: 'RS'
-  },
-  sameAs: [
-    'https://www.betapack.co.rs'
-  ]
-}
-
 const router = useRouter()
 const route = useRoute()
 const { storeId, store, storeRoute } = useStore()
 const heroStore = computed(() => store.value || getStoreById('steel'))
 
-// SEO Meta Tags (store-aware)
-useHead({
-  title: () => heroStore.value.seoTitle,
-  meta: [
-    { name: 'description', content: () => heroStore.value.seoDescription },
-    // Open Graph (Facebook, LinkedIn)
-    { property: 'og:site_name', content: 'BetaPack' },
-    { property: 'og:title', content: () => heroStore.value.seoTitle },
-    { property: 'og:description', content: () => heroStore.value.seoDescription },
-    { property: 'og:image', content: 'https://www.betapack.co.rs/Betapack-hero-image-optimized.jpg' },
-    { property: 'og:image:width', content: '1200' },
-    { property: 'og:image:height', content: '630' },
-    { property: 'og:image:alt', content: () => `BetaPack - ${heroStore.value.heroTitle}` },
-    { property: 'og:url', content: 'https://www.betapack.co.rs' },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:locale', content: 'sr_RS' },
-    // Twitter Card
-    { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: () => heroStore.value.seoTitle },
-    { name: 'twitter:description', content: () => heroStore.value.seoDescription },
-    { name: 'twitter:image', content: 'https://www.betapack.co.rs/Betapack-hero-image-optimized.jpg' },
-    { name: 'twitter:image:alt', content: () => `BetaPack - ${heroStore.value.heroTitle}` }
-  ],
-  link: [
-    { rel: 'canonical', href: 'https://www.betapack.co.rs' }
-  ],
-  script: [
-    {
-      type: 'application/ld+json',
-      children: JSON.stringify(localBusinessSchema)
-    },
-    {
-      type: 'application/ld+json',
-      children: JSON.stringify(webSiteSchema)
-    },
-    {
-      type: 'application/ld+json',
-      children: JSON.stringify(organizationSchema)
-    }
-  ]
-})
-
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
 const cartStore = useCartStore()
+
+// SEO Meta Tags (store-aware). Strana kategorije (?category=N) ima svoj canonical,
+// u istom obliku kao u sitemap-u; nepoznata kategorija pada na stranu prodavnice.
+const activeCategory = computed(() => {
+  const id = Number(route.query.category)
+  return categoryStore.categories.find(c => c.id === id) || null
+})
+
+useHead(() => {
+  const category = activeCategory.value
+  return buildHead({
+    title: category ? `${category.name} | ${heroStore.value.seoTitle}` : heroStore.value.seoTitle,
+    description: heroStore.value.seoDescription,
+    path: category ? `${heroStore.value.path}?category=${category.id}` : heroStore.value.path,
+    image: DEFAULT_OG_IMAGE,
+    imageAlt: `BetaPack - ${heroStore.value.heroTitle}`
+  })
+})
 
 // Carousel state
 const carouselIndex = ref(0)
@@ -278,9 +154,13 @@ const prevSlide = () => {
   }
 }
 
-const viewProductDetail = (product) => {
+const productPath = (product) => {
   const identifier = product.slug || product.id || product
-  router.push(storeRoute(`/proizvod/${identifier}`))
+  return storeRoute(`/proizvod/${identifier}`)
+}
+
+const viewProductDetail = (product) => {
+  router.push(productPath(product))
 }
 
 // Product quantities (key = product.id, value = quantity)
@@ -590,6 +470,8 @@ const loadStoreData = async () => {
   selectedVariants.value = {}
   productQuantities.value = {}
   await categoryStore.fetchCategories(storeId.value)
+  // Strana kategorije iz sitemap-a: /steel?category=N otvara tu kategoriju
+  selectedCategory.value = activeCategory.value?.id ?? null
   await productStore.fetchProducts(storeId.value)
 }
 
@@ -853,7 +735,7 @@ onUnmounted(() => {
 
                       <div class="p-6">
                         <p class="text-sm text-[#1565c0] font-bold mb-2 uppercase tracking-wide">{{ product.category_name }}</p>
-                        <h3 class="font-bold text-gray-900 mb-3 text-lg line-clamp-1">{{ product.name }}</h3>
+                        <h3 class="font-bold text-gray-900 mb-3 text-lg line-clamp-1"><router-link :to="productPath(product)" @click.stop>{{ product.name }}</router-link></h3>
 
                         <div class="flex items-center justify-between mt-3">
                           <div>
@@ -1090,7 +972,7 @@ onUnmounted(() => {
 
                     <div class="p-3 flex-1 flex flex-col">
                       <p class="text-xs text-[#1565c0] font-bold mb-1 uppercase tracking-wide">{{ product.category_name }}</p>
-                      <h3 class="font-bold text-gray-900 mb-1 text-sm line-clamp-2">{{ product.name }}</h3>
+                      <h3 class="font-bold text-gray-900 mb-1 text-sm line-clamp-2"><router-link :to="productPath(product)" @click.stop>{{ product.name }}</router-link></h3>
                       <p class="text-xs text-gray-600 mb-2 line-clamp-2 leading-relaxed">{{ product.description }}</p>
 
                       <div class="mt-auto">

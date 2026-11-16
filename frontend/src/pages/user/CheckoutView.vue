@@ -14,9 +14,6 @@ useHead({
   title: 'Finalizacija narudžbine - BetaPack',
   meta: [
     { name: 'robots', content: 'noindex, nofollow' }
-  ],
-  link: [
-    { rel: 'canonical', href: 'https://www.betapack.co.rs/checkout' }
   ]
 })
 

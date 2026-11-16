@@ -1,24 +1,20 @@
 <script setup>
+import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
+import { useStore } from '@/composables/useStore'
+import { getStoreById } from '@/config/stores'
+import { buildHead } from '@/utils/seo'
 
-useHead({
-  title: 'O Nama - BetaPack | Bravarija i Ambalaža',
-  meta: [
-    { name: 'description', content: 'Beta Pack posluje u prodaji bravarskog materijala i kovanog gvožđa, kao i ambalaže za ugostiteljstvo, dostavu hrane i prehrambene objekte.' },
-    { name: 'keywords', content: 'BetaPack, o nama, bravarija Beograd, kovano gvožđe, ambalaža za hranu, ambalaža ugostiteljstvo, Beta Pack Batajnica' },
-    { property: 'og:site_name', content: 'BetaPack' },
-    { property: 'og:title', content: 'O Nama - BetaPack' },
-    { property: 'og:description', content: 'Beta Pack — bravarski materijali i ambalaža za hranu. Kvalitet, brza isporuka i pouzdana saradnja.' },
-    { property: 'og:url', content: 'https://www.betapack.co.rs/o-nama' },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:locale', content: 'sr_RS' }
-  ],
-  link: [
-    { rel: 'canonical', href: 'https://www.betapack.co.rs/o-nama' }
-  ]
-})
+const { store: routeStore } = useStore()
+const store = computed(() => routeStore.value || getStoreById('steel'))
+
+useHead(() => buildHead({
+  title: store.value.aboutSeoTitle,
+  description: store.value.aboutSeoDescription,
+  path: `${store.value.path}/o-nama`
+}))
 
 const features = [
   {

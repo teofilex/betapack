@@ -1,21 +1,23 @@
 <script setup>
 import { useHead } from '@unhead/vue'
-import { useRouter } from 'vue-router'
 import { STORES } from '@/config/stores'
 import StoreIcon from '@/components/StoreIcon.vue'
+import { buildHead, absoluteUrl } from '@/utils/seo'
 
-const router = useRouter()
 const HOME_IMAGE = '/betapackHomeNew.jpg'
 
-useHead({
+const homeHead = buildHead({
   title: 'BetaPack | Kovano gvožđe i Ambalaža Beograd',
-  meta: [
-    {
-      name: 'description',
-      content: 'Beta Pack — izaberite oblast poslovanja: bravarski materijal i kovano gvožđe ili ambalaža za ugostiteljstvo i dostavu hrane.'
-    }
-  ],
+  description: 'Beta Pack — izaberite oblast poslovanja: bravarski materijal i kovano gvožđe ili ambalaža za ugostiteljstvo i dostavu hrane.',
+  path: '/',
+  image: absoluteUrl(HOME_IMAGE),
+  imageAlt: 'Beta Pack — kovano gvožđe i ambalaža za hranu'
+})
+
+useHead({
+  ...homeHead,
   link: [
+    ...homeHead.link,
     {
       rel: 'stylesheet',
       href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap'
@@ -41,37 +43,29 @@ const sections = [
     align: 'right'
   }
 ]
-
-const selectStore = (path) => {
-  router.push(path)
-}
-
-const goTo = (path) => {
-  router.push(path)
-}
 </script>
 
 <template>
   <div class="home-page min-h-screen flex flex-col bg-[#0a1628] text-white">
     <header class="relative z-20 border-b border-white/10 bg-[#0a1628]/90 backdrop-blur-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 cursor-pointer" @click="goTo('/')">
+        <router-link to="/" class="flex items-center gap-3 cursor-pointer">
           <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 lg:h-12 w-auto" />
           <div class="text-lg font-bold tracking-wide">BETA PACK</div>
-        </div>
+        </router-link>
         <nav class="flex items-center gap-1 sm:gap-3">
-          <button
-            @click="goTo('/o-nama')"
+          <router-link
+            to="/steel/o-nama"
             class="text-gray-300 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition font-semibold text-sm cursor-pointer"
           >
             O nama
-          </button>
-          <button
-            @click="goTo('/kontakt')"
+          </router-link>
+          <router-link
+            to="/steel/kontakt"
             class="text-gray-300 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition font-semibold text-sm cursor-pointer"
           >
             Kontakt
-          </button>
+          </router-link>
         </nav>
       </div>
     </header>
@@ -102,10 +96,10 @@ const goTo = (path) => {
         </div>
 
         <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 mt-6 md:mt-10">
-          <button
+          <router-link
             v-for="section in sections"
             :key="section.store.id"
-            @click="selectStore(section.store.path)"
+            :to="section.store.path"
             class="home-panel group relative overflow-hidden flex flex-col items-stretch cursor-pointer transition-all duration-300 md:hover:bg-black/15"
             :class="[
               section.align === 'left' ? 'md:items-center md:pr-16' : 'md:items-center md:pl-16',
@@ -156,7 +150,7 @@ const goTo = (path) => {
                 <span class="home-btn-arrow text-lg leading-none transition-transform duration-300 group-hover:translate-x-1">→</span>
               </span>
             </div>
-          </button>
+          </router-link>
         </div>
       </div>
     </main>

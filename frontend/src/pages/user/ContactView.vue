@@ -1,31 +1,22 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { api } from '@/services/api'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import { useStore } from '@/composables/useStore'
+import { getStoreById } from '@/config/stores'
+import { buildHead } from '@/utils/seo'
 
-const { storeId } = useStore()
+const { storeId, store: routeStore } = useStore()
+const store = computed(() => routeStore.value || getStoreById('steel'))
 
 // SEO Meta Tags
-useHead({
-  title: 'Kontakt - BetaPack | Kovano Gvožđe',
-  meta: [
-    { name: 'description', content: 'Kontaktirajte BetaPack za sve informacije o bravarskim materijalima. Adresa: Pukovnika Milenka Pavlovića 159 A, Zemun-Batajnica. Telefon: 065/330 02 42.' },
-    { name: 'keywords', content: 'kontakt BetaPack, telefon gvožđara Beograd, adresa bravarija Batajnica, kovano gvožđe Zemun kontakt, gde kupiti kovano gvožđe Beograd, bravarski materijali prodavnica' },
-    // Open Graph
-    { property: 'og:site_name', content: 'BetaPack' },
-    { property: 'og:title', content: 'Kontakt - BetaPack' },
-    { property: 'og:description', content: 'Kontaktirajte nas za sve informacije o bravarskim materijalima' },
-    { property: 'og:url', content: 'https://www.betapack.co.rs/kontakt' },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:locale', content: 'sr_RS' }
-  ],
-  link: [
-    { rel: 'canonical', href: 'https://www.betapack.co.rs/kontakt' }
-  ]
-})
+useHead(() => buildHead({
+  title: store.value.contactSeoTitle,
+  description: store.value.contactSeoDescription,
+  path: `${store.value.path}/kontakt`
+}))
 
 const contactInfo = {
   name: 'Beta Pack d.o.o.',

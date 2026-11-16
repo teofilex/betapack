@@ -19,6 +19,10 @@ export const STORES = {
     features: ['Profili i kutije', 'Firiketi i šipke', 'Ukrasni elementi'],
     seoTitle: 'Kovano Gvožđe Beograd | Beta Pack',
     seoDescription: 'Beta Pack — prodaja bravarskih materijala od kovanog gvožđa u Beogradu.',
+    aboutSeoTitle: 'O nama | Kovano gvožđe i bravarski materijal | Beta Pack',
+    aboutSeoDescription: 'Beta Pack iz Batajnice prodaje bravarski materijal i elemente od kovanog gvožđa za kapije, ograde, gelendere i metalne konstrukcije.',
+    contactSeoTitle: 'Kontakt | Kovano gvožđe Beograd | Beta Pack',
+    contactSeoDescription: 'Kontaktirajte Beta Pack za bravarski materijal i kovano gvožđe. Pukovnika Milenka Pavlovića 159 A, Batajnica (Zemun), tel. 065/330 02 42.',
     heroContactButton: 'Pošalji upit',
   },
   ambalaza: {
@@ -46,6 +50,10 @@ export const STORES = {
     features: ['Posude i ambalaža', 'Folije i kese', 'Prodaja na pakovanje'],
     seoTitle: 'Ambalaža za hranu Beograd | BetaPack Ambalaža',
     seoDescription: 'Beta Pack nudi širok izbor ambalaže za restorane, kafiće, pekare, poslastičarnice, mesare, fast food objekte, maloprodaju i dostavu hrane.',
+    aboutSeoTitle: 'O nama | Ambalaža za hranu i ugostiteljstvo | Beta Pack',
+    aboutSeoDescription: 'Beta Pack nudi ambalažu za restorane, kafiće, pekare, poslastičarnice, mesare i dostavu hrane: PET, PP, papir, karton, alu, stiropor i folije.',
+    contactSeoTitle: 'Kontakt | Ambalaža za hranu Beograd | Beta Pack',
+    contactSeoDescription: 'Pošaljite upit za ambalažu za hranu i ugostiteljstvo. Beta Pack, Pukovnika Milenka Pavlovića 159 A, Batajnica (Zemun), tel. 065/330 02 42.',
   },
 }
 
