@@ -68,11 +68,18 @@ class SitemapTests(TestCase):
 
 @override_settings(ALLOWED_HOSTS=['api.betapack.co.rs', 'testserver'])
 class RobotsTests(TestCase):
-    def test_api_domain_is_fully_disallowed_without_sitemap(self):
+    def test_api_stays_crawlable_everything_else_blocked(self):
+        # Googlebot mora da stigne do /api/ da bi renderovao frontend
         response = self.client.get('/robots.txt', HTTP_HOST='api.betapack.co.rs')
         self.assertEqual(response.status_code, 200)
-        body = response.content.decode()
-        self.assertIn('User-agent: *', body)
-        self.assertIn('Disallow: /', body)
-        self.assertNotIn('Allow:', body)
-        self.assertNotIn('Sitemap', body)
+        lines = response.content.decode().splitlines()
+        self.assertEqual(lines, [
+            'User-agent: *',
+            'Allow: /api/',
+            'Disallow: /admin/',
+            'Disallow: /',
+        ])
+
+    def test_no_sitemap_line(self):
+        response = self.client.get('/robots.txt', HTTP_HOST='api.betapack.co.rs')
+        self.assertNotIn('Sitemap', response.content.decode())
