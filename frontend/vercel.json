@@ -1,11 +1,12 @@
 {
+  "trailingSlash": false,
   "redirects": [
     {
       "source": "/",
       "has": [
         { "type": "query", "key": "category", "value": "(?<category>.*)" }
       ],
-      "destination": "/steel/?category=:category",
+      "destination": "/steel?category=:category",
       "statusCode": 301
     },
     {
