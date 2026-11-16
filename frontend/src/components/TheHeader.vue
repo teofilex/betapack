@@ -34,10 +34,14 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
-const navigateTo = (route) => {
-  router.push(route)
+const closeMenus = () => {
   mobileMenuOpen.value = false
   showCartPreview.value = false
+}
+
+const navigateTo = (route) => {
+  router.push(route)
+  closeMenus()
 }
 
 const updateQuantity = (item, newQuantity) => {
@@ -61,42 +65,45 @@ const handleLogout = () => {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16 lg:h-18">
 
-        <div class="flex items-center gap-3 lg:gap-4 cursor-pointer" @click="navigateTo('/')">
+        <router-link to="/" class="flex items-center gap-3 lg:gap-4 cursor-pointer" @click="closeMenus">
           <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 lg:h-12 w-auto" />
           <div>
             <div class="text-base lg:text-lg font-bold text-white">BETA PACK</div>
             <div v-if="store" class="text-[10px] text-gray-400 font-medium hidden sm:block">{{ store.shortLabel }}</div>
           </div>
-        </div>
+        </router-link>
 
         <nav class="hidden md:flex items-center gap-2 lg:gap-3">
           <!-- Store switcher -->
           <div class="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/10">
-            <button
+            <router-link
               v-for="s in STORE_LIST"
               :key="s.id"
-              @click="navigateTo(s.path)"
+              :to="s.path"
+              @click="closeMenus"
               :class="storeId === s.id ? 'bg-[#1976d2] text-white shadow' : 'text-gray-300 hover:text-white hover:bg-white/10'"
               class="flex items-center gap-1 px-3 lg:px-4 py-1.5 rounded-lg transition font-semibold text-sm cursor-pointer"
             >
               <StoreIcon :store-id="s.id" size="sm" class="flex-shrink-0" />
               <span>{{ s.shortLabel }}</span>
-            </button>
+            </router-link>
           </div>
 
           <template v-if="store">
-            <button
-              @click="navigateTo(storeRoute('/o-nama'))"
+            <router-link
+              :to="storeRoute('/o-nama')"
+              @click="closeMenus"
               class="text-gray-300 hover:text-white hover:bg-white/10 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg transition font-semibold text-sm lg:text-base cursor-pointer"
             >
               O nama
-            </button>
-            <button
-              @click="navigateTo(storeRoute('/kontakt'))"
+            </router-link>
+            <router-link
+              :to="storeRoute('/kontakt')"
+              @click="closeMenus"
               class="text-gray-300 hover:text-white hover:bg-white/10 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg transition font-semibold text-sm lg:text-base cursor-pointer"
             >
               Kontakt
-            </button>
+            </router-link>
           </template>
         </nav>
 
@@ -227,19 +234,20 @@ const handleLogout = () => {
     <div v-if="mobileMenuOpen" class="md:hidden bg-gray-800 border-t border-gray-700">
       <nav class="px-4 py-4 space-y-2">
         <p class="text-[10px] uppercase tracking-wider text-gray-500 font-bold px-4 pt-1">Prodavnica</p>
-        <button
+        <router-link
           v-for="s in STORE_LIST"
           :key="s.id"
-          @click="navigateTo(s.path)"
+          :to="s.path"
+          @click="closeMenus"
           :class="storeId === s.id ? 'bg-[#1976d2] text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'"
           class="flex items-center gap-2 w-full text-left px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer"
         >
           <StoreIcon :store-id="s.id" size="sm" class="flex-shrink-0" />
           <span>{{ s.label }}</span>
-        </button>
+        </router-link>
         <template v-if="store">
-          <button @click="navigateTo(storeRoute('/o-nama'))" class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer">O nama</button>
-          <button @click="navigateTo(storeRoute('/kontakt'))" class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer">Kontakt</button>
+          <router-link :to="storeRoute('/o-nama')" @click="closeMenus" class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer">O nama</router-link>
+          <router-link :to="storeRoute('/kontakt')" @click="closeMenus" class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer">Kontakt</router-link>
           <button @click="navigateTo(storeRoute('/cart'))" class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer">🛒 Korpa</button>
         </template>
         <button v-if="isAdmin" @click="navigateTo('/admin')" class="block w-full text-left text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition font-semibold text-base cursor-pointer border-t border-gray-700 mt-2">⚙️ Admin Panel</button>

@@ -118,6 +118,12 @@ const footerTagline = computed(() =>
 
       <!-- Bottom bar -->
       <div class="border-t border-gray-800 mt-4 pt-3 text-center text-xs">
+        <nav aria-label="Navigacija" class="flex flex-wrap justify-center gap-x-5 gap-y-1 mb-2">
+          <router-link to="/steel" class="hover:text-white transition">Kovano gvožđe</router-link>
+          <router-link to="/ambalaza" class="hover:text-white transition">Ambalaža</router-link>
+          <router-link :to="`${activeStore.path}/o-nama`" class="hover:text-white transition">O nama</router-link>
+          <router-link :to="`${activeStore.path}/kontakt`" class="hover:text-white transition">Kontakt</router-link>
+        </nav>
         <p>&copy; {{ currentYear }} {{ contactInfo.name }}. Sva prava zadržana.</p>
       </div>
     </div>

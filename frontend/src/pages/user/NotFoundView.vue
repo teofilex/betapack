@@ -80,13 +80,13 @@ useHead({
               🏠 Početna
             </router-link>
             <router-link
-              to="/kontakt"
+              to="/steel/kontakt"
               class="text-[#1976d2] hover:text-[#1565c0] hover:underline font-medium text-sm"
             >
               📞 Kontakt
             </router-link>
             <router-link
-              to="/o-nama"
+              to="/steel/o-nama"
               class="text-[#1976d2] hover:text-[#1565c0] hover:underline font-medium text-sm"
             >
               ℹ️ O nama
