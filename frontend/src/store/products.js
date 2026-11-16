@@ -45,8 +45,10 @@ export const useProductStore = defineStore('products', {
             this.loading = true
             this.currentStore = store
             try {
+                // Bez cache-bustera: server kesira listu i poništava kes pri svakoj izmeni
+                // proizvoda, pa je odgovor uvek svez.
                 const res = await api.get('products/', {
-                    params: { store, _: Date.now() }
+                    params: { store }
                 })
                 this.products = res.data
             } finally {
