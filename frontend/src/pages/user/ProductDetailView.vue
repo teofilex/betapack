@@ -726,7 +726,7 @@ onUnmounted(() => {
                 
                 <!-- Link to Cart/Checkout -->
                 <router-link
-                  to="/cart"
+                  :to="storeRoute('/cart')"
                   class="block w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2.5 rounded-lg transition-all text-sm shadow-md hover:shadow-lg cursor-pointer text-center"
                 >
                   🛍️ Idi na korpu i naruči

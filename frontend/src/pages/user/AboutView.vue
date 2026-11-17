@@ -154,7 +154,7 @@ const features = [
               <span>Pozovite nas</span>
             </a>
             <router-link
-              to="/kontakt"
+              :to="`${store.path}/kontakt`"
               class="inline-flex items-center justify-center gap-2 bg-gray-900 text-white font-bold px-6 py-3 rounded-xl hover:bg-gray-800 transition-all duration-300 text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               <span class="text-lg">✉️</span>
