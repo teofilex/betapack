@@ -7,6 +7,7 @@ import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
+import ProductImage from '@/components/ProductImage.vue'
 import { useStore } from '@/composables/useStore'
 
 // SEO Meta Tags - noindex for checkout page
@@ -392,10 +393,12 @@ const submitOrder = async () => {
                   class="flex gap-2 pb-3 border-b"
                 >
                   <div class="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                    <img
+                    <ProductImage
                       v-if="item.images && item.images.length > 0"
                       :src="getImageUrl(item.images[0].image)"
                       :alt="item.name"
+                      :widths="[80, 160, 240]"
+                      sizes="64px"
                       class="w-full h-full object-contain"
                     />
                     <div v-else class="w-full h-full flex items-center justify-center text-gray-400">

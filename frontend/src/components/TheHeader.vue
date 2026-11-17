@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '@/store/cart'
 import { useAuthStore } from '@/store/auth'
 import { getImageUrl } from '@/composables/useImageUrl'
+import ProductImage from '@/components/ProductImage.vue'
 import { useStore } from '@/composables/useStore'
 import { STORE_LIST } from '@/config/stores'
 import StoreIcon from '@/components/StoreIcon.vue'
@@ -157,10 +158,12 @@ const handleLogout = () => {
                     class="flex gap-3 pb-3 border-b last:border-0"
                   >
                     <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
+                      <ProductImage
                         v-if="item.images && item.images.length > 0"
                         :src="getImageUrl(item.images[0].image)"
                         :alt="item.name"
+                        :widths="[80, 160, 240]"
+                        sizes="64px"
                         class="w-full h-full object-contain"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">

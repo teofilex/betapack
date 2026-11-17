@@ -7,6 +7,7 @@ import TheFooter from '@/components/TheFooter.vue'
 import { useCartStore } from '@/store/cart'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import { getImageUrl } from '@/composables/useImageUrl'
+import ProductImage from '@/components/ProductImage.vue'
 import { useStore } from '@/composables/useStore'
 import {
   getQuantityStep, getMinQuantity, isValidLengthQuantity, isPackageMode, isLengthMode, isOnRequest, formatQuantityLabel
@@ -175,10 +176,12 @@ const goToCheckout = () => {
             >
               <!-- Image -->
               <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                <img
+                <ProductImage
                   v-if="item.images && item.images.length > 0"
                   :src="getImageUrl(item.images[0].image)"
                   :alt="item.name"
+                  :widths="[80, 160, 240]"
+                  sizes="64px"
                   class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">

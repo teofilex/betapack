@@ -4,9 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
+import ProductImage from '@/components/ProductImage.vue'
 import { useCartStore } from '@/store/cart'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
+import { cloudinaryUrl } from '@/utils/cloudinary'
 import { useStore } from '@/composables/useStore'
 import { getStoreById } from '@/config/stores'
 import { buildHead, absoluteUrl, SITE_URL } from '@/utils/seo'
@@ -23,6 +25,11 @@ const selectedVariant = ref(null)
 const selectedImageIndex = ref(0)
 const quantity = ref(1)
 const quantityError = ref(null)
+
+// og:image, twitter:image i JSON-LD: JPEG sirine 1200 px. Originali sa Cloudinary-ja znaju
+// biti vise MB (WhatsApp/Facebook odbace prevelike slike), a JPEG je jedini oblik koji
+// podrzavaju svi cetkari; f_auto bi im vratio WebP/AVIF.
+const shareImageUrl = (image) => cloudinaryUrl(getImageUrl(image), { width: 1200, format: 'jpg' })
 
 // Prodavnica kojoj proizvod pripada. Dok se proizvod ne ucita, vazi prodavnica iz URL-a.
 const productStoreId = computed(() => product.value?.store || storeId.value || 'steel')
@@ -49,7 +56,7 @@ const productDescription = computed(() =>
 )
 const productImage = computed(() =>
   product.value && product.value.images && product.value.images.length > 0
-    ? getImageUrl(product.value.images[0].image)
+    ? shareImageUrl(product.value.images[0].image)
     : `${SITE_URL}/betapack-logo.png`
 )
 const productPrice = computed(() =>
@@ -68,7 +75,7 @@ const productSchema = computed(() => {
     name: product.value.name,
     description: product.value.description || defaultDescription(product.value.name),
     image: product.value.images && product.value.images.length > 0
-      ? product.value.images.map(img => getImageUrl(img.image))
+      ? product.value.images.map(img => shareImageUrl(img.image))
       : [`${SITE_URL}/betapack-logo.png`],
     sku: product.value.id ? `BP-${product.value.id}` : undefined,
     brand: {
@@ -495,7 +502,8 @@ onUnmounted(() => {
         </button>
 
         <!-- Loading -->
-        <div v-if="loading" class="text-center py-20">
+        <!-- min-h-screen: podnozje ostaje ispod prvog ekrana dok se proizvod ucitava, pa se ne pomera kad sadrzaj stigne -->
+        <div v-if="loading" class="text-center py-20 min-h-screen">
           <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1565c0]"></div>
           <p class="text-gray-600 mt-4">Učitavanje proizvoda...</p>
         </div>
@@ -508,10 +516,13 @@ onUnmounted(() => {
             <div>
               <!-- Main Image -->
               <div class="relative bg-white rounded-xl overflow-hidden mb-4 aspect-square border border-gray-200">
-                <img
+                <ProductImage
                   v-if="images.length > 0"
                   :src="getImageUrl(images[selectedImageIndex].image)"
                   :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
+                  :widths="[480, 720, 1080]"
+                  sizes="(min-width: 1024px) 560px, 90vw"
+                  eager
                   class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
@@ -533,10 +544,11 @@ onUnmounted(() => {
                   :class="selectedImageIndex === index ? 'ring-2 ring-[#1976d2]' : 'ring-1 ring-gray-200'"
                   class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-[#1976d2] transition cursor-pointer bg-white"
                 >
-                  <img
+                  <ProductImage
                     :src="getImageUrl(img.image)"
                     :alt="`${product.name} - Slika ${index + 1} - BetaPack`"
-                    loading="lazy"
+                    :widths="[120, 240, 360]"
+                    sizes="(min-width: 1024px) 130px, 22vw"
                     class="w-full h-full object-contain"
                   />
                 </button>

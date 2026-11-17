@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
+import ProductImage from '@/components/ProductImage.vue'
 import ResponsivePicture from '@/components/ResponsivePicture.vue'
 import { useProductStore } from '@/store/products'
 import { useCategoryStore } from '@/store/categories'
@@ -754,11 +755,11 @@ onUnmounted(() => {
                       class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition cursor-pointer group"
                     >
                       <div class="relative h-48 bg-white overflow-hidden">
-                        <img
+                        <ProductImage
                           v-if="getProductImage(product)"
                           :src="getImageUrl(getProductImage(product).image)"
                           :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
-                          loading="lazy"
+                          sizes="(min-width: 1024px) 280px, 45vw"
                           class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                         />
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
@@ -977,11 +978,11 @@ onUnmounted(() => {
                       <!-- Dark overlay on hover -->
                       <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-10 pointer-events-none"></div>
 
-                      <img
+                      <ProductImage
                         v-if="getProductImage(product)"
                         :src="getImageUrl(getProductImage(product).image)"
                         :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
-                        loading="lazy"
+                        sizes="(min-width: 1280px) 240px, (min-width: 1024px) 320px, (min-width: 640px) 300px, 90vw"
                         class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
