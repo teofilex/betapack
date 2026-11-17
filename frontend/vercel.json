@@ -29,9 +29,15 @@
       "source": "/sitemap.xml",
       "destination": "https://api.betapack.co.rs/sitemap.xml"
     },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/steel/proizvod/:slug", "destination": "/spa.html" },
+    { "source": "/steel/cart", "destination": "/spa.html" },
+    { "source": "/steel/checkout", "destination": "/spa.html" },
+    { "source": "/steel/order-success/:orderId", "destination": "/spa.html" },
+    { "source": "/ambalaza/proizvod/:slug", "destination": "/spa.html" },
+    { "source": "/ambalaza/cart", "destination": "/spa.html" },
+    { "source": "/ambalaza/checkout", "destination": "/spa.html" },
+    { "source": "/ambalaza/order-success/:orderId", "destination": "/spa.html" },
+    { "source": "/admin", "destination": "/spa.html" },
+    { "source": "/admin/:path*", "destination": "/spa.html" }
   ]
 }
