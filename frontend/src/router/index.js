@@ -1,16 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
+// Pocetna, prodavnica i strana proizvoda su ulazne strane (pretraga vodi pravo na njih),
+// pa ostaju u glavnom fajlu: lazy ucitavanje bi im dodalo jos jedan krug ka serveru.
+// Sve ostalo se ucitava tek kad zatreba. Admin (Chart.js, vuedraggable, PrimeVue
+// komponente) je najveci deo koda, a posetioci ga nikad ne otvaraju.
 import HomeView from "@/pages/user/HomeView.vue";
 import ShopView from "@/pages/user/ShopView.vue";
-import CartView from "@/pages/user/CartView.vue";
 import ProductDetailView from "@/pages/user/ProductDetailView.vue";
-import CheckoutView from "@/pages/user/CheckoutView.vue";
-import OrderSuccessView from "@/pages/user/OrderSuccessView.vue";
-import ContactView from "@/pages/user/ContactView.vue";
-import AboutView from "@/pages/user/AboutView.vue";
 import NotFoundView from "@/pages/user/NotFoundView.vue";
-import Login from "../admin/pages/Login.vue";
-import AdminView from "../admin/pages/AdminView.vue";
+
+const CartView = () => import("@/pages/user/CartView.vue");
+const CheckoutView = () => import("@/pages/user/CheckoutView.vue");
+const OrderSuccessView = () => import("@/pages/user/OrderSuccessView.vue");
+const ContactView = () => import("@/pages/user/ContactView.vue");
+const AboutView = () => import("@/pages/user/AboutView.vue");
+const Login = () => import("../admin/pages/Login.vue");
+const AdminView = () => import("../admin/pages/AdminView.vue");
 
 const storeChildRoutes = (store) => [
     {
@@ -117,7 +122,12 @@ const router = createRouter({
     }
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+    // Admin ima svoj paket (PrimeVue tema i ikone) koji se ucitava tek ovde
+    if (to.path.startsWith('/admin')) {
+        const { installAdminPlugins } = await import('@/admin/setup')
+        installAdminPlugins()
+    }
     const authStore = useAuthStore()
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
         next('/admin/login')
