@@ -13,11 +13,17 @@
   <link rel="manifest" href="/site.webmanifest">
   <meta name="theme-color" content="#1a1a1a">
 
-  <link rel="stylesheet" href="https://unpkg.com/primevue/resources/themes/aura-light-blue/theme.css" />
-  <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css" />
+  <!-- Fontovi: samo Inter, samo koriscene tezine (800 je naslov na pocetnoj). Montserrat iz
+       HomeView.vue se nikad ne primenjuje (globalno pravilo '* { font-family: Inter }' ispod ga
+       pregazi), pa se ne ucitava. Ucitavanje ne blokira prikaz (media=print pa all), a
+       display=swap odmah pokazuje tekst. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  </noscript>
   <title>Beta Pack | Kovano gvožđe i ambalaža za hranu, Beograd</title>
   <meta name="description" content="Beta Pack, Batajnica (Zemun, Beograd): bravarski materijal i kovano gvožđe za kapije, ograde i gelendere, kao i ambalaža za hranu i ugostiteljstvo.">
 

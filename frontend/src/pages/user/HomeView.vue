@@ -14,16 +14,7 @@ const homeHead = buildHead({
   imageAlt: 'Beta Pack — kovano gvožđe i ambalaža za hranu'
 })
 
-useHead({
-  ...homeHead,
-  link: [
-    ...homeHead.link,
-    {
-      rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap'
-    }
-  ]
-})
+useHead(homeHead)
 
 const sections = [
   {
