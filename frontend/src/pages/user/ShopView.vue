@@ -497,17 +497,44 @@ watch(filteredProducts, () => {
   })
 }, { deep: true })
 
+// Osvezava podatke (cene, zalihe) bez diranja filtera koje je kupac podesio.
+// Odabrane varijante i unete kolicine se resetuju jer drze objekte iz starih podataka.
+// Poziva se i na 'focus' i na 'visibilitychange' (pri povratku u tab stizu oba), pa
+// zahtev koji je vec u toku ne pokrece drugi.
+let refreshing = null
+let refreshingStore = null
+const refreshStoreData = () => {
+  const store = storeId.value
+  if (!store) return Promise.resolve()
+  if (!refreshing || refreshingStore !== store) {
+    selectedVariants.value = {}
+    productQuantities.value = {}
+    refreshingStore = store
+    const current = (async () => {
+      await categoryStore.fetchCategories(store)
+      await productStore.fetchProducts(store)
+      // Podkategorija koja je u medjuvremenu obrisana ne sme da ostane kao filter
+      const category = categoryStore.categories.find(c => c.id === selectedCategory.value)
+      if (selectedSubcategory.value && !category?.subcategories?.some(sub => sub.id === selectedSubcategory.value)) {
+        selectedSubcategory.value = null
+      }
+    })().finally(() => {
+      if (refreshing === current) refreshing = null
+    })
+    refreshing = current
+  }
+  return refreshing
+}
+
+// Ucitavanje pri otvaranju strane ili promeni prodavnice: filteri kreću ispočetka
+// (kategorija se ravna po adresi)
 const loadStoreData = async () => {
   if (!storeId.value) return
 
-  // Reset filters when switching store (kategorija se ravna po adresi)
   selectedSubcategory.value = null
   searchQuery.value = ''
   showOnlyOnSale.value = false
-  selectedVariants.value = {}
-  productQuantities.value = {}
-  await categoryStore.fetchCategories(storeId.value)
-  await productStore.fetchProducts(storeId.value)
+  await refreshStoreData()
 }
 
 watch(
@@ -522,13 +549,13 @@ watch(
 
 const onPageShow = (event) => {
   if (event.persisted && route.name?.endsWith('-shop')) {
-    loadStoreData()
+    refreshStoreData()
   }
 }
 
 const onVisibilityChange = () => {
   if (document.visibilityState === 'visible' && route.name?.endsWith('-shop')) {
-    loadStoreData()
+    refreshStoreData()
   }
 }
 
@@ -536,7 +563,7 @@ const onVisibilityChange = () => {
 // jedan pored drugog (oba "visible", pa 'visibilitychange' ne okine).
 const onWindowFocus = () => {
   if (route.name?.endsWith('-shop')) {
-    loadStoreData()
+    refreshStoreData()
   }
 }
 
