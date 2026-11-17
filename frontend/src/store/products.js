@@ -5,7 +5,12 @@ export const useProductStore = defineStore('products', {
     state: () => ({
         products: [],
         loading: false,
-        currentStore: 'steel'
+        currentStore: 'steel',
+        // Podaci stigli iz prerenderovane strane (build-time); ShopView ih prvi put
+        // koristi bez spinnera, a sveze podatke dovlaci tiho posle montiranja.
+        prerendered: false,
+        // Proizvod sa prerenderovane strane proizvoda (isti oblik kao odgovor API-ja)
+        prerenderedProduct: null
     }),
 
     getters: {
@@ -41,8 +46,9 @@ export const useProductStore = defineStore('products', {
     },
 
     actions: {
-        async fetchProducts(store = 'steel') {
-            this.loading = true
+        // silent: osvezavanje bez spinnera (lista se samo zameni kad stignu podaci)
+        async fetchProducts(store = 'steel', { silent = false } = {}) {
+            if (!silent) this.loading = true
             this.currentStore = store
             try {
                 // Bez cache-bustera: server kesira listu i poništava kes pri svakoj izmeni
@@ -52,7 +58,7 @@ export const useProductStore = defineStore('products', {
                 })
                 this.products = res.data
             } finally {
-                this.loading = false
+                if (!silent) this.loading = false
             }
         }
     }

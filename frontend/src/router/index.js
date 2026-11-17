@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+// Ruter pravi vite-ssg (main.js): ovde su samo rute, scrollBehavior i guard za admin.
 import { useAuthStore } from "@/store/auth";
 // Pocetna, prodavnica i strana proizvoda su ulazne strane (pretraga vodi pravo na njih),
 // pa ostaju u glavnom fajlu: lazy ucitavanje bi im dodalo jos jedan krug ka serveru.
@@ -78,84 +78,84 @@ const storeChildRoutes = (store) => [
     },
 ]
 
-const router = createRouter({
-    routes: [
-        {
-            path: '/',
-            name: 'home',
-            component: HomeView
-        },
-        {
-            path: '/steel',
-            children: storeChildRoutes('steel')
-        },
-        {
-            path: '/ambalaza',
-            children: storeChildRoutes('ambalaza')
-        },
-        // Legacy redirects
-        { path: '/proizvod/:slugOrId', redirect: to => `/steel/proizvod/${to.params.slugOrId}` },
-        { path: '/cart', redirect: '/steel/cart' },
-        { path: '/checkout', redirect: '/steel/checkout' },
-        { path: '/order-success/:orderId', redirect: to => `/steel/order-success/${to.params.orderId}` },
-        { path: '/kontakt', redirect: '/steel/kontakt' },
-        { path: '/o-nama', redirect: '/steel/o-nama' },
-        {
-            path: '/admin',
-            redirect: '/admin/login'
-        },
-        {
-            path: '/admin/login',
-            name: 'admin-login',
-            component: Login
-        },
-        {
-            path: '/admin/panel',
-            name: 'admin-panel',
-            component: AdminView,
-            meta: { requiresAuth: true }
-        },
-        {
-            path: '/:pathMatch(.*)*',
-            name: 'not-found',
-            component: NotFoundView
-        }
-    ],
-    history: createWebHistory(import.meta.env.BASE_URL),
-    scrollBehavior(to, from, savedPosition) {
-        // Nazad/Napred: vrati sacuvanu poziciju (kad se strana napuni podacima i bude dovoljno visoka)
-        if (savedPosition) {
-            return whenPageIsTallEnough(savedPosition)
-        }
-        // Link sa #sidrom: na sidro, ispod lepljivog zaglavlja
-        if (to.hash) {
-            return { el: to.hash, top: 80, behavior: 'smooth' }
-        }
-        // Ista strana, drugi query (npr. /steel?category=N): ne skroluje; listu proizvoda
-        // pri promeni kategorije pomera sam ShopView (scrollToProducts)
-        if (to.path === from.path) {
-            return false
-        }
-        // Druga strana: na vrh. Ruter ovo poziva tek kad je navigacija zavrsena, pa kod lazy
-        // ruta i posle ucitavanja i iscrtavanja nove strane (stara strana se ne trza ranije)
-        return { top: 0, left: 0 }
+export const routes = [
+    {
+        path: '/',
+        name: 'home',
+        component: HomeView
+    },
+    {
+        path: '/steel',
+        children: storeChildRoutes('steel')
+    },
+    {
+        path: '/ambalaza',
+        children: storeChildRoutes('ambalaza')
+    },
+    // Legacy redirects
+    { path: '/proizvod/:slugOrId', redirect: to => `/steel/proizvod/${to.params.slugOrId}` },
+    { path: '/cart', redirect: '/steel/cart' },
+    { path: '/checkout', redirect: '/steel/checkout' },
+    { path: '/order-success/:orderId', redirect: to => `/steel/order-success/${to.params.orderId}` },
+    { path: '/kontakt', redirect: '/steel/kontakt' },
+    { path: '/o-nama', redirect: '/steel/o-nama' },
+    {
+        path: '/admin',
+        redirect: '/admin/login'
+    },
+    {
+        path: '/admin/login',
+        name: 'admin-login',
+        component: Login
+    },
+    {
+        path: '/admin/panel',
+        name: 'admin-panel',
+        component: AdminView,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        name: 'not-found',
+        component: NotFoundView
     }
-})
+]
 
-router.beforeEach(async (to, from, next) => {
-    // Admin ima svoj paket (PrimeVue tema i ikone) koji se ucitava tek ovde
-    if (to.path.startsWith('/admin')) {
-        const { installAdminPlugins } = await import('@/admin/setup')
-        installAdminPlugins()
+export function scrollBehavior(to, from, savedPosition) {
+    // Nazad/Napred: vrati sacuvanu poziciju (kad se strana napuni podacima i bude dovoljno visoka)
+    if (savedPosition) {
+        return whenPageIsTallEnough(savedPosition)
     }
-    const authStore = useAuthStore()
-    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        next('/admin/login')
-    } else if (to.path === '/admin/login' && authStore.isAuthenticated) {
-        next('/admin/panel')
-    } else {
-        next()
+    // Link sa #sidrom: na sidro, ispod lepljivog zaglavlja
+    if (to.hash) {
+        return { el: to.hash, top: 80, behavior: 'smooth' }
     }
-})
+    // Ista strana, drugi query (npr. /steel?category=N): ne skroluje; listu proizvoda
+    // pri promeni kategorije pomera sam ShopView (scrollToProducts)
+    if (to.path === from.path) {
+        return false
+    }
+    // Druga strana: na vrh. Ruter ovo poziva tek kad je navigacija zavrsena, pa kod lazy
+    // ruta i posle ucitavanja i iscrtavanja nove strane (stara strana se ne trza ranije)
+    return { top: 0, left: 0 }
+}
 
-export default router
+// Guard za admin: PrimeVue paket i provera prijave. `app` je potreban da se PrimeVue
+// ugradi u istu aplikaciju kad se otvori /admin.
+export function installRouterGuards(router, app) {
+    router.beforeEach(async (to, from, next) => {
+        // Admin ima svoj paket (PrimeVue tema i ikone) koji se ucitava tek ovde
+        if (to.path.startsWith('/admin')) {
+            const { installAdminPlugins } = await import('@/admin/setup')
+            installAdminPlugins(app)
+        }
+        const authStore = useAuthStore()
+        if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+            next('/admin/login')
+        } else if (to.path === '/admin/login' && authStore.isAuthenticated) {
+            next('/admin/panel')
+        } else {
+            next()
+        }
+    })
+}

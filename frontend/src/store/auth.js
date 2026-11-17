@@ -1,11 +1,14 @@
 import { defineStore } from "pinia";
 import { api } from "@/services/api";
+import { storage } from "@/utils/storage";
 
 export const useAuthStore = defineStore('auth', {
+    // Pocetno stanje je prazno (isto kao u prerenderu); sesija iz localStorage-a se
+    // ucitava pozivom loadFromStorage() pre ili posle montiranja (vidi main.js)
     state: () => ({
-        user: JSON.parse(localStorage.getItem("user")) || null,
-        accessToken: localStorage.getItem('access') || null,
-        refreshToken: localStorage.getItem('refresh') || null
+        user: null,
+        accessToken: null,
+        refreshToken: null
     }),
 
     getters: {
@@ -14,6 +17,16 @@ export const useAuthStore = defineStore('auth', {
     },
 
     actions: {
+        loadFromStorage() {
+            try {
+                this.user = JSON.parse(storage.get('user')) || null
+            } catch {
+                this.user = null
+            }
+            this.accessToken = storage.get('access') || null
+            this.refreshToken = storage.get('refresh') || null
+        },
+
         async login(username, password) {
             try {
                 const response = await api.post('/auth/login/', {
@@ -23,13 +36,13 @@ export const useAuthStore = defineStore('auth', {
                 this.accessToken = response.data.access
                 this.refreshToken = response.data.refresh
 
-                localStorage.setItem('access', this.accessToken)
-                localStorage.setItem('refresh', this.refreshToken)
+                storage.set('access', this.accessToken)
+                storage.set('refresh', this.refreshToken)
 
                 await this.fetchUser()
 
                 // OVDE nakon fetchUser-a imamo user objekt → sacuvaj ga
-                localStorage.setItem("user", JSON.stringify(this.user))
+                storage.set("user", JSON.stringify(this.user))
 
                 return true
 
@@ -65,11 +78,11 @@ export const useAuthStore = defineStore('auth', {
                 })
 
                 this.accessToken = response.data.access
-                localStorage.setItem('access', this.accessToken)
+                storage.set('access', this.accessToken)
 
                 if (response.data.refresh) {
                     this.refreshToken = response.data.refresh
-                    localStorage.setItem('refresh', this.refreshToken)
+                    storage.set('refresh', this.refreshToken)
                 }
 
                 return true
@@ -109,9 +122,9 @@ export const useAuthStore = defineStore('auth', {
             this.user = null
             this.accessToken = null
             this.refreshToken = null
-            localStorage.removeItem('access')
-            localStorage.removeItem('refresh')
-            localStorage.removeItem('user')
+            storage.remove('access')
+            storage.remove('refresh')
+            storage.remove('user')
         },
     },
 })

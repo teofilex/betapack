@@ -503,7 +503,7 @@ watch(filteredProducts, () => {
 // zahtev koji je vec u toku ne pokrece drugi.
 let refreshing = null
 let refreshingStore = null
-const refreshStoreData = () => {
+const refreshStoreData = ({ silent = false } = {}) => {
   const store = storeId.value
   if (!store) return Promise.resolve()
   if (!refreshing || refreshingStore !== store) {
@@ -512,7 +512,7 @@ const refreshStoreData = () => {
     refreshingStore = store
     const current = (async () => {
       await categoryStore.fetchCategories(store)
-      await productStore.fetchProducts(store)
+      await productStore.fetchProducts(store, { silent })
       // Podkategorija koja je u medjuvremenu obrisana ne sme da ostane kao filter
       const category = categoryStore.categories.find(c => c.id === selectedCategory.value)
       if (selectedSubcategory.value && !category?.subcategories?.some(sub => sub.id === selectedSubcategory.value)) {
@@ -537,12 +537,22 @@ const loadStoreData = async () => {
   await refreshStoreData()
 }
 
+// Strana stigla prerenderovana: proizvodi i kategorije su vec u store-u (isti DOM kao u
+// HTML-u, bez spinnera), a sveze podatke strana dovlaci tiho posle montiranja.
+let revalidateOnMount = false
+
 watch(
   () => route.path,
   () => {
-    if (route.name?.endsWith('-shop')) {
-      loadStoreData()
+    if (!route.name?.endsWith('-shop')) return
+    // Prerender: podatke je vec postavio ruter (vidi prerender/loadData.js)
+    if (import.meta.env.SSR) return
+    if (productStore.prerendered && productStore.currentStore === storeId.value) {
+      productStore.prerendered = false
+      revalidateOnMount = true
+      return
     }
+    loadStoreData()
   },
   { immediate: true }
 )
@@ -568,6 +578,11 @@ const onWindowFocus = () => {
 }
 
 onMounted(() => {
+  if (revalidateOnMount) {
+    revalidateOnMount = false
+    // Tiho osvezavanje: ako ne uspe, ostaju prerenderovani podaci
+    refreshStoreData({ silent: true }).catch(() => {})
+  }
   window.addEventListener('pageshow', onPageShow)
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('focus', onWindowFocus)

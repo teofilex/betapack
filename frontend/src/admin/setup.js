@@ -3,11 +3,10 @@
 import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 import 'primeicons/primeicons.css'
-import { app } from '@/app'
 
 let installed = false
 
-export function installAdminPlugins() {
+export function installAdminPlugins(app) {
     if (installed) return
     installed = true
 

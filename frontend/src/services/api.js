@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { storage } from '@/utils/storage'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
@@ -8,7 +9,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('access')
+        const token = storage.get('access')
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
@@ -24,8 +25,8 @@ let refreshPromise = null
 // endpointe, pa bi kupcu ponuda ostala prazna. Za zasticene endpointe
 // ovaj pokusaj vrati 401, sto je i ispravno — korisnik ide na login.
 const retryBezTokena = (request) => {
-    localStorage.removeItem('access')
-    localStorage.removeItem('refresh')
+    storage.remove('access')
+    storage.remove('refresh')
     if (request.headers) {
         delete request.headers.Authorization
     }
@@ -61,7 +62,7 @@ api.interceptors.response.use(
                 return retryBezTokena(originalRequest)
             }
 
-            const token = localStorage.getItem('access')
+            const token = storage.get('access')
             if (token) {
                 originalRequest.headers.Authorization = `Bearer ${token}`
             }

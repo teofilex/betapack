@@ -6,6 +6,7 @@ import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
 import ProductImage from '@/components/ProductImage.vue'
 import { useCartStore } from '@/store/cart'
+import { useProductStore } from '@/store/products'
 import { api } from '@/services/api'
 import { getImageUrl } from '@/composables/useImageUrl'
 import { cloudinaryUrl } from '@/utils/cloudinary'
@@ -17,6 +18,7 @@ import { getAmbalazaDefaultQuantity, getAmbalazaSellingNote, isAmbalazaPackageMo
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const catalog = useProductStore()
 const { storeRoute, storeId } = useStore()
 
 const product = ref(null)
@@ -289,49 +291,89 @@ const sortedVariants = computed(() => {
   })
 })
 
-const fetchProduct = async () => {
-  loading.value = true
+// Kolicina iz korpe ako je proizvod (varijanta) u njoj, inace pocetna kolicina
+const syncQuantityFromCart = () => {
+  if (!product.value) return
+  const variantId = selectedVariant.value ? selectedVariant.value.id : null
+  const cartItem = cartStore.getCartItem(product.value.id, variantId)
+  quantity.value = cartItem ? cartItem.quantity : pocetnaKolicina(selectedVariant.value)
+}
+
+// Postavlja proizvod i bira varijantu. keepSelection (tiho osvezavanje): ostaje izabrana
+// varijanta ako jos postoji.
+const applyProduct = (data, { keepSelection = false } = {}) => {
+  product.value = data
+
+  // Auto-select first variant if available (first from sorted list - sale variants first)
+  if (data.variants && data.variants.length > 0) {
+    const kept = keepSelection ? data.variants.find(v => v.id === selectedVariant.value?.id) : null
+    if (kept) {
+      selectedVariant.value = kept
+      return
+    }
+    // Use sortedVariants to get the first variant (sale variants are first)
+    const sorted = [...data.variants].sort((a, b) => {
+      if (a.on_sale && !b.on_sale) return -1
+      if (!a.on_sale && b.on_sale) return 1
+      const extractDim = (name) => {
+        const match = name.match(/(\d+)/)
+        return match ? parseInt(match[1]) : 0
+      }
+      return extractDim(a.name) - extractDim(b.name)
+    })
+    selectedVariant.value = sorted[0]
+  } else {
+    selectedVariant.value = null
+  }
+  // Check if this variant (or product) is in cart and load quantity
+  if (!keepSelection) syncQuantityFromCart()
+}
+
+// silent: strana je vec prikazana (prerender); podaci se samo tiho osvezavaju, bez
+// spinnera, bez promene izbora kupca i bez odlaska sa strane ako zahtev ne uspe.
+const fetchProduct = async ({ silent = false } = {}) => {
+  if (!silent) loading.value = true
   try {
     const response = await api.get(`/products/${route.params.slugOrId}/`, {
       params: { _: Date.now() }
     })
-    product.value = response.data
+    const fresh = response.data
+
+    // Isti podaci kao na prerenderovanoj strani: nista se ne dira
+    if (silent && JSON.stringify(product.value) === JSON.stringify(fresh)) return
 
     // Proizvod otvoren pod pogresnom prodavnicom (npr. stari /proizvod/<slug> link
     // za ambalazu) prebacuje se na svoju pravu putanju.
-    if (product.value.store && storeId.value && product.value.store !== storeId.value) {
+    const wrongStore = fresh.store && storeId.value && fresh.store !== storeId.value
+    applyProduct(fresh, { keepSelection: silent })
+    if (wrongStore) {
       router.replace({ path: productPath.value, query: route.query, hash: route.hash })
     }
-
-    // Auto-select first variant if available (first from sorted list - sale variants first)
-    if (product.value.variants && product.value.variants.length > 0) {
-      // Use sortedVariants to get the first variant (sale variants are first)
-      const sorted = [...product.value.variants].sort((a, b) => {
-        if (a.on_sale && !b.on_sale) return -1
-        if (!a.on_sale && b.on_sale) return 1
-        const extractDim = (name) => {
-          const match = name.match(/(\d+)/)
-          return match ? parseInt(match[1]) : 0
-        }
-        return extractDim(a.name) - extractDim(b.name)
-      })
-      selectedVariant.value = sorted[0]
-      // Check if this variant is in cart and load quantity
-      const variantId = selectedVariant.value.id
-      const cartItem = cartStore.getCartItem(product.value.id, variantId)
-      quantity.value = cartItem ? cartItem.quantity : pocetnaKolicina(selectedVariant.value)
-    } else {
-      // No variants, check if product is in cart
-      const cartItem = cartStore.getCartItem(product.value.id, null)
-      quantity.value = cartItem ? cartItem.quantity : pocetnaKolicina(null)
-    }
   } catch (error) {
+    if (silent && error.response?.status !== 404) return
     console.error('Error fetching product:', error)
     router.push(storeRoute())
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
+
+// Prerender: proizvod je vec u store-u (isti DOM kao u HTML-u, bez spinnera)
+const prerendered = catalog.prerenderedProduct
+const startedFromPrerender = !!prerendered &&
+  [prerendered.slug, prerendered.id].some(key => key != null && String(key) === String(route.params.slugOrId))
+if (startedFromPrerender) {
+  loading.value = false
+  applyProduct(prerendered)
+}
+// Potrosen: pri sledecem ulasku na stranu (SPA navigacija) ide normalno ucitavanje.
+// Na serveru se ne brise, jer se store serijalizuje u HTML tek posle iscrtavanja.
+if (!import.meta.env.SSR) catalog.prerenderedProduct = null
+
+// Korpa iz localStorage-a stize tek posle hidracije (main.js)
+watch(() => cartStore.loaded, (loaded) => {
+  if (loaded) syncQuantityFromCart()
+})
 
 // Get cart item for current product
 const getCartItem = computed(() => {
@@ -497,7 +539,7 @@ watch(
 )
 
 onMounted(() => {
-  fetchProduct()
+  fetchProduct({ silent: startedFromPrerender })
   window.addEventListener('pageshow', onPageShow)
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('focus', onWindowFocus)

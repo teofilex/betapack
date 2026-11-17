@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { storage } from '@/utils/storage'
 import {
     getSellingMode, getPackageSize, getMinQuantity, isOnRequest
 } from '@/composables/useSellingMode'
@@ -12,17 +13,11 @@ import {
 } from '@/composables/useAmbalazaSelling'
 
 export const useCartStore = defineStore('cart', {
-    state: () => {
-        const savedCart = JSON.parse(localStorage.getItem('cart') || '[]')
-        const validItems = savedCart.filter(item => {
-            if (item.selling_mode === 'on_request') return true
-            return item.current_price !== undefined && item.current_price !== null
-        })
-        if (validItems.length !== savedCart.length) {
-            localStorage.setItem('cart', JSON.stringify(validItems))
-        }
-        return { items: validItems }
-    },
+    // Pocetno stanje je prazno (isto kao u prerenderu); korpa iz localStorage-a se
+    // ucitava pozivom loadFromStorage() pre ili posle montiranja (vidi main.js).
+    // `loaded` javlja komponentama koje korpu citaju jednom (npr. strana proizvoda)
+    // da je stvarna korpa stigla.
+    state: () => ({ items: [], loaded: false }),
 
     getters: {
         itemCount: (state) => state.items.length,
@@ -65,12 +60,26 @@ export const useCartStore = defineStore('cart', {
 
     actions: {
         save() {
-            localStorage.setItem('cart', JSON.stringify(this.items))
+            storage.set('cart', JSON.stringify(this.items))
         },
 
-        load() {
-            const saved = localStorage.getItem('cart')
-            if (saved) this.items = JSON.parse(saved)
+        // Ucitava korpu; stavke bez cene (osim "na upit") odbacuje i cisti sacuvanu korpu
+        loadFromStorage() {
+            let savedCart = []
+            try {
+                savedCart = JSON.parse(storage.get('cart') || '[]')
+            } catch {
+                savedCart = []
+            }
+            const validItems = savedCart.filter(item => {
+                if (item.selling_mode === 'on_request') return true
+                return item.current_price !== undefined && item.current_price !== null
+            })
+            if (validItems.length !== savedCart.length) {
+                storage.set('cart', JSON.stringify(validItems))
+            }
+            this.items = validItems
+            this.loaded = true
         },
 
         add(product, quantity = 1) {
