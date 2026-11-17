@@ -7,6 +7,7 @@ import { getImageUrl } from '@/composables/useImageUrl'
 import { useStore } from '@/composables/useStore'
 import { STORE_LIST } from '@/config/stores'
 import StoreIcon from '@/components/StoreIcon.vue'
+import BrandLogo from '@/components/BrandLogo.vue'
 import {
   getQuantityStep, getMinQuantity, isPackageMode, isLengthMode, isOnRequest
 } from '@/composables/useSellingMode'
@@ -66,7 +67,7 @@ const handleLogout = () => {
       <div class="flex justify-between items-center h-16 lg:h-18">
 
         <router-link to="/" class="flex items-center gap-3 lg:gap-4 cursor-pointer" @click="closeMenus">
-          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 lg:h-12 w-auto" />
+          <BrandLogo class="h-10 lg:h-12 w-auto" />
           <div>
             <div class="text-base lg:text-lg font-bold text-white">BETA PACK</div>
             <div v-if="store" class="text-[10px] text-gray-400 font-medium hidden sm:block">{{ store.shortLabel }}</div>

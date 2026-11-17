@@ -3,6 +3,8 @@ import { useHead } from '@unhead/vue'
 import { STORES } from '@/config/stores'
 import StoreIcon from '@/components/StoreIcon.vue'
 import { buildHead, absoluteUrl } from '@/utils/seo'
+import BrandLogo from '@/components/BrandLogo.vue'
+import ResponsivePicture from '@/components/ResponsivePicture.vue'
 
 const HOME_IMAGE = '/betapackHomeNew.jpg'
 
@@ -16,13 +18,41 @@ const homeHead = buildHead({
 
 useHead(homeHead)
 
+// Prazan GIF: <img> nema sta da skida kad nijedan <source> ne vazi za trenutnu sirinu ekrana
+const EMPTY_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+
+const desktopMedia = '(min-width: 768px)'
+const desktopSources = [
+  {
+    media: desktopMedia,
+    type: 'image/webp',
+    srcset: '/betapackHomeNew-1280.webp 1280w, /betapackHomeNew-1920.webp 1920w',
+    sizes: '100vw'
+  },
+  { media: desktopMedia, srcset: HOME_IMAGE }
+]
+
+function mobileSources(name, widths, jpeg) {
+  const media = '(max-width: 767px)'
+  return [
+    {
+      media,
+      type: 'image/webp',
+      srcset: widths.map((width) => `/${name}-${width}.webp ${width}w`).join(', '),
+      sizes: '100vw'
+    },
+    { media, srcset: jpeg }
+  ]
+}
+
 const sections = [
   {
     store: STORES.steel,
     title: 'Bravarski materijal i kovano gvožđe',
     tags: ['Kapije', 'Ograde', 'Dekorativni elementi'],
     buttonText: 'Pogledaj ponudu',
-    mobileImage: '/steelMobileVersion.jpg',
+    mobileSources: mobileSources('steelMobileVersion', [640, 960, 1200], '/steelMobileVersion.jpg'),
+    mobileSize: [1200, 800],
     align: 'left'
   },
   {
@@ -30,7 +60,8 @@ const sections = [
     title: 'Ambalaža za ugostiteljstvo i dostavu',
     tags: ['PET', 'PP', 'papir', 'alu', 'folije'],
     buttonText: 'Pogledaj asortiman',
-    mobileImage: '/ambalazaMobileVersion.jpg',
+    mobileSources: mobileSources('ambalazaMobileVersion', [640, 960, 1280], '/ambalazaMobileVersion.jpg'),
+    mobileSize: [1280, 853],
     align: 'right'
   }
 ]
@@ -41,7 +72,7 @@ const sections = [
     <header class="relative z-20 border-b border-white/10 bg-[#0a1628]/90 backdrop-blur-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
         <router-link to="/" class="flex items-center gap-3 cursor-pointer">
-          <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-10 lg:h-12 w-auto" />
+          <BrandLogo class="h-10 lg:h-12 w-auto" />
           <div class="text-lg font-bold tracking-wide">BETA PACK</div>
         </router-link>
         <nav class="flex items-center gap-1 sm:gap-3">
@@ -63,12 +94,14 @@ const sections = [
 
     <main class="relative flex-1 flex flex-col min-h-0 bg-[#0a1628]">
       <!-- Hero pozadina -->
-      <img
-        :src="HOME_IMAGE"
+      <!-- Samo na >= 768 px: na telefonu se ova slika uopste ne skida -->
+      <ResponsivePicture
+        :src="EMPTY_IMAGE"
+        :sources="desktopSources"
         alt=""
         aria-hidden="true"
+        eager
         class="home-hero-image absolute inset-0 w-full h-full object-cover object-center hidden md:block"
-        fetchpriority="high"
       />
 
       <!-- Overlay — tamni gradient + blagi vignette -->
@@ -106,9 +139,14 @@ const sections = [
                   : 'min-h-[240px] sm:min-h-[280px] h-[240px] sm:h-[280px]'
               "
             >
-              <img
-                :src="section.mobileImage"
+              <!-- Samo na < 768 px: na desktopu se ove slike ne skidaju -->
+              <ResponsivePicture
+                :src="EMPTY_IMAGE"
+                :sources="section.mobileSources"
+                :width="section.mobileSize[0]"
+                :height="section.mobileSize[1]"
                 :alt="section.title"
+                :eager="section.store.id === 'steel'"
                 class="w-full"
                 :class="
                   section.store.id === 'ambalaza'

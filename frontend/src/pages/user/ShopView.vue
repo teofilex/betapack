@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import TheHeader from '@/components/TheHeader.vue'
 import TheFooter from '@/components/TheFooter.vue'
+import ResponsivePicture from '@/components/ResponsivePicture.vue'
 import { useProductStore } from '@/store/products'
 import { useCategoryStore } from '@/store/categories'
 import { useCartStore } from '@/store/cart'
@@ -559,10 +560,13 @@ onUnmounted(() => {
 
       <!-- Hero Image -->
       <div class="relative overflow-hidden" :style="{ height: storeId === 'ambalaza' ? '580px' : '450px' }">
-        <img
+        <ResponsivePicture
           :src="heroStore.heroImage"
+          :sources="heroStore.heroImageSources"
+          :width="heroStore.heroImageSize[0]"
+          :height="heroStore.heroImageSize[1]"
           :alt="`BetaPack - ${heroStore.heroTitle}`"
-          fetchpriority="high"
+          eager
           class="absolute inset-0 w-full h-full object-cover"
         />
 

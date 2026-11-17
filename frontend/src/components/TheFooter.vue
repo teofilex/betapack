@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useStore } from '@/composables/useStore'
 import { getStoreById } from '@/config/stores'
+import BrandLogo from '@/components/BrandLogo.vue'
 
 const currentYear = new Date().getFullYear()
 const { store, storeId } = useStore()
@@ -36,7 +37,7 @@ const footerTagline = computed(() =>
         <!-- O kompaniji -->
         <div>
           <div class="flex items-center gap-2 mb-3">
-            <img src="/betapack-logo.png" alt="Beta Pack Logo" class="h-8 w-auto" />
+            <BrandLogo class="h-8 w-auto" />
             <h3 class="text-base font-bold text-white">BETA PACK</h3>
           </div>
           <p v-if="storeId" class="text-[10px] uppercase tracking-wider text-[#42a5f5] font-semibold mb-2">

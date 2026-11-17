@@ -7,6 +7,12 @@ export const STORES = {
     tagline: 'Kovano gvožđe i bravarski materijali',
     description: 'Profili, kutije, firiketi i ukrasni elementi za ograde, kapije i gelendere.',
     heroImage: '/Betapack-hero-image-optimized.jpg',
+    heroImageSize: [1920, 550],
+    // WebP: na telefonu (<768 px) isecak sa sredine, jer object-cover ionako prikazuje centar
+    heroImageSources: [
+      { media: '(max-width: 767px)', type: 'image/webp', srcset: '/Betapack-hero-image-optimized-mobile.webp' },
+      { type: 'image/webp', srcset: '/Betapack-hero-image-optimized.webp' },
+    ],
     heroTitle: 'Kovano gvožđe i bravarski proizvodi',
     heroSubtitle: 'Širok asortiman kvalitetnih proizvoda - profili, cevi, čelik u traci, ukrasni elementi i dodatna oprema za bravariju',
     footerDescription: 'Prodaja bravarskih materijala i elemenata od kovanog gvožđa — kapije, ograde, gelenderi, dekorativni elementi i metalne konstrukcije.',
@@ -33,6 +39,11 @@ export const STORES = {
     tagline: 'Ambalaža za hranu i ugostiteljstvo',
     description: 'PET, PP, papir, karton, alu, stiropor, folije i dodatna oprema — za restorane, kafiće, pekare i dostavu hrane.',
     heroImage: '/AmbalazaHeroImage.jpeg',
+    heroImageSize: [1600, 900],
+    heroImageSources: [
+      { media: '(max-width: 767px)', type: 'image/webp', srcset: '/AmbalazaHeroImage-mobile.webp' },
+      { type: 'image/webp', srcset: '/AmbalazaHeroImage.webp' },
+    ],
     heroTitle: 'Ambalaža za hranu',
     heroSubtitle: 'Beta Pack nudi širok izbor ambalaže za restorane, kafiće, pekare, poslastičarnice, mesare, fast food objekte, maloprodaju i dostavu hrane.',
     heroTags: ['PET', 'PP', 'papir', 'karton', 'alu', 'stiropor', 'folije', 'dodatna oprema'],
