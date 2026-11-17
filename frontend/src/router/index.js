@@ -17,6 +17,22 @@ const AboutView = () => import("@/pages/user/AboutView.vue");
 const Login = () => import("../admin/pages/Login.vue");
 const AdminView = () => import("../admin/pages/AdminView.vue");
 
+// Pri povratku (Nazad) strana je cesto jos kratka jer se proizvodi ucitavaju sa API-ja:
+// sacekaj (najvise ~1,5 s) da dovoljno poraste, pa tek onda skoci na sacuvanu poziciju.
+const whenPageIsTallEnough = (position) =>
+    new Promise((resolve) => {
+        const deadline = performance.now() + 1500
+        const check = () => {
+            const needed = (position.top || 0) + window.innerHeight
+            if (document.documentElement.scrollHeight >= needed || performance.now() > deadline) {
+                resolve(position)
+            } else {
+                requestAnimationFrame(check)
+            }
+        }
+        check()
+    })
+
 const storeChildRoutes = (store) => [
     {
         path: '',
@@ -107,18 +123,22 @@ const router = createRouter({
     ],
     history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
+        // Nazad/Napred: vrati sacuvanu poziciju (kad se strana napuni podacima i bude dovoljno visoka)
         if (savedPosition) {
-            return savedPosition
+            return whenPageIsTallEnough(savedPosition)
         }
+        // Link sa #sidrom: na sidro, ispod lepljivog zaglavlja
         if (to.hash) {
-            return { el: to.hash, behavior: 'smooth' }
+            return { el: to.hash, top: 80, behavior: 'smooth' }
         }
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                window.scrollTo(0, 0)
-                resolve({ top: 0, left: 0 })
-            }, 100)
-        })
+        // Ista strana, drugi query (npr. /steel?category=N): ne skroluje; listu proizvoda
+        // pri promeni kategorije pomera sam ShopView (scrollToProducts)
+        if (to.path === from.path) {
+            return false
+        }
+        // Druga strana: na vrh. Ruter ovo poziva tek kad je navigacija zavrsena, pa kod lazy
+        // ruta i posle ucitavanja i iscrtavanja nove strane (stara strana se ne trza ranije)
+        return { top: 0, left: 0 }
     }
 })
 
