@@ -28,6 +28,11 @@ const contactInfo = {
   coordinates: { lat: 44.914361, lng: 20.258167 }
 }
 
+// Mapa je na prvom ekranu (desktop), pa se Google Maps iframe ne ucitava odmah nego tek
+// na klik; do tada stoji pregled iste velicine, bez pomeranja sadrzaja.
+const mapShown = ref(false)
+const mapUrl = `https://www.google.com/maps?q=${contactInfo.coordinates.lat},${contactInfo.coordinates.lng}`
+
 const form = ref({
   name: '',
   email: '',
@@ -313,17 +318,44 @@ const sendMessage = async () => {
 
         </div>
 
-        <!-- Google Maps -->
+        <!-- Google Maps: iframe se ubacuje tek na klik; pregled je iste visine (360 px) -->
         <div class="mt-9 bg-white rounded-xl shadow-lg overflow-hidden">
           <iframe
-            :src="`https://www.google.com/maps?q=${contactInfo.coordinates.lat},${contactInfo.coordinates.lng}&output=embed`"
+            v-if="mapShown"
+            :src="`${mapUrl}&output=embed`"
             width="100%"
             height="360"
             style="border:0;"
             allowfullscreen=""
-            loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
+            title="Mapa: Beta Pack, Batajnica"
           ></iframe>
+          <div
+            v-else
+            class="h-[360px] flex flex-col items-center justify-center gap-4 text-center px-4 bg-gradient-to-br from-blue-50 to-gray-100"
+          >
+            <svg class="w-12 h-12 text-[#1976d2]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+            </svg>
+            <p class="text-sm font-semibold text-gray-800">{{ contactInfo.address }}, {{ contactInfo.city }}</p>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                @click="mapShown = true"
+                class="bg-[#1976d2] hover:bg-[#1565c0] text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition cursor-pointer"
+              >
+                Prikaži mapu
+              </button>
+              <a
+                :href="mapUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-sm font-semibold text-[#1976d2] hover:underline"
+              >
+                Otvori u Google Maps
+              </a>
+            </div>
+          </div>
         </div>
 
       </div>
