@@ -59,13 +59,34 @@ const productImage = computed(() =>
     ? shareImageUrl(product.value.images[0].image)
     : `${SITE_URL}/betapack-logo.png`
 )
-const productPrice = computed(() =>
-  product.value ? product.value.current_price : 0
-)
+// Cena za strukturisane podatke (JSON-LD Product i og:product:price): stvarna cena > 0,
+// u skladu sa onim sto strana pokazuje kupcu. Sa varijantama je to najnizi iznos medju
+// varijantama koje nisu "na upit"; bez varijanti cena proizvoda. Proizvod "na upit"
+// (cena prazna ili 0.00) nema cenu, pa nema ni Product (Google bi prijavio offers bez price).
+// Cena 0 se nikad ne upisuje.
+const schemaPrice = computed(() => {
+  const p = product.value
+  if (!p) return null
+  const positive = (value) => {
+    const amount = parseFloat(value)
+    return Number.isFinite(amount) && amount > 0 ? amount : null
+  }
 
-// Schema.org JSON-LD for Product
+  if (p.variants && p.variants.length > 0) {
+    const prices = p.variants
+      .filter(v => v.selling_mode !== 'on_request')
+      .map(v => positive(v.current_price ?? v.price))
+      .filter(amount => amount !== null)
+    return prices.length > 0 ? Math.min(...prices) : null
+  }
+
+  if (p.selling_mode === 'on_request') return null
+  return positive(p.current_price)
+})
+
+// Schema.org JSON-LD for Product (samo za proizvode sa cenom)
 const productSchema = computed(() => {
-  if (!product.value) return null
+  if (!product.value || schemaPrice.value === null) return null
 
   const isSteel = productStoreId.value === 'steel'
 
@@ -90,7 +111,7 @@ const productSchema = computed(() => {
       '@type': 'Offer',
       url: absoluteUrl(productPath.value),
       priceCurrency: 'RSD',
-      price: product.value.current_price,
+      price: schemaPrice.value.toFixed(2),
       priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       availability: product.value.in_stock
         ? 'https://schema.org/InStock'
@@ -150,15 +171,19 @@ useHead(() => {
 
   return {
     ...head,
-    meta: [
-      ...head.meta,
-      { property: 'product:price:amount', content: productPrice.value },
-      { property: 'product:price:currency', content: 'RSD' }
-    ],
-    // Structured data postoji tek kad je proizvod ucitan
+    meta: schemaPrice.value === null
+      ? head.meta
+      : [
+          ...head.meta,
+          { property: 'product:price:amount', content: schemaPrice.value.toFixed(2) },
+          { property: 'product:price:currency', content: 'RSD' }
+        ],
+    // Structured data postoji tek kad je proizvod ucitan; Product samo ako ima cenu
     script: product.value
       ? [
-          { type: 'application/ld+json', key: 'ld-product', innerHTML: JSON.stringify(productSchema.value) },
+          ...(productSchema.value
+            ? [{ type: 'application/ld+json', key: 'ld-product', innerHTML: JSON.stringify(productSchema.value) }]
+            : []),
           { type: 'application/ld+json', key: 'ld-breadcrumb', innerHTML: JSON.stringify(breadcrumbSchema.value) }
         ]
       : []
