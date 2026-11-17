@@ -1,0 +1,45 @@
+# Nocno osvezavanje sajta: Vercel ponovo gradi frontend (prerender povlaci proizvode i
+# cene sa API-ja), pa strane koje vide posetioci i pretrazivaci budu sveze.
+# Potreban GitHub secret: VERCEL_DEPLOY_HOOK_URL (Vercel Deploy Hook za granu master).
+name: Nocni build
+
+on:
+  schedule:
+    # GitHub cron je u UTC. 03:00 po beogradskom vremenu je 01:00 UTC leti (CEST) i
+    # 02:00 UTC zimi (CET): pokrecu se oba, a korak ispod propusta samo onaj u 03h.
+    - cron: '0 1 * * *'
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Proveri da je 03h u Beogradu
+        id: gate
+        run: |
+          hour=$(TZ=Europe/Belgrade date +%H)
+          echo "Beograd: $(TZ=Europe/Belgrade date '+%F %T')"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$hour" = "03" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Nije 03h u Beogradu, preskace se."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pozovi Vercel Deploy Hook
+        if: steps.gate.outputs.run == 'true'
+        env:
+          HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "::error::Secret VERCEL_DEPLOY_HOOK_URL nije podesen."
+            exit 1
+          fi
+          status=$(curl -sS -o response.txt -w '%{http_code}' -X POST "$HOOK_URL")
+          cat response.txt; echo
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::Deploy Hook vratio HTTP $status."
+            exit 1
+          fi
