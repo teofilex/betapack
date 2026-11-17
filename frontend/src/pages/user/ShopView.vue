@@ -787,6 +787,7 @@ onUnmounted(() => {
                           :src="getImageUrl(getProductImage(product).image)"
                           :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
                           sizes="(min-width: 1024px) 280px, 45vw"
+                          :eager="slideIndex === 0"
                           class="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                         />
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
@@ -993,7 +994,7 @@ onUnmounted(() => {
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6"
               >
                 <div
-                  v-for="product in filteredProducts"
+                  v-for="(product, index) in filteredProducts"
                   :key="product.id"
                   class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-2xl hover:border-[#1976d2] hover:-translate-y-2 transition-all duration-300 group flex flex-col h-full"
                 >
@@ -1010,6 +1011,7 @@ onUnmounted(() => {
                         :src="getImageUrl(getProductImage(product).image)"
                         :alt="`${product.name} - ${product.category_name} - BetaPack kovano gvožđe`"
                         sizes="(min-width: 1280px) 240px, (min-width: 1024px) 320px, (min-width: 640px) 300px, 90vw"
+                        :eager="index < 4"
                         class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                       />
                       <div v-else class="w-full h-full flex items-center justify-center text-gray-400">

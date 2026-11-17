@@ -523,6 +523,7 @@ onUnmounted(() => {
                   :widths="[480, 720, 1080]"
                   sizes="(min-width: 1024px) 560px, 90vw"
                   eager
+                  priority
                   class="w-full h-full object-contain"
                 />
                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">

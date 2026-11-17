@@ -10,8 +10,10 @@ const props = defineProps({
   alt: { type: String, default: '' },
   widths: { type: Array, default: () => [320, 480, 640] },
   sizes: { type: String, default: '50vw' },
-  // slika na prvom ekranu (ne lazy, visok prioritet)
+  // slika na prvom ekranu: ne ide lazy (skida se odmah)
   eager: { type: Boolean, default: false },
+  // glavna (LCP) slika: dodatno visok prioritet preuzimanja
+  priority: { type: Boolean, default: false },
 })
 
 const fallbackSrc = computed(() => cloudinaryUrl(props.src, { width: props.widths[Math.floor(props.widths.length / 2)] }))
@@ -25,7 +27,7 @@ const srcset = computed(() => cloudinarySrcset(props.src, props.widths))
     :sizes="srcset ? sizes : undefined"
     :alt="alt"
     :loading="eager ? 'eager' : 'lazy'"
-    :fetchpriority="eager ? 'high' : undefined"
+    :fetchpriority="priority ? 'high' : undefined"
     decoding="async"
   />
 </template>
